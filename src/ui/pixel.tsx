@@ -202,14 +202,22 @@ function RagRaid() {
   );
 }
 
-export function PixelRag({ pose = 'idle', className, title }: RagProps) {
-  const label = title ?? `ラグ BABY ${pose.toUpperCase()}`;
+function poseFromContext(className?: string): RagPose {
+  if (className?.includes('scene-companion')) return 'depart';
+  if (className?.includes('camp-rag')) return 'return';
+  if (className?.includes('raid-rag')) return 'raid';
+  return 'idle';
+}
+
+export function PixelRag({ pose, className, title }: RagProps) {
+  const resolvedPose = pose ?? poseFromContext(className);
+  const label = title ?? `ラグ BABY ${resolvedPose.toUpperCase()}`;
   return (
-    <SvgShell className={`rag-sprite rag-pose-${pose} ${className ?? ''}`.trim()} title={label} viewBox="0 0 32 32">
-      {pose === 'idle' && <RagIdle />}
-      {pose === 'depart' && <RagDepart />}
-      {pose === 'return' && <RagReturn />}
-      {pose === 'raid' && <RagRaid />}
+    <SvgShell className={`rag-sprite rag-pose-${resolvedPose} ${className ?? ''}`.trim()} title={label} viewBox="0 0 32 32">
+      {resolvedPose === 'idle' && <RagIdle />}
+      {resolvedPose === 'depart' && <RagDepart />}
+      {resolvedPose === 'return' && <RagReturn />}
+      {resolvedPose === 'raid' && <RagRaid />}
     </SvgShell>
   );
 }
