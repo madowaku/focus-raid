@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { ragBabyPoseIndex, ragBabySheet, type RagRasterPose } from './rag-raster';
+import { volgaPoseIndex, volgaSheet, type VolgaPose } from './volga-raster';
 
 type PixelProps = {
   className?: string;
@@ -10,6 +11,10 @@ export type RagPose = RagRasterPose;
 
 type RagProps = PixelProps & {
   pose?: RagPose;
+};
+
+type BossProps = PixelProps & {
+  pose?: VolgaPose;
 };
 
 function SvgShell({ className, title, children, viewBox = '0 0 24 24' }: PixelProps & { children: ReactNode; viewBox?: string }) {
@@ -32,6 +37,12 @@ function poseFromContext(className?: string): RagPose {
   if (className?.includes('camp-rag')) return 'return';
   if (className?.includes('raid-rag')) return 'raid';
   return 'idle';
+}
+
+function bossPoseFromContext(className?: string): VolgaPose {
+  if (className?.includes('raid-focus-boss')) return 'focus';
+  if (className?.includes('raid-result-boss')) return 'result';
+  return 'ready';
 }
 
 export function PixelRag({ pose, className, title }: RagProps) {
@@ -90,20 +101,23 @@ export function PixelAbyss(props: PixelProps) {
   );
 }
 
-export function PixelBoss(props: PixelProps) {
+export function PixelBoss({ pose, className, title }: BossProps) {
+  const resolvedPose = pose ?? bossPoseFromContext(className);
+  const frame = volgaPoseIndex[resolvedPose];
+  const position = `${(frame / 2) * 100}% 0%`;
+  const style = {
+    backgroundImage: `url("${volgaSheet}")`,
+    backgroundPosition: position,
+    backgroundRepeat: 'no-repeat',
+    backgroundSize: '300% 100%',
+  } as CSSProperties;
+
   return (
-    <SvgShell {...props} title={props.title ?? 'WORLD BOSS'}>
-      <rect x="5" y="5" width="14" height="10" fill="#9e3b36" />
-      <rect x="7" y="3" width="3" height="4" fill="#e0a44e" />
-      <rect x="15" y="2" width="3" height="5" fill="#e0a44e" />
-      <rect x="3" y="8" width="4" height="3" fill="#6b2d3d" />
-      <rect x="18" y="7" width="4" height="4" fill="#6b2d3d" />
-      <rect x="8" y="8" width="2" height="2" fill="#ffd56a" />
-      <rect x="15" y="8" width="2" height="2" fill="#ffd56a" />
-      <rect x="10" y="12" width="6" height="2" fill="#351b2c" />
-      <rect x="7" y="15" width="4" height="5" fill="#7d3132" />
-      <rect x="15" y="15" width="4" height="5" fill="#7d3132" />
-      <rect x="2" y="19" width="20" height="2" fill="#351b2c" />
-    </SvgShell>
+    <span
+      className={`pixel-art volga-sprite volga-pose-${resolvedPose} ${className ?? ''}`.trim()}
+      role="img"
+      aria-label={title ?? `灰燼竜ヴォルガ ${resolvedPose.toUpperCase()}`}
+      style={style}
+    />
   );
 }
