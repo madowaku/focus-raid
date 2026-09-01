@@ -18,21 +18,26 @@ for (const viewport of viewports) {
     deviceScaleFactor: 1,
   });
 
+  // Keep visual evidence deterministic: a standard focus completion always yields a RARE drop.
+  await page.addInitScript(() => {
+    Math.random = () => 0.1;
+  });
+  await page.clock.install({ time: new Date('2026-09-01T21:00:00+09:00') });
+
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
   await page.screenshot({ path: `${outDir}/${viewport.name}-home.png` });
 
   await page.getByRole('button', { name: /集中をはじめる/ }).click();
-  await page.waitForTimeout(350);
   await page.screenshot({ path: `${outDir}/${viewport.name}-focus.png` });
 
-  await page.getByRole('button', { name: /帰還する/ }).click();
-  await page.waitForTimeout(200);
+  // Run a real 25-minute session through the app's own interval logic without waiting in wall-clock time.
+  await page.clock.runFor(25 * 60 * 1000);
+  await page.locator('.result-shell').waitFor({ state: 'visible' });
   await page.screenshot({ path: `${outDir}/${viewport.name}-result.png` });
 
   await page.getByRole('button', { name: /HOMEへ戻る/ }).click();
   const navButtons = page.locator('.bottom-nav button');
   await navButtons.nth(1).click();
-  await page.waitForTimeout(200);
   await page.screenshot({ path: `${outDir}/${viewport.name}-world.png` });
 
   await page.close();
