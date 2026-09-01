@@ -40,6 +40,18 @@ for (const viewport of viewports) {
   await navButtons.nth(1).click();
   await page.screenshot({ path: `${outDir}/${viewport.name}-world.png` });
 
+  // Exercise the World Raid route separately so the raid pose and CTA stay under visual regression coverage.
+  await page.locator('.raid-card-button').click();
+  await page.locator('.raid-ready-shell').waitFor({ state: 'visible' });
+  await page.screenshot({ path: `${outDir}/${viewport.name}-raid-ready.png` });
+
+  await page.getByRole('button', { name: /25分レイド集中をはじめる/ }).click();
+  await page.screenshot({ path: `${outDir}/${viewport.name}-raid-focus.png` });
+
+  await page.clock.runFor(25 * 60 * 1000);
+  await page.locator('.result-shell').waitFor({ state: 'visible' });
+  await page.screenshot({ path: `${outDir}/${viewport.name}-raid-result.png` });
+
   await page.close();
 }
 
