@@ -1,0 +1,16 @@
+{
+  "name": "focus-raid-api",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node index.mjs",
+    "check": "node --check index.mjs"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.3.0"
+  }
+}

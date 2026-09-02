@@ -1,7 +1,7 @@
 {
   "name": "focus-raid",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,6 +12,7 @@
     "visual:capture": "node scripts/capture-ui.mjs"
   },
   "dependencies": {
+    "firebase": "^12.18.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },

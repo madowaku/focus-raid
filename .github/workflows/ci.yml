@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, feat/mvp-vertical-slice]
+    branches: [main, feat/mvp-vertical-slice, feat/firebase-foundation]
   pull_request:
     branches: [main]
 
@@ -15,14 +15,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Install dependencies
+      - name: Install web dependencies
         run: npm install
+      - name: Install API dependencies
+        run: npm install --prefix server
       - name: Typecheck
         run: npm run typecheck
       - name: Test
         run: npm test
       - name: Build
         run: npm run build
+      - name: Check Cloud Run API syntax
+        run: npm run check --prefix server
 
   visual-qa:
     runs-on: ubuntu-latest
