@@ -1,0 +1,52 @@
+.rag-sprite {
+  transform-origin: 50% 88%;
+}
+
+.home-rag.rag-pose-idle,
+.log-rag.rag-pose-idle {
+  animation: rag-idle 1.6s steps(2, end) infinite;
+}
+
+.scene-companion.rag-pose-depart {
+  animation: rag-depart 720ms steps(4, end) infinite;
+}
+
+.camp-rag.rag-pose-return {
+  animation: rag-return 2.2s steps(2, end) infinite;
+}
+
+.raid-rag.rag-pose-raid {
+  animation: rag-raid 920ms steps(2, end) infinite;
+}
+
+@keyframes rag-idle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+@keyframes rag-depart {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(2px, -1px); }
+  50% { transform: translate(4px, 0); }
+  75% { transform: translate(2px, 1px); }
+}
+
+@keyframes rag-return {
+  0%, 100% { transform: translateY(1px); }
+  50% { transform: translateY(3px); }
+}
+
+@keyframes rag-raid {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-rag.rag-pose-idle,
+  .log-rag.rag-pose-idle,
+  .scene-companion.rag-pose-depart,
+  .camp-rag.rag-pose-return,
+  .raid-rag.rag-pose-raid {
+    animation: none;
+  }
+}
