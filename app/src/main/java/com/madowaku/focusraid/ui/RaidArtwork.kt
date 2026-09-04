@@ -1,6 +1,9 @@
 package com.madowaku.focusraid.ui
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -11,190 +14,185 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
 import kotlin.math.min
 
-enum class CompanionMood {
+internal enum class CompanionMood {
     Idle,
     Focused,
     Celebrate,
 }
 
 @Composable
-internal fun CompanionArtwork(
+internal fun RagArtwork(
     modifier: Modifier = Modifier,
     mood: CompanionMood = CompanionMood.Idle,
 ) {
     val primary = MaterialTheme.colorScheme.primary
+    val secondary = MaterialTheme.colorScheme.secondary
     val tertiary = MaterialTheme.colorScheme.tertiary
-    val onSurface = MaterialTheme.colorScheme.onSurface
     val surface = MaterialTheme.colorScheme.surface
+    val onSurface = MaterialTheme.colorScheme.onSurface
 
-    Canvas(
-        modifier = modifier.semantics {
-            contentDescription = "相棒ラグ"
-        },
-    ) {
+    Canvas(modifier = modifier) {
         val unit = min(size.width, size.height)
         val center = Offset(size.width / 2f, size.height / 2f)
-        val lift = when (mood) {
-            CompanionMood.Idle -> 0f
-            CompanionMood.Focused -> unit * 0.025f
-            CompanionMood.Celebrate -> unit * 0.06f
-        }
 
         drawCircle(
             brush = Brush.radialGradient(
-                colors = listOf(primary.copy(alpha = .34f), Color.Transparent),
-                center = center,
+                colors = listOf(primary.copy(alpha = .28f), Color.Transparent),
+                center = Offset(center.x, center.y + unit * .05f),
                 radius = unit * .52f,
             ),
-            radius = unit * .50f,
-            center = center,
+            radius = unit * .48f,
+            center = Offset(center.x, center.y + unit * .04f),
         )
 
-        val leftWing = Path().apply {
-            moveTo(center.x - unit * .16f, center.y - unit * .03f - lift)
+        val tailPath = Path().apply {
+            moveTo(center.x + unit * .20f, center.y + unit * .13f)
             cubicTo(
-                center.x - unit * .40f,
-                center.y - unit * .29f - lift,
-                center.x - unit * .46f,
-                center.y + unit * .01f - lift,
-                center.x - unit * .25f,
-                center.y + unit * .13f - lift,
+                center.x + unit * .42f,
+                center.y + unit * .02f,
+                center.x + unit * .42f,
+                center.y + unit * .31f,
+                center.x + unit * .21f,
+                center.y + unit * .28f,
             )
-            cubicTo(
-                center.x - unit * .18f,
-                center.y + unit * .08f - lift,
-                center.x - unit * .15f,
-                center.y + unit * .03f - lift,
-                center.x - unit * .16f,
-                center.y - unit * .03f - lift,
-            )
-            close()
-        }
-        drawPath(leftWing, primary.copy(alpha = .76f))
-
-        val rightWing = Path().apply {
-            moveTo(center.x + unit * .16f, center.y - unit * .03f - lift)
-            cubicTo(
-                center.x + unit * .40f,
-                center.y - unit * .29f - lift,
-                center.x + unit * .46f,
-                center.y + unit * .01f - lift,
-                center.x + unit * .25f,
-                center.y + unit * .13f - lift,
-            )
-            cubicTo(
-                center.x + unit * .18f,
-                center.y + unit * .08f - lift,
-                center.x + unit * .15f,
-                center.y + unit * .03f - lift,
-                center.x + unit * .16f,
-                center.y - unit * .03f - lift,
-            )
-            close()
-        }
-        drawPath(rightWing, primary.copy(alpha = .76f))
-
-        val body = Path().apply {
-            moveTo(center.x, center.y - unit * .33f - lift)
-            cubicTo(
-                center.x - unit * .25f,
-                center.y - unit * .22f - lift,
-                center.x - unit * .27f,
-                center.y + unit * .17f - lift,
-                center.x,
-                center.y + unit * .31f - lift,
-            )
-            cubicTo(
-                center.x + unit * .27f,
-                center.y + unit * .17f - lift,
-                center.x + unit * .25f,
-                center.y - unit * .22f - lift,
-                center.x,
-                center.y - unit * .33f - lift,
-            )
-            close()
         }
         drawPath(
-            path = body,
+            path = tailPath,
+            color = primary,
+            style = Stroke(width = unit * .12f, cap = StrokeCap.Round),
+        )
+
+        drawOval(
             brush = Brush.verticalGradient(
-                listOf(onSurface, primary.copy(alpha = .88f)),
-                startY = center.y - unit * .35f,
-                endY = center.y + unit * .34f,
+                listOf(onSurface.copy(alpha = .98f), surface),
+                startY = center.y - unit * .06f,
+                endY = center.y + unit * .36f,
             ),
+            topLeft = Offset(center.x - unit * .23f, center.y - unit * .04f),
+            size = Size(unit * .46f, unit * .38f),
         )
 
-        val earLeft = Path().apply {
-            moveTo(center.x - unit * .13f, center.y - unit * .24f - lift)
-            lineTo(center.x - unit * .25f, center.y - unit * .41f - lift)
-            lineTo(center.x - unit * .04f, center.y - unit * .31f - lift)
-            close()
-        }
-        val earRight = Path().apply {
-            moveTo(center.x + unit * .13f, center.y - unit * .24f - lift)
-            lineTo(center.x + unit * .25f, center.y - unit * .41f - lift)
-            lineTo(center.x + unit * .04f, center.y - unit * .31f - lift)
-            close()
-        }
-        drawPath(earLeft, onSurface)
-        drawPath(earRight, onSurface)
-
-        drawCircle(
-            color = surface,
-            radius = unit * .045f,
-            center = Offset(center.x - unit * .09f, center.y - unit * .08f - lift),
-        )
-        drawCircle(
-            color = surface,
-            radius = unit * .045f,
-            center = Offset(center.x + unit * .09f, center.y - unit * .08f - lift),
-        )
-        drawCircle(
-            color = tertiary,
-            radius = unit * .020f,
-            center = Offset(center.x - unit * .09f, center.y - unit * .08f - lift),
-        )
-        drawCircle(
-            color = tertiary,
-            radius = unit * .020f,
-            center = Offset(center.x + unit * .09f, center.y - unit * .08f - lift),
-        )
-
-        val coreRadius = if (mood == CompanionMood.Celebrate) unit * .075f else unit * .060f
         drawCircle(
             brush = Brush.radialGradient(
-                listOf(Color.White, tertiary, primary.copy(alpha = .30f)),
-                radius = coreRadius * 2.4f,
+                listOf(onSurface.copy(alpha = .98f), surface),
+                center = Offset(center.x, center.y - unit * .12f),
+                radius = unit * .28f,
             ),
-            radius = coreRadius,
-            center = Offset(center.x, center.y + unit * .08f - lift),
+            radius = unit * .24f,
+            center = Offset(center.x, center.y - unit * .13f),
+        )
+
+        val leftEar = Path().apply {
+            moveTo(center.x - unit * .16f, center.y - unit * .28f)
+            lineTo(center.x - unit * .07f, center.y - unit * .47f)
+            lineTo(center.x + unit * .00f, center.y - unit * .28f)
+            close()
+        }
+        val rightEar = Path().apply {
+            moveTo(center.x + unit * .00f, center.y - unit * .28f)
+            lineTo(center.x + unit * .08f, center.y - unit * .47f)
+            lineTo(center.x + unit * .17f, center.y - unit * .27f)
+            close()
+        }
+        drawPath(leftEar, onSurface)
+        drawPath(rightEar, onSurface)
+
+        drawPath(
+            path = Path().apply {
+                moveTo(center.x - unit * .13f, center.y - unit * .28f)
+                lineTo(center.x - unit * .08f, center.y - unit * .39f)
+                lineTo(center.x - unit * .03f, center.y - unit * .28f)
+                close()
+            },
+            color = secondary.copy(alpha = .66f),
+        )
+        drawPath(
+            path = Path().apply {
+                moveTo(center.x + unit * .03f, center.y - unit * .28f)
+                lineTo(center.x + unit * .08f, center.y - unit * .39f)
+                lineTo(center.x + unit * .13f, center.y - unit * .28f)
+                close()
+            },
+            color = secondary.copy(alpha = .66f),
+        )
+
+        val eyeOffsetY = center.y - unit * .13f
+        when (mood) {
+            CompanionMood.Idle -> {
+                drawCircle(tertiary, radius = unit * .022f, center = Offset(center.x - unit * .075f, eyeOffsetY))
+                drawCircle(tertiary, radius = unit * .022f, center = Offset(center.x + unit * .075f, eyeOffsetY))
+            }
+
+            CompanionMood.Focused -> {
+                drawLine(
+                    color = tertiary,
+                    start = Offset(center.x - unit * .11f, eyeOffsetY),
+                    end = Offset(center.x - unit * .04f, eyeOffsetY - unit * .015f),
+                    strokeWidth = unit * .025f,
+                    cap = StrokeCap.Round,
+                )
+                drawLine(
+                    color = tertiary,
+                    start = Offset(center.x + unit * .04f, eyeOffsetY - unit * .015f),
+                    end = Offset(center.x + unit * .11f, eyeOffsetY),
+                    strokeWidth = unit * .025f,
+                    cap = StrokeCap.Round,
+                )
+            }
+
+            CompanionMood.Celebrate -> {
+                drawCircle(tertiary, radius = unit * .024f, center = Offset(center.x - unit * .075f, eyeOffsetY))
+                drawCircle(tertiary, radius = unit * .024f, center = Offset(center.x + unit * .075f, eyeOffsetY))
+                drawArc(
+                    color = secondary,
+                    startAngle = 8f,
+                    sweepAngle = 164f,
+                    useCenter = false,
+                    topLeft = Offset(center.x - unit * .065f, center.y - unit * .08f),
+                    size = Size(unit * .13f, unit * .09f),
+                    style = Stroke(width = unit * .022f, cap = StrokeCap.Round),
+                )
+            }
+        }
+
+        drawCircle(
+            color = secondary,
+            radius = unit * .025f,
+            center = Offset(center.x, center.y - unit * .055f),
+        )
+
+        drawOval(
+            color = primary,
+            topLeft = Offset(center.x - unit * .18f, center.y + unit * .12f),
+            size = Size(unit * .36f, unit * .13f),
+        )
+        drawCircle(
+            color = tertiary,
+            radius = unit * .04f,
+            center = Offset(center.x, center.y + unit * .18f),
         )
     }
 }
 
 @Composable
-internal fun BossArtwork(modifier: Modifier = Modifier) {
+internal fun VolgaArtwork(modifier: Modifier = Modifier) {
+    val primary = MaterialTheme.colorScheme.primary
     val secondary = MaterialTheme.colorScheme.secondary
     val tertiary = MaterialTheme.colorScheme.tertiary
     val surfaceVariant = MaterialTheme.colorScheme.surfaceVariant
     val onSurface = MaterialTheme.colorScheme.onSurface
 
-    Canvas(
-        modifier = modifier.semantics {
-            contentDescription = "灰燼竜ヴォルガ"
-        },
-    ) {
+    Canvas(modifier = modifier) {
         val unit = min(size.width, size.height)
         val center = Offset(size.width / 2f, size.height / 2f)
 
         drawCircle(
             brush = Brush.radialGradient(
-                listOf(secondary.copy(alpha = .26f), Color.Transparent),
+                listOf(secondary.copy(alpha = .28f), primary.copy(alpha = .10f), Color.Transparent),
                 center = center,
                 radius = unit * .55f,
             ),
@@ -203,55 +201,28 @@ internal fun BossArtwork(modifier: Modifier = Modifier) {
         )
 
         val leftHorn = Path().apply {
-            moveTo(center.x - unit * .18f, center.y - unit * .18f)
-            lineTo(center.x - unit * .43f, center.y - unit * .40f)
-            lineTo(center.x - unit * .30f, center.y - unit * .04f)
+            moveTo(center.x - unit * .25f, center.y - unit * .21f)
+            lineTo(center.x - unit * .42f, center.y - unit * .42f)
+            lineTo(center.x - unit * .14f, center.y - unit * .30f)
             close()
         }
         val rightHorn = Path().apply {
-            moveTo(center.x + unit * .18f, center.y - unit * .18f)
-            lineTo(center.x + unit * .43f, center.y - unit * .40f)
-            lineTo(center.x + unit * .30f, center.y - unit * .04f)
+            moveTo(center.x + unit * .25f, center.y - unit * .21f)
+            lineTo(center.x + unit * .42f, center.y - unit * .42f)
+            lineTo(center.x + unit * .14f, center.y - unit * .30f)
             close()
         }
-        drawPath(leftHorn, tertiary.copy(alpha = .80f))
-        drawPath(rightHorn, tertiary.copy(alpha = .80f))
+        drawPath(leftHorn, secondary)
+        drawPath(rightHorn, secondary)
 
-        val head = Path().apply {
-            moveTo(center.x, center.y - unit * .36f)
-            cubicTo(
-                center.x - unit * .34f,
-                center.y - unit * .28f,
-                center.x - unit * .37f,
-                center.y + unit * .12f,
-                center.x - unit * .18f,
-                center.y + unit * .30f,
-            )
-            cubicTo(
-                center.x - unit * .07f,
-                center.y + unit * .40f,
-                center.x + unit * .07f,
-                center.y + unit * .40f,
-                center.x + unit * .18f,
-                center.y + unit * .30f,
-            )
-            cubicTo(
-                center.x + unit * .37f,
-                center.y + unit * .12f,
-                center.x + unit * .34f,
-                center.y - unit * .28f,
-                center.x,
-                center.y - unit * .36f,
-            )
-            close()
-        }
-        drawPath(
-            path = head,
+        drawOval(
             brush = Brush.verticalGradient(
                 listOf(onSurface.copy(alpha = .92f), surfaceVariant),
                 startY = center.y - unit * .38f,
                 endY = center.y + unit * .40f,
             ),
+            topLeft = Offset(center.x - unit * .34f, center.y - unit * .30f),
+            size = Size(unit * .68f, unit * .62f),
         )
 
         drawRoundRect(
@@ -279,7 +250,7 @@ internal fun BossArtwork(modifier: Modifier = Modifier) {
 
         val jaw = Path().apply {
             moveTo(center.x - unit * .18f, center.y + unit * .17f)
-            quadraticBezierTo(center.x, center.y + unit * .34f, center.x + unit * .18f, center.y + unit * .17f)
+            quadraticTo(center.x, center.y + unit * .34f, center.x + unit * .18f, center.y + unit * .17f)
         }
         drawPath(
             path = jaw,
@@ -312,35 +283,53 @@ internal fun RaidClashMark(modifier: Modifier = Modifier) {
             strokeWidth = stroke,
             cap = StrokeCap.Round,
         )
-        drawCircle(
-            color = Color.White,
-            radius = min(size.width, size.height) * .065f,
-            center = Offset(size.width / 2f, size.height / 2f),
+    }
+}
+
+@Composable
+internal fun RaidDuelArtwork(modifier: Modifier = Modifier) {
+    Box(modifier = modifier) {
+        RagArtwork(
+            modifier = Modifier
+                .size(86.dp),
+            mood = CompanionMood.Celebrate,
+        )
+        VolgaArtwork(
+            modifier = Modifier
+                .size(98.dp),
+        )
+        RaidClashMark(
+            modifier = Modifier
+                .fillMaxSize(),
         )
     }
 }
 
-private fun DrawScope.drawEmberCracks(center: Offset, unit: Float, color: Color) {
-    val crackWidth = unit * .025f
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawEmberCracks(
+    center: Offset,
+    unit: Float,
+    color: Color,
+) {
+    val stroke = unit * .025f
     drawLine(
-        color = color.copy(alpha = .72f),
-        start = Offset(center.x, center.y - unit * .28f),
-        end = Offset(center.x - unit * .06f, center.y - unit * .11f),
-        strokeWidth = crackWidth,
+        color = color,
+        start = Offset(center.x - unit * .08f, center.y + unit * .04f),
+        end = Offset(center.x - unit * .14f, center.y + unit * .18f),
+        strokeWidth = stroke,
         cap = StrokeCap.Round,
     )
     drawLine(
-        color = color.copy(alpha = .58f),
-        start = Offset(center.x - unit * .06f, center.y - unit * .11f),
-        end = Offset(center.x + unit * .02f, center.y + unit * .03f),
-        strokeWidth = crackWidth,
+        color = color,
+        start = Offset(center.x - unit * .14f, center.y + unit * .18f),
+        end = Offset(center.x - unit * .08f, center.y + unit * .25f),
+        strokeWidth = stroke,
         cap = StrokeCap.Round,
     )
     drawLine(
-        color = color.copy(alpha = .52f),
-        start = Offset(center.x + unit * .12f, center.y + unit * .14f),
-        end = Offset(center.x + unit * .20f, center.y + unit * .28f),
-        strokeWidth = crackWidth,
+        color = color,
+        start = Offset(center.x + unit * .10f, center.y + unit * .02f),
+        end = Offset(center.x + unit * .16f, center.y + unit * .17f),
+        strokeWidth = stroke,
         cap = StrokeCap.Round,
     )
 }
