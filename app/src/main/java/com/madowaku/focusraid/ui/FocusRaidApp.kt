@@ -200,7 +200,7 @@ internal fun FocusRaidAppContent(
 
                         MainTab.RAID -> RaidOverview(state)
                         MainTab.COMPANION -> CompanionOverview(state)
-                        MainTab.LOG -> LogOverview(state)
+                        MainTab.LOG -> SessionHistoryOverview(state)
                     }
                 }
             }
