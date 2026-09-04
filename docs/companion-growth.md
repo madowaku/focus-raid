@@ -1,29 +1,50 @@
-# Companion growth
+# Companion Growth
 
-Rag grows only from cumulative credited focus minutes. Growth never rolls back when a streak ends and cannot be accelerated by paid power.
+Focus Raid's companion growth is a direct reflection of cumulative credited focus time.
+
+## Rules
+
+- 1 credited focus minute = 1 companion growth minute.
+- Growth never rolls back when a streak breaks.
+- Paid features never accelerate growth.
+- Early-ended sessions still contribute any credited whole minutes.
+- Mature companions keep accumulating shared focus time even after the final visual form is unlocked.
 
 ## Stages
 
-| Stage | Cumulative focus | Visual language |
+| Stage | Cumulative focus | Visual identity |
 | --- | ---: | --- |
-| 卵 | 0–74 min | Glowing egg, visible crack, no dragon silhouette yet |
-| 幼体 | 75–719 min | Round body, tiny horns, short wings |
-| 第一成長 | 720–1,799 min | Taller body, longer horns and wings, tail appears |
-| 第二成長 | 1,800–4,499 min | Broad wings, longer tail, shoulder spikes |
-| 成熟 | 4,500+ min | Largest wings and horns, crown horn, brighter core aura |
+| Egg | 0–74 min | Glowing egg, shell cracks |
+| Hatchling | 75–719 min | Round body, small horns and wings |
+| First growth | 720–1,799 min | Larger wings and horns, tail appears |
+| Second growth | 1,800–4,499 min | Larger silhouette, longer tail, shoulder spikes |
+| Mature | 4,500+ min | Largest wings and horns, crown horn, stronger core aura |
 
-The silhouettes are drawn with Compose Canvas today so every state remains deterministic and testable before final sprite production. The growth stage is supplied by `CompanionGrowth`, the same pure Kotlin rule used by the progress UI.
+`CompanionGrowth` is the single source of truth for stage, next threshold, remaining minutes, and within-stage progress. HOME, RAID, result, and Companion surfaces all render from that same domain state.
 
-## UI contract
+## Evolution reveal
 
-- HOME, RAID, ABORTED and VICTORY render Rag in the player's actual current stage.
-- The Companion tab renders the current form as the hero image.
-- The Companion tab also shows all five forms as a progression strip. Future forms are deliberately dimmed and named `???` until unlocked.
-- The current stage label and visual form must always agree.
-- The egg stage must render as an egg, not a baby dragon.
+When credited focus changes the companion stage, `CompanionGrowth.evolutionBetween(beforeMinutes, afterMinutes)` returns the old and new stages. The session result stores that one-time evolution event.
 
-## Visual QA
+On a normal completion, the VICTORY screen inserts a rare `RAG EVOLVED!` card ahead of the normal damage/reward stack. It briefly shows the previous form, then reveals the new form after about 650 ms. The rest of VICTORY remains available by scrolling, so evolution feels special without turning every focus completion into a cutscene.
 
-Visual QA captures every growth silhouette at 360×800. The regular hatchling Companion screen is also captured at 720×1280 with the rest of the standard large-device QA set.
+If an early-ended session still crosses a threshold, ABORTED also acknowledges the evolution in a compact banner. This preserves the core rule that credited focus time is never rolled back just because a session ended early.
 
-This protects the main progression promise: spending real focus time should visibly change the companion, not only increment a number.
+Evolution state is cleared when the result is dismissed or a new session starts.
+
+## Companion screen
+
+The Companion tab shows:
+
+- current visual form
+- total time spent together
+- today's credited focus
+- progress toward the next stage
+- remaining minutes to the next stage
+- a five-form progression strip
+
+Future forms are dimmed and labeled `???` until unlocked. This exposes the existence of future growth without spoiling the exact unlocked silhouette too aggressively.
+
+## QA
+
+Visual QA includes every companion form at 360×800 and an explicit evolution result at both 360×800 and 720×1280. Domain tests cover exact thresholds, no-op sessions, and forward-only evolution detection.
