@@ -63,4 +63,23 @@ class CompanionGrowthTest {
         assertEquals(0, status.totalMinutes)
         assertEquals(75, status.remainingMinutes)
     }
+
+    @Test
+    fun `evolution is reported when a focus session crosses a threshold`() {
+        val evolution = CompanionGrowth.evolutionBetween(695, 720)
+
+        assertEquals(CompanionStage.HATCHLING, evolution?.from)
+        assertEquals(CompanionStage.FIRST_GROWTH, evolution?.to)
+    }
+
+    @Test
+    fun `evolution is not reported when stage does not change`() {
+        assertNull(CompanionGrowth.evolutionBetween(620, 645))
+        assertNull(CompanionGrowth.evolutionBetween(720, 720))
+    }
+
+    @Test
+    fun `evolution never runs backwards`() {
+        assertNull(CompanionGrowth.evolutionBetween(720, 695))
+    }
 }
