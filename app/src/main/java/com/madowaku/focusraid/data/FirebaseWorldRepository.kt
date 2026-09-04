@@ -91,7 +91,6 @@ class FirebaseWorldRepository private constructor(
                         FIREBASE_APP_NAME,
                     )
                 }
-                ?: return null
 
             return FirebaseWorldRepository(
                 auth = FirebaseAuth.getInstance(app),
