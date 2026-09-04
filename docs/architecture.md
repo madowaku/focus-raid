@@ -2,28 +2,26 @@
 
 ## Core rule
 
-Keep focus timing authoritative on-device, read shared state through repositories, and mutate authoritative world state through Cloud Run when the backend is introduced.
+Keep focus timing authoritative on-device, read shared world state through repositories, and send authoritative world mutations through server endpoints rather than trusting the Android client.
 
-## Android v1 boundaries
+The timer must remain useful even when every network dependency is unavailable.
 
-### UI
+## Session flow
 
-Jetpack Compose renders the app as state, not as separate timer pages.
-
-The core focus flow is:
+Jetpack Compose renders one focus flow as state:
 
 ```text
 READY -> RUNNING <-> PAUSED -> COMPLETED
                        \-> ABORTED
 ```
 
-READY / RAID / VICTORY are visual states of one session flow. Navigation is hidden while a focus session is active.
+READY / RAID / VICTORY are visual states of that flow. Navigation disappears while a focus session is active.
 
-### Timer
+## Timer
 
 Never make `remainingSeconds -= 1` the source of truth.
 
-Running sessions persist:
+Running sessions persist an absolute end timestamp:
 
 ```text
 endEpochMillis = startEpochMillis + duration
@@ -31,57 +29,39 @@ endEpochMillis = startEpochMillis + duration
 
 The UI derives remaining time from `endEpochMillis - now`. This survives screen-off, activity recreation and process death.
 
-`AlarmManager` schedules the completion notification. If exact alarms are allowed, Focus Raid uses an exact alarm; otherwise it uses an idle-safe fallback and still restores the correct elapsed state when the app opens.
+`AlarmManager` schedules completion notification delivery. If exact alarms are allowed, Focus Raid uses an exact alarm; otherwise it uses an idle-safe fallback and still restores the correct elapsed state when the app opens.
 
-`BOOT_COMPLETED` and `MY_PACKAGE_REPLACED` restore the completion alarm from DataStore for an active running session. If the persisted end time already passed while the device was unavailable, Focus Raid posts the completion notification on recovery and resolves the completed session when the app next opens.
-
-When exact-alarm special access is granted, `ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED` triggers the same restore path so an already-running focus session can be upgraded from the fallback alarm to an exact completion alarm.
+`BOOT_COMPLETED`, `MY_PACKAGE_REPLACED`, and exact-alarm permission changes restore an active completion alarm from DataStore. If the persisted end time already passed, recovery posts the completion notification and the next app process reconciles the expired session.
 
 ### Timer durability gate
 
-Timer behavior is protected by an emulator durability suite that must continue to pass before timer changes are considered safe.
+`scripts/test-timer-durability.sh` exercises four Android emulator failure modes on every PR:
 
-The suite exercises four failure modes against a short persisted session:
-
-1. deep Doze while the screen is off
+1. deep Doze while screen-off
 2. normal screen-off sleep
 3. application process death via `am kill`
 4. full emulator reboot with an active persisted session
 
-Each scenario verifies both halves of the contract:
+Each case verifies both completion delivery and fresh-process reconciliation of expired `RUNNING -> READY` state.
 
-- completion delivery still occurs at the persisted end time
-- a fresh app process reconciles an expired `RUNNING` session back to `READY`
+The debug control receiver exists only under `src/debug`; production builds do not expose it.
 
-The test observes a debug-only completion-delivery marker written by the same notifier path used in production. The debug receiver used to seed and inspect sessions lives only under `src/debug`, so production builds do not expose the durability control surface.
+Current v1 behavior does not require a foreground service. Revisit that only if a future feature needs continuous foreground execution rather than end-time correctness and notification delivery.
 
-The CI gate lives in `scripts/test-timer-durability.sh` and runs as the `timer-durability` job alongside unit tests, lint, APK build, and visual QA.
+## System access
 
-Current validated behavior on the API 36 emulator:
+Do not cold-prompt notification permission at launch.
 
-- deep Doze: completion delivered and expired session reconciled after fresh launch
-- screen off: completion delivered and expired session reconciled after fresh launch
-- process kill: alarm survived process death, completion delivered, persisted state reconciled after fresh launch
-- device reboot: `BOOT_COMPLETED` recovery delivered completion and persisted state reconciled after fresh launch
-
-This makes a foreground service unnecessary for the current v1 timer contract. Revisit that decision only if a future requirement needs continuous foreground execution rather than end-time correctness and notification delivery.
-
-### System access
-
-Do not cold-prompt notification permission on app launch.
-
-The first focus start may show a short education dialog when either of these capabilities is unavailable:
+The first focus start can show a short education dialog for:
 
 - app notifications
 - exact alarms / Alarms & reminders special access
 
-The dialog explains why Focus Raid uses each capability and always allows the user to continue without granting them. The education acknowledgement is persisted so a deliberate opt-out does not block every future session.
+Users can continue without either capability. The persisted end timestamp remains authoritative regardless of notification permission.
 
-When permissions are unavailable, the focus session remains valid because the authoritative end timestamp is persisted independently of the notification path.
+## Persistence
 
-### Persistence
-
-Preferences DataStore stores small current-state values:
+Preferences DataStore stores compact current-session state:
 
 - selected duration
 - selected expedition
@@ -89,37 +69,37 @@ Preferences DataStore stores small current-state values:
 - active session id
 - running end timestamp
 - paused remaining duration
-- cumulative focus minutes
-- whether timer system-access education has been acknowledged
+- cumulative credited focus minutes
+- system-access education acknowledgement
 
-Room stores durable session history. Each meaningful completed or aborted focus session becomes one `focus_sessions` row containing:
+Room stores durable Adventure Log rows. Each meaningful completed or aborted session records:
 
 - stable `sessionId`
 - completion timestamp
 - planned and credited minutes
 - expedition
-- outcome (`COMPLETED` / `ABORTED`)
+- outcome
 - damage
 - optional rarity / discovery
 
-The `sessionId` is created when focus starts and survives pause, resume, process death, and reboot through DataStore. It is also the Room primary key, so replaying recovery after a crash cannot duplicate the same Adventure Log entry.
+The same `sessionId` survives pause, resume, process death and reboot. It is also the Room primary key, preventing duplicate history during recovery.
 
-Session-state DataStore writes are serialized in invocation order. This prevents a delayed `saveReady()` from a just-finished session from racing with a rapid `startAgain()` and overwriting the newly-running session.
+Session-state DataStore writes are serialized in invocation order so a delayed write from a previous session cannot overwrite a newly-started session.
 
-The Adventure Log observes the latest Room rows as a Flow and renders actual recent focus history grouped by day. Room is now the canonical local history store; DataStore remains intentionally limited to compact active-session/preferences state.
+## Domain
 
-### Domain
+`core/domain` is pure Kotlin and contains no Android API dependencies.
 
-`core/domain` is pure Kotlin. No Android APIs belong there.
-
-Current MVP rules:
+Current rules:
 
 - 1 credited minute = 1 personal damage
 - 1 credited minute = 1 world EP
 - every accumulated 25 focus minutes produces one discovery roll
-- companion growth uses cumulative focus minutes, never streaks or paid boosts
+- companion growth uses cumulative credited focus minutes only
+- streak loss never rolls companion growth back
+- paid power never accelerates companion growth
 
-Companion growth is modeled by `CompanionGrowth`, rather than duplicating thresholds in UI code. The v1 milestones are:
+### Companion growth
 
 | Total focus time | Stage |
 | ---: | --- |
@@ -129,22 +109,74 @@ Companion growth is modeled by `CompanionGrowth`, rather than duplicating thresh
 | 1,800–4,499 min | 第二成長 |
 | 4,500+ min | 成熟 |
 
-The companion screen shows both total shared focus time and progress inside the current stage. Progress never rolls back when a streak breaks. A mature companion keeps accumulating shared focus time even though there is no further stage threshold.
+`CompanionGrowth` owns thresholds, progress, next-stage calculations and threshold-crossing detection. When a session crosses a threshold, the result state carries a `CompanionEvolution` so the UI can show the rare `RAG EVOLVED!` reveal without duplicating growth rules.
 
-### Footprints
+## Shared world reads
 
-Footprints are deliberately lightweight asynchronous social interaction, not chat.
+`WorldRepository` is observable through `StateFlow<WorldSnapshot>` and also exposes a small `WorldSyncStatus` state.
 
-- A completed focus session may show up to three short footprints left at the current expedition position.
-- A player may leave at most one footprint from the fixed `FootprintPresets` catalog for that completion flow.
-- Free-form text is not part of v1. This avoids moderation, abuse, personal-information and store-policy scope growing into a social network feature.
-- The UI treats footprints as traces from earlier adventurers, not as a feed, ranking or follower system.
-- Tower footprints are keyed by tower floor. Abyss footprints are keyed by depth.
-- `WorldRepository` owns reads and writes so the current fake implementation can be replaced without changing the ViewModel or Compose flow.
+Two implementations exist:
 
-The Android MVP currently uses `FakeWorldRepository` seed data so the full read/select/post UX can be exercised before Firebase is connected. The production adapter should persist footprints remotely with an anonymous author id, server timestamp, expedition, checkpoint and preset id. Clients should render text and glyph from the local preset catalog rather than trusting remote free-form display text.
+- `FakeWorldRepository`: deterministic local preview used by CI, screenshots and unconfigured builds
+- `FirebaseWorldRepository`: anonymous Firebase Auth + one-shot Firestore read of `world/current`
 
-Suggested Firestore shape:
+`WorldRepositoryFactory` selects Firebase only when all three build values exist:
+
+```text
+FOCUS_RAID_FIREBASE_PROJECT_ID
+FOCUS_RAID_FIREBASE_API_KEY
+FOCUS_RAID_FIREBASE_APP_ID
+```
+
+Otherwise it deliberately falls back to the fake repository.
+
+Firebase initialization is explicit, so the repository does not require committing `google-services.json` just to build the app.
+
+Runtime order:
+
+1. restore the local focus session
+2. if the session is not RUNNING or PAUSED, sign in anonymously if needed
+3. perform a one-shot server read of `world/current`
+4. map valid fields onto the local fallback snapshot
+5. publish the new snapshot through `StateFlow`
+6. refresh again after a result is dismissed and the app returns to READY
+
+There is no realtime Firestore listener during focus. A rapid `もう一回集中する` path also skips the post-result refresh so a new focus session does not intentionally launch network work first.
+
+If Auth or Firestore fails, the repository reports `OFFLINE`, restores the preview snapshot, and leaves timer / local progression behavior untouched.
+
+The expected Firestore shape and setup steps live in `docs/firebase-setup.md`.
+
+## Authoritative world writes
+
+The Android client must not directly mutate authoritative shared raid state.
+
+`firestore.rules` allows authenticated reads of `world/**` and denies client writes. Future contribution flow should be:
+
+```text
+Android focus completion
+  -> Cloud Run finishFocus / submitRaid
+  -> validate identity + session payload
+  -> write per-user raid entry
+  -> aggregate world state
+  -> clients read world/current
+```
+
+Do not update one shared world document directly from every device session.
+
+## Footprints
+
+Footprints are lightweight asynchronous traces, not chat.
+
+- fixed preset messages only
+- no free-form text in v1
+- at most a few recent traces are shown at a checkpoint
+- Tower footprints are keyed by floor
+- Abyss footprints are keyed by depth
+
+The current Android slice keeps footprint reads/writes in the repository abstraction but uses the local fake implementation. Remote footprint posting remains a separate server-validated phase so clients cannot forge arbitrary text or bypass eligibility rules.
+
+Suggested remote shape:
 
 ```text
 footprints/{expedition}/{checkpoint}/entries/{entryId}
@@ -153,29 +185,19 @@ footprints/{expedition}/{checkpoint}/entries/{entryId}
   createdAt
 ```
 
-Recommended backend rules:
+Clients should render glyph/text from the local preset catalog rather than trusting display text from Firestore.
 
-- authenticated anonymous-or-linked users may create one server-validated preset entry per eligible checkpoint/completion token
-- clients cannot write arbitrary message text or glyphs
-- reads are capped and ordered newest-first
-- retention can prune old entries if the collection becomes noisy
+## Planned backend services
 
-### Data
-
-`WorldRepository` is currently backed by `FakeWorldRepository` so the complete UI flow is testable without Firebase.
-
-Planned backend services remain:
-
-- Firebase Auth: anonymous first, optional linking later
-- Firestore: user summaries, goals, world/current, raids, raid entries, footprints
-- Cloud Run: startFocus, finishFocus, submitRaid, leaveFootprint, worldRollup
-- FCM: opt-in raid notifications
+- Firebase Auth: anonymous first, optional account linking later
+- Firestore: `world/current`, user summaries, raids, raid entries, footprints
+- Cloud Run: `startFocus`, `finishFocus`, `submitRaid`, `leaveFootprint`, `worldRollup`
+- FCM: opt-in world raid notifications
 - App Check: protect server endpoints
 
-### Scaling
+## Scaling rules
 
-- Do not update one shared world document per user session at large scale.
-- Do not keep realtime Firestore listeners running while focusing.
-- Submit raid results to per-user entry documents and aggregate.
-- Footprints should be fetched only at completion / checkpoint views, not watched continuously.
-- Add sharded counters only when traffic proves they are needed.
+- no realtime shared-world listener while focusing
+- submit raid results to per-user entry documents and aggregate server-side
+- fetch footprints only around completion / checkpoint views
+- add sharded counters only when real traffic proves they are required
