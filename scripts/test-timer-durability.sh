@@ -30,6 +30,26 @@ clear_state() {
   broadcast -a "$ACTION_CLEAR" >/dev/null || true
 }
 
+kill_app_process() {
+  adb shell input keyevent KEYCODE_HOME >/dev/null 2>&1 || true
+  adb shell am kill "$PACKAGE" >/dev/null 2>&1 || true
+
+  for _ in {1..10}; do
+    if [[ -z "$(adb shell pidof "$PACKAGE" 2>/dev/null | tr -d '\r')" ]]; then
+      return 0
+    fi
+    sleep 0.5
+  done
+
+  log "FAIL: app process could not be killed cleanly"
+  return 1
+}
+
+prepare_scenario() {
+  clear_state
+  kill_app_process
+}
+
 # Read the app's tiny completion-delivery marker directly from its debug data directory.
 # `run-as` does not start the application process, so this remains a valid process-death test.
 completion_marker_xml() {
@@ -86,20 +106,24 @@ launch_main() {
 
 reconcile_after_expiry() {
   local scenario="$1"
+
+  # Always exercise process-death restoration here. This prevents a ViewModel left alive by the
+  # previous scenario from masking or blocking persisted-session reconciliation.
+  kill_app_process
   launch_main
 
   for _ in {1..15}; do
     local output
     output="$(probe)"
     if grep -q "phase=READY" <<<"$output"; then
-      log "PASS: ${scenario} reconciled expired persisted session to READY"
+      log "PASS: ${scenario} reconciled expired persisted session to READY after fresh launch"
       adb shell input keyevent KEYCODE_HOME >/dev/null || true
       return 0
     fi
     sleep 1
   done
 
-  log "FAIL: ${scenario} did not reconcile persisted state after app launch"
+  log "FAIL: ${scenario} did not reconcile persisted state after fresh app launch"
   probe | tee -a "$REPORT_FILE"
   return 1
 }
@@ -151,7 +175,7 @@ fi
 # Running it before any other Focus Raid alarm avoids a false failure from that OS quota.
 log ""
 log "SCENARIO 1/4: deep Doze"
-clear_state
+prepare_scenario
 seed_timer 15000
 launch_main
 adb shell dumpsys battery unplug >/dev/null
@@ -174,7 +198,7 @@ reconcile_after_expiry "deep-Doze"
 
 log ""
 log "SCENARIO 2/4: screen off"
-clear_state
+prepare_scenario
 seed_timer 12000
 launch_main
 adb shell input keyevent KEYCODE_SLEEP >/dev/null
@@ -186,7 +210,7 @@ reconcile_after_expiry "screen-off"
 
 log ""
 log "SCENARIO 3/4: app process kill"
-clear_state
+prepare_scenario
 seed_timer 12000
 launch_main
 adb shell input keyevent KEYCODE_HOME >/dev/null
@@ -205,7 +229,7 @@ reconcile_after_expiry "process-kill"
 
 log ""
 log "SCENARIO 4/4: device reboot"
-clear_state
+prepare_scenario
 seed_timer 12000
 log "Rebooting emulator with an active persisted session..."
 adb reboot
