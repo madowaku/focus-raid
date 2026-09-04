@@ -21,6 +21,7 @@ Focus Raid v1 is intentionally Android-only.
 - Wall-clock based resilient timer
 - AlarmManager completion notification
 - Preferences DataStore session recovery
+- Room session history
 - Pure Kotlin domain rules
 - Firebase / Firestore / Cloud Run boundary preserved for the next phase
 
@@ -30,12 +31,31 @@ The previous React/Vite PWA prototype is preserved on the `archive/pwa-mvp-v0.1`
 
 - READY: duration selection, expedition selection, large timer hero, raid CTA, current raid card
 - RAID: 208dp timer hero, pause/resume, early return, quiet reduced-information layout
-- VICTORY: credited focus time, personal damage, world EP, discovery result, repeat CTA
+- VICTORY / ABORTED: credited focus time remains meaningful whether the session completes or ends early
 - Session restoration after process death using an absolute end timestamp
 - Exact completion alarm when exact alarms are permitted, graceful inexact fallback otherwise
-- Notification permission request on Android 13+
+- Reboot / app-update alarm restoration and a four-case durability CI gate
+- Notification and exact-alarm education before optional system access
+- Adventure Log backed by Room
+- Today focus minutes and streak derived from actual local history
+- Fixed-message Footprints for lightweight asynchronous interaction
+- Companion growth from egg to mature form using cumulative focus minutes
+- Distinct Compose Canvas silhouettes for egg / hatchling / first growth / second growth / mature
 - Home / Raid / Companion / Log bottom navigation
 - Pure Kotlin domain tests
+- 360×800 and 720×1280 emulator visual QA
+
+## Companion growth
+
+Rag starts as an egg on a fresh install and visually evolves as credited focus time accumulates.
+
+- 0 min: egg
+- 75 min: hatchling
+- 720 min: first growth
+- 1,800 min: second growth
+- 4,500 min: mature
+
+The Companion tab shows the current form, progress to the next form, time spent together, today's contribution, and a five-form progression strip. Future forms stay dimmed until unlocked.
 
 ## Build
 
@@ -75,3 +95,4 @@ See:
 - `docs/design-system.md`
 - `docs/kotlin-migration.md`
 - `docs/rag-baby-sprite.md`
+- `docs/companion-growth.md`
