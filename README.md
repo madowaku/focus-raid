@@ -45,7 +45,7 @@ The previous React/Vite PWA prototype is preserved on the `archive/pwa-mvp-v0.1`
 - `RAG EVOLVED!` result reveal whenever credited focus crosses a growth threshold
 - Anonymous Firebase Auth + one-shot Firestore `world/current` read when backend config is present
 - Local preview fallback when Firebase is unavailable or unconfigured
-- No shared-world realtime listener while RUNNING / PAUSED
+- Shared-world refresh only outside active RUNNING / PAUSED sessions
 - Home / Raid / Companion / Log bottom navigation
 - Pure Kotlin domain tests
 - 26 Android emulator visual QA screenshots across 360×800 and 720×1280, including evolution
@@ -77,6 +77,8 @@ FOCUS_RAID_FIREBASE_APP_ID
 ```
 
 When all three exist, Focus Raid signs in anonymously and performs a one-shot server read of `world/current` while the app is outside an active focus session. Missing or failed backend configuration falls back to `FakeWorldRepository`, so cloud availability never blocks the timer.
+
+`WorldRepository` exposes both the latest snapshot and a sync status (`LOCAL_PREVIEW`, `CONNECTING`, `LIVE`, `OFFLINE`). Firestore data is mapped defensively, so incomplete remote documents cannot crash the focus UI.
 
 See `docs/firebase-setup.md` for the Firestore document shape and setup steps.
 
