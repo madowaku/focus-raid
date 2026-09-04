@@ -26,6 +26,11 @@ data class CompanionGrowthStatus(
         get() = stage.nextLabel
 }
 
+data class CompanionEvolution(
+    val from: CompanionStage,
+    val to: CompanionStage,
+)
+
 object CompanionGrowth {
     fun from(totalMinutes: Int): CompanionGrowthStatus {
         val safeTotal = totalMinutes.coerceAtLeast(0)
@@ -55,5 +60,15 @@ object CompanionGrowth {
             progress = stageMinutes.toFloat() / span.toFloat(),
             remainingMinutes = (nextThreshold - safeTotal).coerceAtLeast(0),
         )
+    }
+
+    fun evolutionBetween(beforeMinutes: Int, afterMinutes: Int): CompanionEvolution? {
+        val before = from(beforeMinutes).stage
+        val after = from(afterMinutes).stage
+        return if (after.ordinal > before.ordinal) {
+            CompanionEvolution(from = before, to = after)
+        } else {
+            null
+        }
     }
 }
