@@ -1,15 +1,20 @@
 package com.madowaku.focusraid.ui
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -18,16 +23,24 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.madowaku.focusraid.core.model.SessionPhase
 
 @Composable
-fun FocusRaidRoot(viewModel: FocusViewModel) {
+fun FocusRaidRoot(
+    viewModel: FocusViewModel,
+    systemAccess: FocusSystemAccess = FocusSystemAccess(),
+    onRequestNotificationPermission: () -> Unit = {},
+    onRequestExactAlarmPermission: () -> Unit = {},
+) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var tab by rememberSaveable { mutableStateOf(MainTab.HOME) }
     var showCustomDuration by rememberSaveable { mutableStateOf(false) }
     var customDurationMinutes by rememberSaveable { mutableStateOf(state.selectedMinutes) }
     var showEndConfirmation by rememberSaveable { mutableStateOf(false) }
+    var showSystemAccessEducation by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(state.phase) {
         if (state.phase != SessionPhase.RUNNING && state.phase != SessionPhase.PAUSED) {
@@ -35,6 +48,7 @@ fun FocusRaidRoot(viewModel: FocusViewModel) {
         }
         if (state.phase != SessionPhase.READY) {
             showCustomDuration = false
+            showSystemAccessEducation = false
         }
     }
 
@@ -73,7 +87,13 @@ fun FocusRaidRoot(viewModel: FocusViewModel) {
                 customDurationMinutes = state.selectedMinutes
                 showCustomDuration = true
             },
-            onStart = viewModel::start,
+            onStart = {
+                if (!systemAccess.isReady && !state.systemAccessEducationSeen) {
+                    showSystemAccessEducation = true
+                } else {
+                    viewModel.start()
+                }
+            },
             onPause = viewModel::pause,
             onResume = viewModel::resume,
             onFinishEarly = { showEndConfirmation = true },
@@ -94,6 +114,20 @@ fun FocusRaidRoot(viewModel: FocusViewModel) {
         )
     }
 
+    if (showSystemAccessEducation && state.phase == SessionPhase.READY) {
+        FocusSystemAccessDialog(
+            access = systemAccess,
+            onRequestNotificationPermission = onRequestNotificationPermission,
+            onRequestExactAlarmPermission = onRequestExactAlarmPermission,
+            onDismiss = { showSystemAccessEducation = false },
+            onContinue = {
+                viewModel.markSystemAccessEducationSeen()
+                showSystemAccessEducation = false
+                viewModel.start()
+            },
+        )
+    }
+
     if (showEndConfirmation &&
         (state.phase == SessionPhase.RUNNING || state.phase == SessionPhase.PAUSED)
     ) {
@@ -106,6 +140,81 @@ fun FocusRaidRoot(viewModel: FocusViewModel) {
             },
         )
     }
+}
+
+@Composable
+internal fun FocusSystemAccessDialog(
+    access: FocusSystemAccess,
+    onRequestNotificationPermission: () -> Unit,
+    onRequestExactAlarmPermission: () -> Unit,
+    onDismiss: () -> Unit,
+    onContinue: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text("終了通知を確実に届ける")
+        },
+        text = {
+            Column {
+                Text(
+                    "画面を閉じていても集中終了を知らせるため、通知と正確なアラームを有効にできます。許可しなくてもタイマーは使えます。",
+                )
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    if (access.notificationsEnabled) "✓ 通知：有効" else "通知：設定が必要",
+                    color = if (access.notificationsEnabled) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                )
+                if (!access.notificationsEnabled) {
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedButton(
+                        onClick = onRequestNotificationPermission,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("通知を許可")
+                    }
+                }
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    if (access.exactAlarmsEnabled) "✓ 正確な終了時刻：有効" else "正確な終了時刻：設定が必要",
+                    color = if (access.exactAlarmsEnabled) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                )
+                if (!access.exactAlarmsEnabled) {
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedButton(
+                        onClick = onRequestExactAlarmPermission,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("正確な終了時刻を有効にする")
+                    }
+                }
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    "設定しない場合も終了時刻は端末内に保存され、アプリへ戻ったとき正しい残り時間へ復元します。",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        },
+        confirmButton = {
+            Button(onClick = onContinue) {
+                Text(if (access.isReady) "レイド開始" else "このまま開始")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("閉じる")
+            }
+        },
+    )
 }
 
 @Composable
