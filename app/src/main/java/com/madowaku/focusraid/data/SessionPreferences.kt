@@ -22,6 +22,7 @@ data class PersistedSession(
     val pausedRemainingMillis: Long = 0L,
     val totalFocusMinutes: Int = 645,
     val systemAccessEducationSeen: Boolean = false,
+    val sessionId: String? = null,
 )
 
 class SessionPreferences(private val context: Context) {
@@ -33,6 +34,7 @@ class SessionPreferences(private val context: Context) {
         val pausedRemainingMillis = longPreferencesKey("paused_remaining_millis")
         val totalFocusMinutes = intPreferencesKey("total_focus_minutes")
         val systemAccessEducationSeen = booleanPreferencesKey("system_access_education_seen")
+        val sessionId = stringPreferencesKey("session_id")
     }
 
     val session: Flow<PersistedSession> = context.focusRaidDataStore.data.map { prefs ->
@@ -48,6 +50,7 @@ class SessionPreferences(private val context: Context) {
             pausedRemainingMillis = prefs[Keys.pausedRemainingMillis] ?: 0L,
             totalFocusMinutes = prefs[Keys.totalFocusMinutes] ?: 645,
             systemAccessEducationSeen = prefs[Keys.systemAccessEducationSeen] ?: false,
+            sessionId = prefs[Keys.sessionId],
         )
     }
 
@@ -59,13 +62,19 @@ class SessionPreferences(private val context: Context) {
         context.focusRaidDataStore.edit { it[Keys.expedition] = expedition.name }
     }
 
-    suspend fun saveRunning(minutes: Int, expedition: Expedition, endEpochMillis: Long) {
+    suspend fun saveRunning(
+        minutes: Int,
+        expedition: Expedition,
+        endEpochMillis: Long,
+        sessionId: String,
+    ) {
         context.focusRaidDataStore.edit {
             it[Keys.selectedMinutes] = minutes
             it[Keys.expedition] = expedition.name
             it[Keys.phase] = SessionPhase.RUNNING.name
             it[Keys.endEpochMillis] = endEpochMillis
             it[Keys.pausedRemainingMillis] = 0L
+            it[Keys.sessionId] = sessionId
         }
     }
 
@@ -82,6 +91,7 @@ class SessionPreferences(private val context: Context) {
             it[Keys.phase] = SessionPhase.READY.name
             it[Keys.endEpochMillis] = 0L
             it[Keys.pausedRemainingMillis] = 0L
+            it.remove(Keys.sessionId)
         }
     }
 
