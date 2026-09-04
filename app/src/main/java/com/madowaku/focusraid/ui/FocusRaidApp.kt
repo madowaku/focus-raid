@@ -72,6 +72,12 @@ internal enum class MainTab(val label: String, val glyph: String) {
     LOG("ログ", "▤"),
 }
 
+private enum class OverviewArtwork {
+    Boss,
+    Companion,
+    Log,
+}
+
 @Composable
 fun FocusRaidApp(viewModel: FocusViewModel) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -308,15 +314,10 @@ private fun CompanionHero(stage: String, modifier: Modifier = Modifier) {
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(
-            modifier = Modifier
-                .size(62.dp)
-                .clip(CircleShape)
-                .background(Brush.radialGradient(listOf(Color(0xFFB69CFF), Color.Transparent))),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text("🐉", fontSize = 42.sp)
-        }
+        CompanionArtwork(
+            modifier = Modifier.size(62.dp),
+            mood = CompanionMood.Idle,
+        )
         Surface(
             shape = CircleShape,
             color = Color(0xCC211735),
@@ -446,7 +447,7 @@ private fun BossCard(state: FocusUiState) {
                     Spacer(Modifier.height(7.dp))
                     Text("🎁 25分集中で探索ロール", fontSize = 12.sp)
                 }
-                Text("🐲", fontSize = 48.sp)
+                BossArtwork(Modifier.size(64.dp))
             }
         }
     }
@@ -489,7 +490,10 @@ private fun RaidScreen(
         }
 
         Spacer(Modifier.weight(0.28f))
-        Text("🐉", fontSize = 42.sp)
+        CompanionArtwork(
+            modifier = Modifier.size(48.dp),
+            mood = if (paused) CompanionMood.Idle else CompanionMood.Focused,
+        )
         Spacer(Modifier.height(4.dp))
 
         TimerRing(
@@ -533,7 +537,7 @@ private fun RaidMiniCard(state: FocusUiState) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(state.world.bossName, fontWeight = FontWeight.Bold)
-                Text("🐲", fontSize = 26.sp)
+                BossArtwork(Modifier.size(36.dp))
             }
             Spacer(Modifier.height(9.dp))
             RaidHpBar(state.world.bossHp, state.world.bossMaxHp)
@@ -584,9 +588,19 @@ private fun VictoryScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text("${reward.creditedMinutes}分集中", fontSize = 26.sp, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(4.dp))
-                Text("🐉  ⚔  🐲", fontSize = 24.sp)
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(6.dp))
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    CompanionArtwork(
+                        modifier = Modifier.size(40.dp),
+                        mood = CompanionMood.Celebrate,
+                    )
+                    RaidClashMark(Modifier.size(28.dp))
+                    BossArtwork(Modifier.size(40.dp))
+                }
+                Spacer(Modifier.height(6.dp))
                 Text(
                     "+${reward.personalDamage} DAMAGE",
                     fontSize = 40.sp,
@@ -706,7 +720,7 @@ private fun RewardMetricCard(title: String, value: String, modifier: Modifier = 
 private fun RaidOverview(state: FocusUiState) {
     SimpleOverview(
         title = "WORLD RAID",
-        glyph = "🐲",
+        artwork = OverviewArtwork.Boss,
         body = "${state.world.bossName}\n${state.world.raidParticipants.toStringWithCommas()}人が参加予定\nARMORY ${state.world.armoryReady}% READY",
     )
 }
@@ -715,7 +729,7 @@ private fun RaidOverview(state: FocusUiState) {
 private fun CompanionOverview(state: FocusUiState) {
     SimpleOverview(
         title = "YOUR COMPANION",
-        glyph = "🐉",
+        artwork = OverviewArtwork.Companion,
         body = "ラグ · ${FocusRules.companionStage(state.totalFocusMinutes)}\n一緒に集中した時間 ${state.totalFocusMinutes / 60}h ${state.totalFocusMinutes % 60}m",
     )
 }
@@ -724,13 +738,13 @@ private fun CompanionOverview(state: FocusUiState) {
 private fun LogOverview(state: FocusUiState) {
     SimpleOverview(
         title = "ADVENTURE LOG",
-        glyph = "▤",
+        artwork = OverviewArtwork.Log,
         body = "累計集中 ${state.totalFocusMinutes / 60}h ${state.totalFocusMinutes % 60}m\n天空塔 ${state.world.towerFloor}F\n深層迷宮 ${state.world.abyssDepth}m",
     )
 }
 
 @Composable
-private fun SimpleOverview(title: String, glyph: String, body: String) {
+private fun SimpleOverview(title: String, artwork: OverviewArtwork, body: String) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -750,7 +764,11 @@ private fun SimpleOverview(title: String, glyph: String, body: String) {
                 Modifier.padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(glyph, fontSize = 64.sp)
+                when (artwork) {
+                    OverviewArtwork.Boss -> BossArtwork(Modifier.size(96.dp))
+                    OverviewArtwork.Companion -> CompanionArtwork(Modifier.size(96.dp))
+                    OverviewArtwork.Log -> Text("▤", fontSize = 64.sp)
+                }
                 Spacer(Modifier.height(12.dp))
                 Text(body, textAlign = TextAlign.Center, lineHeight = 24.sp)
             }
