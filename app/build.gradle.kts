@@ -13,6 +13,9 @@ val firebaseApiKey = providers.gradleProperty("FOCUS_RAID_FIREBASE_API_KEY")
 val firebaseAppId = providers.gradleProperty("FOCUS_RAID_FIREBASE_APP_ID")
     .orElse(providers.environmentVariable("FOCUS_RAID_FIREBASE_APP_ID"))
     .getOrElse("")
+val revenueCatGoogleApiKey = providers.gradleProperty("FOCUS_RAID_REVENUECAT_GOOGLE_API_KEY")
+    .orElse(providers.environmentVariable("FOCUS_RAID_REVENUECAT_GOOGLE_API_KEY"))
+    .getOrElse("")
 
 fun quotedBuildConfig(value: String): String =
     "\"${value.replace("\\", "\\\\").replace("\"", "\\\"")}\""
@@ -34,6 +37,11 @@ android {
         buildConfigField("String", "FIREBASE_PROJECT_ID", quotedBuildConfig(firebaseProjectId))
         buildConfigField("String", "FIREBASE_API_KEY", quotedBuildConfig(firebaseApiKey))
         buildConfigField("String", "FIREBASE_APP_ID", quotedBuildConfig(firebaseAppId))
+        buildConfigField(
+            "String",
+            "REVENUECAT_GOOGLE_API_KEY",
+            quotedBuildConfig(revenueCatGoogleApiKey),
+        )
     }
 
     buildFeatures {
@@ -71,6 +79,7 @@ dependencies {
     implementation("androidx.compose.material3:material3:1.5.0-alpha27")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
+    implementation("com.revenuecat.purchases:purchases:10.15.1")
 
     val firebaseBom = platform("com.google.firebase:firebase-bom:34.4.0")
     implementation(firebaseBom)
