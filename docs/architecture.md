@@ -37,6 +37,35 @@ The UI derives remaining time from `endEpochMillis - now`. This survives screen-
 
 When exact-alarm special access is granted, `ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED` triggers the same restore path so an already-running focus session can be upgraded from the fallback alarm to an exact completion alarm.
 
+### Timer durability gate
+
+Timer behavior is protected by an emulator durability suite that must continue to pass before timer changes are considered safe.
+
+The suite exercises four failure modes against a short persisted session:
+
+1. deep Doze while the screen is off
+2. normal screen-off sleep
+3. application process death via `am kill`
+4. full emulator reboot with an active persisted session
+
+Each scenario verifies both halves of the contract:
+
+- completion delivery still occurs at the persisted end time
+- a fresh app process reconciles an expired `RUNNING` session back to `READY`
+
+The test observes a debug-only completion-delivery marker written by the same notifier path used in production. The debug receiver used to seed and inspect sessions lives only under `src/debug`, so production builds do not expose the durability control surface.
+
+The CI gate lives in `scripts/test-timer-durability.sh` and runs as the `timer-durability` job alongside unit tests, lint, APK build, and visual QA.
+
+Current validated behavior on the API 36 emulator:
+
+- deep Doze: completion delivered and expired session reconciled after fresh launch
+- screen off: completion delivered and expired session reconciled after fresh launch
+- process kill: alarm survived process death, completion delivered, persisted state reconciled after fresh launch
+- device reboot: `BOOT_COMPLETED` recovery delivered completion and persisted state reconciled after fresh launch
+
+This makes a foreground service unnecessary for the current v1 timer contract. Revisit that decision only if a future requirement needs continuous foreground execution rather than end-time correctness and notification delivery.
+
 ### System access
 
 Do not cold-prompt notification permission on app launch.
