@@ -7,12 +7,18 @@ import com.madowaku.focusraid.core.domain.FocusRules
 import com.madowaku.focusraid.core.model.Expedition
 import com.madowaku.focusraid.core.model.Footprint
 import com.madowaku.focusraid.core.model.FootprintPresets
+import com.madowaku.focusraid.core.model.SessionHistoryEntry
+import com.madowaku.focusraid.core.model.SessionOutcome
 import com.madowaku.focusraid.core.model.SessionPhase
 import com.madowaku.focusraid.core.model.SessionReward
 import com.madowaku.focusraid.core.model.WorldSnapshot
+import com.madowaku.focusraid.data.SessionHistoryRepository
 import com.madowaku.focusraid.data.SessionPreferences
 import com.madowaku.focusraid.data.WorldRepository
 import com.madowaku.focusraid.timer.FocusAlarmScheduler
+import java.util.UUID
+import kotlin.math.floor
+import kotlin.math.max
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,8 +26,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlin.math.floor
-import kotlin.math.max
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 data class FocusUiState(
     val phase: SessionPhase = SessionPhase.READY,
@@ -37,6 +43,7 @@ data class FocusUiState(
     val footprints: List<Footprint> = emptyList(),
     val selectedFootprintPresetId: String? = null,
     val footprintPosted: Boolean = false,
+    val sessionHistory: List<SessionHistoryEntry> = emptyList(),
 ) {
     val progress: Float
         get() = if (durationSeconds <= 0) 0f
@@ -46,6 +53,7 @@ data class FocusUiState(
 class FocusViewModel(
     private val preferences: SessionPreferences,
     private val worldRepository: WorldRepository,
+    private val sessionHistoryRepository: SessionHistoryRepository,
     private val alarmScheduler: FocusAlarmScheduler,
     private val nowMillis: () -> Long = System::currentTimeMillis,
 ) : ViewModel() {
@@ -53,9 +61,16 @@ class FocusViewModel(
     val uiState: StateFlow<FocusUiState> = _uiState.asStateFlow()
 
     private var endEpochMillis: Long = 0L
+    private var activeSessionId: String? = null
     private var tickerJob: Job? = null
+    private val sessionPersistenceMutex = Mutex()
 
     init {
+        viewModelScope.launch {
+            sessionHistoryRepository.recentSessions.collect { entries ->
+                _uiState.value = _uiState.value.copy(sessionHistory = entries)
+            }
+        }
         viewModelScope.launch {
             restore()
         }
@@ -110,6 +125,8 @@ class FocusViewModel(
     fun start() {
         if (_uiState.value.phase != SessionPhase.READY) return
         val seconds = _uiState.value.selectedMinutes * 60
+        val sessionId = UUID.randomUUID().toString()
+        activeSessionId = sessionId
         endEpochMillis = nowMillis() + seconds * 1000L
         _uiState.value = _uiState.value.copy(
             phase = SessionPhase.RUNNING,
@@ -121,11 +138,12 @@ class FocusViewModel(
             footprintPosted = false,
         )
         alarmScheduler.schedule(endEpochMillis)
-        viewModelScope.launch {
+        persistSession {
             preferences.saveRunning(
                 minutes = _uiState.value.selectedMinutes,
                 expedition = _uiState.value.expedition,
                 endEpochMillis = endEpochMillis,
+                sessionId = sessionId,
             )
         }
         startTicker()
@@ -140,20 +158,22 @@ class FocusViewModel(
             phase = SessionPhase.PAUSED,
             remainingSeconds = ((remainingMillis + 999L) / 1000L).toInt(),
         )
-        viewModelScope.launch { preferences.savePaused(remainingMillis) }
+        persistSession { preferences.savePaused(remainingMillis) }
     }
 
     fun resume() {
         if (_uiState.value.phase != SessionPhase.PAUSED) return
         val remainingMillis = _uiState.value.remainingSeconds * 1000L
+        val sessionId = activeSessionId ?: UUID.randomUUID().toString().also { activeSessionId = it }
         endEpochMillis = nowMillis() + remainingMillis
         _uiState.value = _uiState.value.copy(phase = SessionPhase.RUNNING)
         alarmScheduler.schedule(endEpochMillis)
-        viewModelScope.launch {
+        persistSession {
             preferences.saveRunning(
                 minutes = _uiState.value.selectedMinutes,
                 expedition = _uiState.value.expedition,
                 endEpochMillis = endEpochMillis,
+                sessionId = sessionId,
             )
         }
         startTicker()
@@ -202,6 +222,7 @@ class FocusViewModel(
 
         when (saved.phase) {
             SessionPhase.RUNNING -> {
+                activeSessionId = saved.sessionId ?: "legacy-${saved.endEpochMillis}"
                 if (saved.endEpochMillis <= nowMillis()) {
                     _uiState.value = base
                     complete(saved.selectedMinutes)
@@ -216,14 +237,19 @@ class FocusViewModel(
                     startTicker()
                 }
             }
+
             SessionPhase.PAUSED -> {
+                activeSessionId = saved.sessionId
+                    ?: "legacy-paused-${saved.totalFocusMinutes}-${saved.pausedRemainingMillis}"
                 val remaining = ((saved.pausedRemainingMillis + 999L) / 1000L).toInt()
                 _uiState.value = base.copy(
                     phase = SessionPhase.PAUSED,
                     remainingSeconds = remaining.coerceAtLeast(0),
                 )
             }
+
             else -> {
+                activeSessionId = null
                 _uiState.value = base.copy(phase = SessionPhase.READY)
                 preferences.saveReady()
             }
@@ -270,6 +296,9 @@ class FocusViewModel(
         } else {
             emptyList()
         }
+        val sessionId = activeSessionId ?: UUID.randomUUID().toString()
+        val completedAtEpochMillis = nowMillis()
+        activeSessionId = null
 
         _uiState.value = before.copy(
             phase = phase,
@@ -281,9 +310,36 @@ class FocusViewModel(
             footprintPosted = false,
         )
 
-        viewModelScope.launch {
+        persistSession {
+            if (reward.creditedMinutes > 0) {
+                sessionHistoryRepository.record(
+                    SessionHistoryEntry(
+                        sessionId = sessionId,
+                        completedAtEpochMillis = completedAtEpochMillis,
+                        plannedMinutes = before.selectedMinutes,
+                        creditedMinutes = reward.creditedMinutes,
+                        expedition = before.expedition,
+                        outcome = if (phase == SessionPhase.COMPLETED) {
+                            SessionOutcome.COMPLETED
+                        } else {
+                            SessionOutcome.ABORTED
+                        },
+                        damage = reward.personalDamage,
+                        rarity = reward.rarity,
+                        discovery = reward.discovery,
+                    ),
+                )
+            }
             preferences.addFocusMinutes(reward.creditedMinutes)
             preferences.saveReady()
+        }
+    }
+
+    private fun persistSession(block: suspend () -> Unit) {
+        viewModelScope.launch {
+            sessionPersistenceMutex.withLock {
+                block()
+            }
         }
     }
 
@@ -295,11 +351,17 @@ class FocusViewModel(
     class Factory(
         private val preferences: SessionPreferences,
         private val worldRepository: WorldRepository,
+        private val sessionHistoryRepository: SessionHistoryRepository,
         private val alarmScheduler: FocusAlarmScheduler,
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return FocusViewModel(preferences, worldRepository, alarmScheduler) as T
+            return FocusViewModel(
+                preferences = preferences,
+                worldRepository = worldRepository,
+                sessionHistoryRepository = sessionHistoryRepository,
+                alarmScheduler = alarmScheduler,
+            ) as T
         }
     }
 }
