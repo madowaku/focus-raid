@@ -18,6 +18,7 @@ import com.madowaku.focusraid.core.model.WorldSnapshot
 import com.madowaku.focusraid.data.SessionHistoryRepository
 import com.madowaku.focusraid.data.SessionPreferences
 import com.madowaku.focusraid.data.WorldRepository
+import com.madowaku.focusraid.data.WorldSyncStatus
 import com.madowaku.focusraid.timer.FocusAlarmScheduler
 import java.util.UUID
 import kotlin.math.floor
@@ -43,6 +44,7 @@ data class FocusUiState(
     val todayFocusMinutes: Int = 0,
     val streakDays: Int = 0,
     val world: WorldSnapshot = WorldSnapshot(),
+    val worldSyncStatus: WorldSyncStatus = WorldSyncStatus.LOCAL_PREVIEW,
     val systemAccessEducationSeen: Boolean = false,
     val footprints: List<Footprint> = emptyList(),
     val selectedFootprintPresetId: String? = null,
@@ -61,7 +63,12 @@ class FocusViewModel(
     private val alarmScheduler: FocusAlarmScheduler,
     private val nowMillis: () -> Long = System::currentTimeMillis,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(FocusUiState(world = worldRepository.snapshot()))
+    private val _uiState = MutableStateFlow(
+        FocusUiState(
+            world = worldRepository.snapshot(),
+            worldSyncStatus = worldRepository.syncStatus.value,
+        ),
+    )
     val uiState: StateFlow<FocusUiState> = _uiState.asStateFlow()
 
     private var endEpochMillis: Long = 0L
@@ -84,7 +91,20 @@ class FocusViewModel(
             }
         }
         viewModelScope.launch {
+            worldRepository.syncStatus.collect { status ->
+                _uiState.value = _uiState.value.copy(worldSyncStatus = status)
+            }
+        }
+        viewModelScope.launch {
+            worldRepository.world.collect { world ->
+                if (_uiState.value.phase !in setOf(SessionPhase.RUNNING, SessionPhase.PAUSED)) {
+                    _uiState.value = _uiState.value.copy(world = world)
+                }
+            }
+        }
+        viewModelScope.launch {
             restore()
+            refreshWorldIfQuiet()
         }
     }
 
@@ -213,6 +233,7 @@ class FocusViewModel(
             selectedFootprintPresetId = null,
             footprintPosted = false,
         )
+        viewModelScope.launch { refreshWorldIfQuiet() }
     }
 
     fun startAgain() {
@@ -270,6 +291,11 @@ class FocusViewModel(
                 preferences.saveReady()
             }
         }
+    }
+
+    private suspend fun refreshWorldIfQuiet() {
+        if (_uiState.value.phase in setOf(SessionPhase.RUNNING, SessionPhase.PAUSED)) return
+        worldRepository.refresh()
     }
 
     private fun startTicker() {
