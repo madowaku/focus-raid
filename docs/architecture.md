@@ -81,17 +81,32 @@ When permissions are unavailable, the focus session remains valid because the au
 
 ### Persistence
 
-Preferences DataStore stores:
+Preferences DataStore stores small current-state values:
 
 - selected duration
 - selected expedition
 - current session phase
+- active session id
 - running end timestamp
 - paused remaining duration
 - cumulative focus minutes
 - whether timer system-access education has been acknowledged
 
-Session history can move to Room when the product needs queries that exceed simple aggregate state.
+Room stores durable session history. Each meaningful completed or aborted focus session becomes one `focus_sessions` row containing:
+
+- stable `sessionId`
+- completion timestamp
+- planned and credited minutes
+- expedition
+- outcome (`COMPLETED` / `ABORTED`)
+- damage
+- optional rarity / discovery
+
+The `sessionId` is created when focus starts and survives pause, resume, process death, and reboot through DataStore. It is also the Room primary key, so replaying recovery after a crash cannot duplicate the same Adventure Log entry.
+
+Session-state DataStore writes are serialized in invocation order. This prevents a delayed `saveReady()` from a just-finished session from racing with a rapid `startAgain()` and overwriting the newly-running session.
+
+The Adventure Log observes the latest Room rows as a Flow and renders actual recent focus history grouped by day. Room is now the canonical local history store; DataStore remains intentionally limited to compact active-session/preferences state.
 
 ### Domain
 
