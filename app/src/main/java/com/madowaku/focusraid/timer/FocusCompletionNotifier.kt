@@ -53,7 +53,32 @@ object FocusCompletionNotifier {
             .build()
 
         manager.notify(NOTIFICATION_ID, notification)
+        recordDelivery(context)
     }
+
+    /**
+     * Records that NotificationManager accepted a completion notification request.
+     *
+     * The timestamp is intentionally tiny, local-only diagnostic state. It lets debug durability
+     * tests prove that an alarm woke the app through screen-off, Doze, process death, and reboot
+     * without depending on unstable `dumpsys notification` text formatting.
+     */
+    private fun recordDelivery(context: Context) {
+        context.getSharedPreferences(DIAGNOSTIC_PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putLong(KEY_LAST_POSTED_AT, System.currentTimeMillis())
+            .apply()
+    }
+
+    internal fun clearDeliveryMarker(context: Context) {
+        context.getSharedPreferences(DIAGNOSTIC_PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .remove(KEY_LAST_POSTED_AT)
+            .commit()
+    }
+
+    internal const val DIAGNOSTIC_PREFS = "focus_completion_delivery"
+    internal const val KEY_LAST_POSTED_AT = "last_posted_at"
 
     private const val CHANNEL_ID = "focus_complete"
     private const val NOTIFICATION_ID = 2500
