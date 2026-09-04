@@ -85,10 +85,34 @@ class VisualQaActivity : ComponentActivity() {
                 ),
             )
 
+            "COMPANION_EGG" -> FocusUiState(
+                totalFocusMinutes = 0,
+                todayFocusMinutes = 0,
+                streakDays = 0,
+            )
+
             "COMPANION" -> FocusUiState(
                 totalFocusMinutes = 645,
                 todayFocusMinutes = 50,
                 streakDays = 4,
+            )
+
+            "COMPANION_FIRST" -> FocusUiState(
+                totalFocusMinutes = 1_200,
+                todayFocusMinutes = 45,
+                streakDays = 7,
+            )
+
+            "COMPANION_SECOND" -> FocusUiState(
+                totalFocusMinutes = 3_000,
+                todayFocusMinutes = 60,
+                streakDays = 12,
+            )
+
+            "COMPANION_MATURE" -> FocusUiState(
+                totalFocusMinutes = 5_000,
+                todayFocusMinutes = 75,
+                streakDays = 21,
             )
 
             "LOG" -> FocusUiState(
@@ -135,9 +159,9 @@ class VisualQaActivity : ComponentActivity() {
             else -> FocusUiState()
         }
 
-        val tab = when (phase) {
-            "COMPANION" -> MainTab.COMPANION
-            "LOG" -> MainTab.LOG
+        val tab = when {
+            phase.startsWith("COMPANION") -> MainTab.COMPANION
+            phase == "LOG" -> MainTab.LOG
             else -> MainTab.HOME
         }
 
