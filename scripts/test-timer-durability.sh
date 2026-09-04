@@ -31,10 +31,16 @@ clear_state() {
 }
 
 kill_app_process() {
+  # `am kill` refuses to kill a foreground process. After screen-off / Doze the keyguard can keep
+  # MainActivity effectively foreground even after a HOME event, so explicitly wake + dismiss it.
+  adb shell input keyevent KEYCODE_WAKEUP >/dev/null 2>&1 || true
+  adb shell wm dismiss-keyguard >/dev/null 2>&1 || true
+  adb shell input keyevent 82 >/dev/null 2>&1 || true
   adb shell input keyevent KEYCODE_HOME >/dev/null 2>&1 || true
+  sleep 0.5
   adb shell am kill "$PACKAGE" >/dev/null 2>&1 || true
 
-  for _ in {1..10}; do
+  for _ in {1..12}; do
     if [[ -z "$(adb shell pidof "$PACKAGE" 2>/dev/null | tr -d '\r')" ]]; then
       return 0
     fi
@@ -42,6 +48,7 @@ kill_app_process() {
   done
 
   log "FAIL: app process could not be killed cleanly"
+  adb shell dumpsys activity processes | grep -A 8 -B 4 "$PACKAGE" | tee -a "$REPORT_FILE" || true
   return 1
 }
 
