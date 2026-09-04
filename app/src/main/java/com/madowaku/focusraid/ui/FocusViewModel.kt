@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.madowaku.focusraid.core.domain.FocusRules
 import com.madowaku.focusraid.core.model.Expedition
+import com.madowaku.focusraid.core.model.Footprint
+import com.madowaku.focusraid.core.model.FootprintPresets
 import com.madowaku.focusraid.core.model.SessionPhase
 import com.madowaku.focusraid.core.model.SessionReward
 import com.madowaku.focusraid.core.model.WorldSnapshot
@@ -32,6 +34,9 @@ data class FocusUiState(
     val streakDays: Int = 12,
     val world: WorldSnapshot = WorldSnapshot(),
     val systemAccessEducationSeen: Boolean = false,
+    val footprints: List<Footprint> = emptyList(),
+    val selectedFootprintPresetId: String? = null,
+    val footprintPosted: Boolean = false,
 ) {
     val progress: Float
         get() = if (durationSeconds <= 0) 0f
@@ -79,6 +84,29 @@ class FocusViewModel(
         viewModelScope.launch { preferences.markSystemAccessEducationSeen() }
     }
 
+    fun selectFootprintPreset(presetId: String) {
+        val current = _uiState.value
+        if (current.phase != SessionPhase.COMPLETED || current.footprintPosted) return
+        if (FootprintPresets.byId(presetId) == null) return
+        _uiState.value = current.copy(selectedFootprintPresetId = presetId)
+    }
+
+    fun leaveFootprint() {
+        val current = _uiState.value
+        if (current.phase != SessionPhase.COMPLETED || current.footprintPosted) return
+        val presetId = current.selectedFootprintPresetId ?: return
+        val footprint = worldRepository.leaveFootprint(
+            expedition = current.expedition,
+            checkpoint = checkpointFor(current),
+            presetId = presetId,
+        ) ?: return
+
+        _uiState.value = current.copy(
+            footprints = (listOf(footprint) + current.footprints).take(3),
+            footprintPosted = true,
+        )
+    }
+
     fun start() {
         if (_uiState.value.phase != SessionPhase.READY) return
         val seconds = _uiState.value.selectedMinutes * 60
@@ -88,6 +116,9 @@ class FocusViewModel(
             remainingSeconds = seconds,
             durationSeconds = seconds,
             reward = null,
+            footprints = emptyList(),
+            selectedFootprintPresetId = null,
+            footprintPosted = false,
         )
         alarmScheduler.schedule(endEpochMillis)
         viewModelScope.launch {
@@ -144,6 +175,9 @@ class FocusViewModel(
             remainingSeconds = selected * 60,
             durationSeconds = selected * 60,
             reward = null,
+            footprints = emptyList(),
+            selectedFootprintPresetId = null,
+            footprintPosted = false,
         )
     }
 
@@ -228,18 +262,34 @@ class FocusViewModel(
             expedition = before.expedition,
             discoveryProgressMinutes = before.totalFocusMinutes % 25,
         )
+        val nearbyFootprints = if (phase == SessionPhase.COMPLETED) {
+            worldRepository.footprints(
+                expedition = before.expedition,
+                checkpoint = checkpointFor(before),
+            )
+        } else {
+            emptyList()
+        }
 
         _uiState.value = before.copy(
             phase = phase,
             remainingSeconds = 0,
             reward = reward,
             totalFocusMinutes = before.totalFocusMinutes + reward.creditedMinutes,
+            footprints = nearbyFootprints,
+            selectedFootprintPresetId = null,
+            footprintPosted = false,
         )
 
         viewModelScope.launch {
             preferences.addFocusMinutes(reward.creditedMinutes)
             preferences.saveReady()
         }
+    }
+
+    private fun checkpointFor(state: FocusUiState): Int = when (state.expedition) {
+        Expedition.TOWER -> state.world.towerFloor
+        Expedition.ABYSS -> state.world.abyssDepth
     }
 
     class Factory(
