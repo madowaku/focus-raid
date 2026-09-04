@@ -222,6 +222,17 @@ class FocusViewModel(
 
     fun resetAfterResult() {
         if (_uiState.value.phase !in setOf(SessionPhase.COMPLETED, SessionPhase.ABORTED)) return
+        resetResultState()
+        viewModelScope.launch { refreshWorldIfQuiet() }
+    }
+
+    fun startAgain() {
+        if (_uiState.value.phase != SessionPhase.COMPLETED) return
+        resetResultState()
+        start()
+    }
+
+    private fun resetResultState() {
         val selected = _uiState.value.selectedMinutes
         _uiState.value = _uiState.value.copy(
             phase = SessionPhase.READY,
@@ -233,13 +244,6 @@ class FocusViewModel(
             selectedFootprintPresetId = null,
             footprintPosted = false,
         )
-        viewModelScope.launch { refreshWorldIfQuiet() }
-    }
-
-    fun startAgain() {
-        if (_uiState.value.phase != SessionPhase.COMPLETED) return
-        resetAfterResult()
-        start()
     }
 
     private suspend fun restore() {
