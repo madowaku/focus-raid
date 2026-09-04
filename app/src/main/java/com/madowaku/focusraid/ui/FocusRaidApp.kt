@@ -6,6 +6,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,6 +54,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -82,6 +84,8 @@ private enum class OverviewArtwork {
 fun FocusRaidApp(viewModel: FocusViewModel) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var tab by rememberSaveable { mutableStateOf(MainTab.HOME) }
+    var showCustomDuration by rememberSaveable { mutableStateOf(false) }
+    var customDurationMinutes by rememberSaveable { mutableStateOf(state.selectedMinutes) }
 
     FocusRaidAppContent(
         state = state,
@@ -89,6 +93,10 @@ fun FocusRaidApp(viewModel: FocusViewModel) {
         onTabChange = { tab = it },
         onSelectMinutes = viewModel::selectMinutes,
         onSelectExpedition = viewModel::selectExpedition,
+        onTimerClick = {
+            customDurationMinutes = state.selectedMinutes
+            showCustomDuration = true
+        },
         onStart = viewModel::start,
         onPause = viewModel::pause,
         onResume = viewModel::resume,
@@ -96,6 +104,18 @@ fun FocusRaidApp(viewModel: FocusViewModel) {
         onAgain = viewModel::startAgain,
         onDone = viewModel::resetAfterResult,
     )
+
+    if (showCustomDuration && state.phase == SessionPhase.READY) {
+        CustomDurationSheet(
+            minutes = customDurationMinutes,
+            onMinutesChange = { customDurationMinutes = it },
+            onConfirm = {
+                viewModel.selectMinutes(customDurationMinutes)
+                showCustomDuration = false
+            },
+            onDismiss = { showCustomDuration = false },
+        )
+    }
 }
 
 @Composable
@@ -105,6 +125,7 @@ internal fun FocusRaidAppContent(
     onTabChange: (MainTab) -> Unit = {},
     onSelectMinutes: (Int) -> Unit = {},
     onSelectExpedition: (Expedition) -> Unit = {},
+    onTimerClick: (() -> Unit)? = null,
     onStart: () -> Unit = {},
     onPause: () -> Unit = {},
     onResume: () -> Unit = {},
@@ -168,6 +189,7 @@ internal fun FocusRaidAppContent(
                             state = state,
                             onSelectMinutes = onSelectMinutes,
                             onSelectExpedition = onSelectExpedition,
+                            onTimerClick = onTimerClick,
                             onStart = onStart,
                         )
 
@@ -234,6 +256,7 @@ private fun ReadyScreen(
     state: FocusUiState,
     onSelectMinutes: (Int) -> Unit,
     onSelectExpedition: (Expedition) -> Unit,
+    onTimerClick: (() -> Unit)?,
     onStart: () -> Unit,
 ) {
     Column(
@@ -257,6 +280,7 @@ private fun ReadyScreen(
                 text = formatClock(state.selectedMinutes * 60),
                 progress = 1f,
                 diameter = 184,
+                onClick = onTimerClick,
             )
             CompanionHero(
                 stage = FocusRules.companionStage(state.totalFocusMinutes),
@@ -797,15 +821,34 @@ private fun RaidHpBar(current: Int, max: Int) {
 }
 
 @Composable
-private fun TimerRing(text: String, progress: Float, diameter: Int) {
+private fun TimerRing(
+    text: String,
+    progress: Float,
+    diameter: Int,
+    onClick: (() -> Unit)? = null,
+) {
     val animatedProgress by animateFloatAsState(
         targetValue = progress,
         animationSpec = tween(350),
         label = "timer-progress",
     )
 
+    val ringModifier = Modifier
+        .size(diameter.dp)
+        .then(
+            if (onClick == null) {
+                Modifier
+            } else {
+                Modifier.clickable(
+                    role = Role.Button,
+                    onClickLabel = "集中時間を変更",
+                    onClick = onClick,
+                )
+            },
+        )
+
     Box(
-        modifier = Modifier.size(diameter.dp),
+        modifier = ringModifier,
         contentAlignment = Alignment.Center,
     ) {
         Canvas(Modifier.fillMaxSize()) {
