@@ -58,11 +58,5 @@ object FocusRules {
         )
     }
 
-    fun companionStage(totalMinutes: Int): String = when {
-        totalMinutes < 75 -> "卵"
-        totalMinutes < 720 -> "幼体"
-        totalMinutes < 1_800 -> "第一成長"
-        totalMinutes < 4_500 -> "第二成長"
-        else -> "成熟"
-    }
+    fun companionStage(totalMinutes: Int): String = CompanionGrowth.from(totalMinutes).stage.label
 }
