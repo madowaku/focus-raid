@@ -12,6 +12,7 @@ interface ProAccessRepository {
     suspend fun refresh()
     suspend fun purchasePro(activity: Activity)
     suspend fun restorePurchases()
+    fun clearPurchaseState()
 }
 
 class DefaultProAccessRepository(
@@ -75,6 +76,10 @@ class DefaultProAccessRepository(
                 _purchaseState.value = PurchaseState.Error(result.message)
             }
         }
+    }
+
+    override fun clearPurchaseState() {
+        _purchaseState.value = PurchaseState.Idle
     }
 
     private fun applySnapshot(snapshot: BillingSnapshot) {
