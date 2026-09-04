@@ -31,6 +31,7 @@ data class FocusUiState(
     val totalFocusMinutes: Int = 645,
     val streakDays: Int = 12,
     val world: WorldSnapshot = WorldSnapshot(),
+    val systemAccessEducationSeen: Boolean = false,
 ) {
     val progress: Float
         get() = if (durationSeconds <= 0) 0f
@@ -70,6 +71,12 @@ class FocusViewModel(
         if (_uiState.value.phase != SessionPhase.READY) return
         _uiState.value = _uiState.value.copy(expedition = expedition)
         viewModelScope.launch { preferences.setExpedition(expedition) }
+    }
+
+    fun markSystemAccessEducationSeen() {
+        if (_uiState.value.systemAccessEducationSeen) return
+        _uiState.value = _uiState.value.copy(systemAccessEducationSeen = true)
+        viewModelScope.launch { preferences.markSystemAccessEducationSeen() }
     }
 
     fun start() {
@@ -156,6 +163,7 @@ class FocusViewModel(
             remainingSeconds = durationSeconds,
             totalFocusMinutes = saved.totalFocusMinutes,
             world = worldRepository.snapshot(),
+            systemAccessEducationSeen = saved.systemAccessEducationSeen,
         )
 
         when (saved.phase) {
