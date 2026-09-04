@@ -1,6 +1,7 @@
 package com.madowaku.focusraid.data
 
 import android.content.Context
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
@@ -20,6 +21,7 @@ data class PersistedSession(
     val endEpochMillis: Long = 0L,
     val pausedRemainingMillis: Long = 0L,
     val totalFocusMinutes: Int = 645,
+    val systemAccessEducationSeen: Boolean = false,
 )
 
 class SessionPreferences(private val context: Context) {
@@ -30,6 +32,7 @@ class SessionPreferences(private val context: Context) {
         val endEpochMillis = longPreferencesKey("end_epoch_millis")
         val pausedRemainingMillis = longPreferencesKey("paused_remaining_millis")
         val totalFocusMinutes = intPreferencesKey("total_focus_minutes")
+        val systemAccessEducationSeen = booleanPreferencesKey("system_access_education_seen")
     }
 
     val session: Flow<PersistedSession> = context.focusRaidDataStore.data.map { prefs ->
@@ -44,6 +47,7 @@ class SessionPreferences(private val context: Context) {
             endEpochMillis = prefs[Keys.endEpochMillis] ?: 0L,
             pausedRemainingMillis = prefs[Keys.pausedRemainingMillis] ?: 0L,
             totalFocusMinutes = prefs[Keys.totalFocusMinutes] ?: 645,
+            systemAccessEducationSeen = prefs[Keys.systemAccessEducationSeen] ?: false,
         )
     }
 
@@ -85,6 +89,12 @@ class SessionPreferences(private val context: Context) {
         context.focusRaidDataStore.edit {
             val current = it[Keys.totalFocusMinutes] ?: 645
             it[Keys.totalFocusMinutes] = current + minutes.coerceAtLeast(0)
+        }
+    }
+
+    suspend fun markSystemAccessEducationSeen() {
+        context.focusRaidDataStore.edit {
+            it[Keys.systemAccessEducationSeen] = true
         }
     }
 }
