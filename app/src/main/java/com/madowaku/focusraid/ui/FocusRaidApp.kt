@@ -40,8 +40,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -61,6 +63,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.madowaku.focusraid.core.domain.CompanionEvolution
 import com.madowaku.focusraid.core.domain.CompanionGrowth
 import com.madowaku.focusraid.core.domain.CompanionStage
 import com.madowaku.focusraid.core.domain.FocusRules
@@ -68,6 +71,7 @@ import com.madowaku.focusraid.core.model.Expedition
 import com.madowaku.focusraid.core.model.SessionPhase
 import com.madowaku.focusraid.core.model.SessionReward
 import kotlin.math.max
+import kotlinx.coroutines.delay
 
 internal enum class MainTab(val label: String, val glyph: String) {
     HOME("ホーム", "⌂"),
@@ -660,6 +664,21 @@ private fun AbortedScreen(
             stage = companionStage,
             mood = CompanionMood.Idle,
         )
+        state.companionEvolution?.let { evolution ->
+            Spacer(Modifier.height(8.dp))
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.tertiaryContainer,
+            ) {
+                Text(
+                    "✦ RAG EVOLVED!  ${evolution.from.label} → ${evolution.to.label}",
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                )
+            }
+        }
         Spacer(Modifier.height(12.dp))
 
         Card(
@@ -750,6 +769,11 @@ private fun VictoryScreen(
             color = MaterialTheme.colorScheme.primary,
         )
         Spacer(Modifier.height(8.dp))
+
+        state.companionEvolution?.let { evolution ->
+            CompanionEvolutionCard(evolution)
+            Spacer(Modifier.height(12.dp))
+        }
 
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -859,6 +883,67 @@ private fun VictoryScreen(
         }
         TextButton(onClick = onDone) {
             Text("完了")
+        }
+    }
+}
+
+@Composable
+private fun CompanionEvolutionCard(evolution: CompanionEvolution) {
+    var revealNewStage by remember(evolution) { mutableStateOf(false) }
+
+    LaunchedEffect(evolution) {
+        delay(650L)
+        revealNewStage = true
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(30.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = .94f),
+        ),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                "RAG EVOLVED!",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Black,
+                color = MaterialTheme.colorScheme.onTertiaryContainer,
+                letterSpacing = 1.sp,
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "${evolution.from.label}  →  ${evolution.to.label}",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onTertiaryContainer,
+            )
+            Spacer(Modifier.height(4.dp))
+            AnimatedContent(
+                targetState = if (revealNewStage) evolution.to else evolution.from,
+                label = "rag-evolution",
+            ) { stage ->
+                CompanionArtwork(
+                    modifier = Modifier.size(112.dp),
+                    stage = stage,
+                    mood = if (stage == evolution.to) CompanionMood.Celebrate else CompanionMood.Idle,
+                )
+            }
+            Text(
+                if (revealNewStage) {
+                    "集中時間が、新しい姿を解放しました。"
+                } else {
+                    "ラグの気配が変わっていく…"
+                },
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = .82f),
+                textAlign = TextAlign.Center,
+            )
         }
     }
 }
