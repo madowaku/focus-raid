@@ -24,12 +24,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.madowaku.focusraid.core.domain.CompanionGrowth
+import com.madowaku.focusraid.core.domain.CompanionStage
 
 @Composable
 internal fun CompanionProgressOverview(state: FocusUiState) {
@@ -52,7 +54,7 @@ internal fun CompanionProgressOverview(state: FocusUiState) {
             fontWeight = FontWeight.Bold,
         )
         Text(
-            "集中した時間だけ、ラグは一緒に育ちます",
+            "集中した時間だけ、ラグは姿を変えながら一緒に育ちます",
             modifier = Modifier.fillMaxWidth(),
             fontSize = 12.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -73,7 +75,8 @@ internal fun CompanionProgressOverview(state: FocusUiState) {
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 CompanionArtwork(
-                    modifier = Modifier.size(132.dp),
+                    modifier = Modifier.size(140.dp),
+                    stage = growth.stage,
                     mood = CompanionMood.Idle,
                 )
                 Spacer(Modifier.height(8.dp))
@@ -165,6 +168,9 @@ internal fun CompanionProgressOverview(state: FocusUiState) {
         }
 
         Spacer(Modifier.height(12.dp))
+        GrowthFormsCard(currentStage = growth.stage)
+
+        Spacer(Modifier.height(12.dp))
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp),
@@ -185,6 +191,59 @@ internal fun CompanionProgressOverview(state: FocusUiState) {
         }
 
         Spacer(Modifier.height(16.dp))
+    }
+}
+
+@Composable
+private fun GrowthFormsCard(currentStage: CompanionStage) {
+    val stages = CompanionStage.entries
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = .82f),
+        ),
+    ) {
+        Column(Modifier.padding(horizontal = 14.dp, vertical = 16.dp)) {
+            Text(
+                "成長の姿",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+            )
+            Spacer(Modifier.height(10.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top,
+            ) {
+                stages.forEach { stage ->
+                    val unlocked = stage.ordinal <= currentStage.ordinal
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        CompanionArtwork(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .alpha(if (unlocked) 1f else .32f),
+                            stage = stage,
+                        )
+                        Text(
+                            if (unlocked) stage.label else "???",
+                            fontSize = 9.sp,
+                            fontWeight = if (stage == currentStage) FontWeight.Bold else FontWeight.Normal,
+                            color = if (stage == currentStage) {
+                                MaterialTheme.colorScheme.tertiary
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                            textAlign = TextAlign.Center,
+                            maxLines = 1,
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
