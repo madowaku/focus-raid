@@ -17,7 +17,7 @@ Free must remain a complete focus timer and progression experience. Pro expands 
 - Level / XP / streak with no progression cap
 - Launch Free raids
 - Basic statistics
-- All session data is stored, while the UI may limit history visibility to the latest 7 days
+- All session data is stored, while history visibility is limited to today plus the previous 6 calendar days
 - Basic themes
 - Read and leave basic preset footprints
 - No ads
@@ -34,6 +34,20 @@ Free must remain a complete focus timer and progression experience. Pro expands 
 - Future content explicitly classified as Pro raids or Pro themes
 
 Free-era history must never be deleted merely because it is not visible in the Free UI. Buying Pro should reveal the already-saved older history.
+
+## Implemented runtime gates
+
+The Android app currently enforces these boundaries:
+
+- Session history is persisted identically for Free and Pro users.
+- Free history shows the current calendar day plus the previous 6 calendar days.
+- Pro history shows every locally stored session.
+- Free users see a locked detailed-statistics card and a locked full-history card that lead to the Pro paywall.
+- Pro users see completion rate, average credited minutes, longest session, completed / aborted counts, and Tower / Abyss focused minutes.
+- Both launch expeditions (`TOWER`, `ABYSS`) remain Free.
+- Every future `Expedition` must be classified exhaustively in `FeatureAccess.raidAccess`; adding an enum value without deciding Free or Pro fails compilation until the policy is updated.
+
+Do not create a fake locked raid merely to advertise Pro. A locked raid should appear only when that raid actually exists in the product.
 
 ## Billing contract
 
@@ -103,11 +117,13 @@ Google Play Billing
 
 Responsibilities:
 
-- `FeatureAccess`: central Free / Pro feature policy.
+- `FeatureAccess`: central Free / Pro feature and raid policy.
+- `HistoryAccessPolicy`: calendar-window history visibility and detailed-statistics derivation.
 - `ProAccessRepository`: owns app-level access state and protects known Pro access from transient refresh / restore failures.
 - `BillingGateway`: isolates the app from RevenueCat-specific APIs.
 - `RevenueCatBillingGateway`: fetches Offering / price, purchases, restores, and maps CustomerInfo to the `pro` entitlement.
 - `ProAccessViewModel`: lifecycle-aware UI bridge.
+- `ProUiContext`: exposes the current access level and paywall action to Compose feature surfaces without coupling them to RevenueCat.
 - `ProPaywallDialog`: Focus Raid Material 3 purchase UI. It never hard-codes the price.
 
 ## Runtime rules
@@ -120,6 +136,7 @@ Responsibilities:
 - Restore failure leaves current access unchanged.
 - Restore success without an active `pro` entitlement is shown as no restorable Pro purchase found.
 - Free timer functionality must continue working if RevenueCat is unavailable.
+- Free and Pro write the same session rows to Room. Entitlement only controls presentation / feature access.
 
 ## v1.0 non-goals
 
@@ -140,8 +157,11 @@ Do not add these without revisiting the monetization specification:
 
 - [ ] Clean install starts as Free
 - [ ] Free core timer works without RevenueCat configuration
-- [ ] Free raids remain usable
-- [ ] Pro feature access is centralized through `FeatureAccess`
+- [x] Free launch raids remain usable
+- [x] Pro feature access is centralized through `FeatureAccess`
+- [x] Free history visibility is limited to 7 calendar days without deleting older rows
+- [x] Pro full-history visibility is wired to entitlement access
+- [x] Detailed statistics are Pro-only
 - [ ] Paywall receives localized store price from RevenueCat
 - [ ] Purchase cancellation keeps Free access
 - [ ] Successful purchase activates entitlement `pro` and immediately unlocks Pro
@@ -149,5 +169,5 @@ Do not add these without revisiting the monetization specification:
 - [ ] Temporary refresh failure does not demote an already-known Pro session
 - [ ] Restore after reinstall reactivates Pro for the same Google Play purchase
 - [ ] Restore with no purchase displays a neutral no-purchase result
-- [ ] Historic Free data becomes visible when Pro is unlocked
-- [ ] Unit tests, lint, and debug APK build pass
+- [x] Historic Free data becomes visible when Pro is unlocked
+- [ ] Unit tests, lint, and debug APK build pass on the latest feature-gate commit
