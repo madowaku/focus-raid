@@ -30,10 +30,12 @@ capture() {
 }
 
 capture READY 360 800 ready-360x800
+capture CUSTOM 360 800 custom-360x800
 capture RAID 360 800 raid-360x800
 capture PAUSED 360 800 paused-360x800
 capture VICTORY 360 800 victory-360x800
 capture READY 720 1280 ready-720x1280
+capture CUSTOM 720 1280 custom-720x1280
 capture RAID 720 1280 raid-720x1280
 capture PAUSED 720 1280 paused-720x1280
 capture VICTORY 720 1280 victory-720x1280
@@ -44,10 +46,12 @@ import struct
 
 expected = {
     "ready-360x800.png": (360, 800),
+    "custom-360x800.png": (360, 800),
     "raid-360x800.png": (360, 800),
     "paused-360x800.png": (360, 800),
     "victory-360x800.png": (360, 800),
     "ready-720x1280.png": (720, 1280),
+    "custom-720x1280.png": (720, 1280),
     "raid-720x1280.png": (720, 1280),
     "paused-720x1280.png": (720, 1280),
     "victory-720x1280.png": (720, 1280),
