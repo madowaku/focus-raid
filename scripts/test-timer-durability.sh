@@ -31,23 +31,24 @@ clear_state() {
 }
 
 kill_app_process() {
-  # `am kill` refuses to kill a foreground process. After screen-off / Doze the keyguard can keep
-  # MainActivity effectively foreground even after a HOME event, so explicitly wake + dismiss it.
+  # `am kill` refuses to kill foreground or temporarily allowlisted processes. AlarmManager grants
+  # a short allowlist window after an allow-while-idle alarm fires, so retry the actual kill command
+  # until that window expires instead of treating the still-live receiver process as a product bug.
   adb shell input keyevent KEYCODE_WAKEUP >/dev/null 2>&1 || true
   adb shell wm dismiss-keyguard >/dev/null 2>&1 || true
   adb shell input keyevent 82 >/dev/null 2>&1 || true
   adb shell input keyevent KEYCODE_HOME >/dev/null 2>&1 || true
   sleep 0.5
-  adb shell am kill "$PACKAGE" >/dev/null 2>&1 || true
 
-  for _ in {1..12}; do
+  for _ in {1..24}; do
+    adb shell am kill "$PACKAGE" >/dev/null 2>&1 || true
+    sleep 0.5
     if [[ -z "$(adb shell pidof "$PACKAGE" 2>/dev/null | tr -d '\r')" ]]; then
       return 0
     fi
-    sleep 0.5
   done
 
-  log "FAIL: app process could not be killed cleanly"
+  log "FAIL: app process could not be killed cleanly after the alarm allowlist window"
   adb shell dumpsys activity processes | grep -A 8 -B 4 "$PACKAGE" | tee -a "$REPORT_FILE" || true
   return 1
 }
@@ -220,14 +221,7 @@ log "SCENARIO 3/4: app process kill"
 prepare_scenario
 seed_timer 12000
 launch_main
-adb shell input keyevent KEYCODE_HOME >/dev/null
-sleep 1
-adb shell am kill "$PACKAGE" >/dev/null
-sleep 1
-if [[ -n "$(adb shell pidof "$PACKAGE" 2>/dev/null | tr -d '\r')" ]]; then
-  log "FAIL: app process remained alive after am kill"
-  exit 1
-fi
+kill_app_process
 log "PASS: app process was killed while the persisted timer remained scheduled"
 sleep 2
 assert_no_completion
