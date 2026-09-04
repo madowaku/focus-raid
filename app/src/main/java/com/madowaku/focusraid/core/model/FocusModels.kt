@@ -30,6 +30,36 @@ enum class SessionPhase {
     ABORTED,
 }
 
+data class FootprintPreset(
+    val id: String,
+    val glyph: String,
+    val text: String,
+)
+
+object FootprintPresets {
+    val all: List<FootprintPreset> = listOf(
+        FootprintPreset("made_it", "⚑", "ここまで来たぞ！"),
+        FootprintPreset("keep_going", "✦", "がんばろう！"),
+        FootprintPreset("almost", "↟", "まだ先へ行ける"),
+        FootprintPreset("one_step", "◆", "今日も一歩！"),
+        FootprintPreset("rest", "☕", "休憩も大事"),
+        FootprintPreset("waiting", "⌁", "先で待ってる！"),
+        FootprintPreset("fire", "🔥", "いい集中だった！"),
+        FootprintPreset("strong", "💪", "積み重ねていこう"),
+    )
+
+    fun byId(id: String): FootprintPreset? = all.firstOrNull { it.id == id }
+}
+
+data class Footprint(
+    val expedition: Expedition,
+    val checkpoint: Int,
+    val presetId: String,
+    val glyph: String,
+    val text: String,
+    val relativeLabel: String,
+)
+
 data class WorldSnapshot(
     val focusNow: Int = 4_218,
     val bossName: String = "灰燼竜ヴォルガ",
