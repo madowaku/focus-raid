@@ -23,7 +23,8 @@ Focus Raid v1 is intentionally Android-only.
 - Preferences DataStore session recovery
 - Room session history
 - Pure Kotlin domain rules
-- Firebase / Firestore / Cloud Run boundary preserved for the next phase
+- Optional Firebase Auth + Firestore shared-world reads
+- Cloud Run remains the planned boundary for authoritative world writes
 
 The previous React/Vite PWA prototype is preserved on the `archive/pwa-mvp-v0.1` branch.
 
@@ -42,6 +43,9 @@ The previous React/Vite PWA prototype is preserved on the `archive/pwa-mvp-v0.1`
 - Companion growth from egg to mature form using cumulative focus minutes
 - Distinct Compose Canvas silhouettes for egg / hatchling / first growth / second growth / mature
 - `RAG EVOLVED!` result reveal whenever credited focus crosses a growth threshold
+- Anonymous Firebase Auth + one-shot Firestore `world/current` read when backend config is present
+- Local preview fallback when Firebase is unavailable or unconfigured
+- No shared-world realtime listener while RUNNING / PAUSED
 - Home / Raid / Companion / Log bottom navigation
 - Pure Kotlin domain tests
 - 26 Android emulator visual QA screenshots across 360×800 and 720×1280, including evolution
@@ -59,6 +63,22 @@ Rag starts as an egg on a fresh install and visually evolves as credited focus t
 The Companion tab shows the current form, progress to the next form, time spent together, today's contribution, and a five-form progression strip. Future forms stay dimmed until unlocked.
 
 When a completed or partially credited session crosses a growth threshold, the result state records the old and new form. A rare `RAG EVOLVED!` card briefly shows the previous silhouette before revealing the newly unlocked form. Evolution never depends on streaks or paid acceleration.
+
+## Shared world
+
+The Android client can initialize Firebase without committing `google-services.json`.
+
+Provide these values as Gradle properties or environment variables:
+
+```text
+FOCUS_RAID_FIREBASE_PROJECT_ID
+FOCUS_RAID_FIREBASE_API_KEY
+FOCUS_RAID_FIREBASE_APP_ID
+```
+
+When all three exist, Focus Raid signs in anonymously and performs a one-shot server read of `world/current` while the app is outside an active focus session. Missing or failed backend configuration falls back to `FakeWorldRepository`, so cloud availability never blocks the timer.
+
+See `docs/firebase-setup.md` for the Firestore document shape and setup steps.
 
 ## Build
 
@@ -99,3 +119,4 @@ See:
 - `docs/kotlin-migration.md`
 - `docs/rag-baby-sprite.md`
 - `docs/companion-growth.md`
+- `docs/firebase-setup.md`
