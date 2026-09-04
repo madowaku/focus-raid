@@ -13,7 +13,7 @@ import androidx.activity.viewModels
 import com.madowaku.focusraid.data.FakeWorldRepository
 import com.madowaku.focusraid.data.SessionPreferences
 import com.madowaku.focusraid.timer.FocusAlarmScheduler
-import com.madowaku.focusraid.ui.FocusRaidApp
+import com.madowaku.focusraid.ui.FocusRaidRoot
 import com.madowaku.focusraid.ui.FocusViewModel
 import com.madowaku.focusraid.ui.theme.FocusRaidTheme
 
@@ -42,7 +42,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             FocusRaidTheme {
-                FocusRaidApp(viewModel)
+                FocusRaidRoot(viewModel)
             }
         }
     }
