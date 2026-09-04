@@ -61,6 +61,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.madowaku.focusraid.core.domain.CompanionGrowth
+import com.madowaku.focusraid.core.domain.CompanionStage
 import com.madowaku.focusraid.core.domain.FocusRules
 import com.madowaku.focusraid.core.model.Expedition
 import com.madowaku.focusraid.core.model.SessionPhase
@@ -306,7 +308,7 @@ private fun ReadyScreen(
                 onClick = onTimerClick,
             )
             CompanionHero(
-                stage = FocusRules.companionStage(state.totalFocusMinutes),
+                stage = CompanionGrowth.from(state.totalFocusMinutes).stage,
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .offset(y = 2.dp),
@@ -356,13 +358,14 @@ private fun TopBar(streak: Int) {
 }
 
 @Composable
-private fun CompanionHero(stage: String, modifier: Modifier = Modifier) {
+private fun CompanionHero(stage: CompanionStage, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         CompanionArtwork(
             modifier = Modifier.size(62.dp),
+            stage = stage,
             mood = CompanionMood.Idle,
         )
         Surface(
@@ -370,7 +373,7 @@ private fun CompanionHero(stage: String, modifier: Modifier = Modifier) {
             color = Color(0xCC211735),
         ) {
             Text(
-                "ラグ · $stage",
+                "ラグ · ${stage.label}",
                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -508,6 +511,7 @@ private fun RaidScreen(
     onFinishEarly: () -> Unit,
 ) {
     val paused = state.phase == SessionPhase.PAUSED
+    val companionStage = CompanionGrowth.from(state.totalFocusMinutes).stage
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -539,6 +543,7 @@ private fun RaidScreen(
         Spacer(Modifier.weight(if (paused) 0.20f else 0.28f))
         CompanionArtwork(
             modifier = Modifier.size(48.dp),
+            stage = companionStage,
             mood = if (paused) CompanionMood.Idle else CompanionMood.Focused,
         )
         Spacer(Modifier.height(4.dp))
@@ -627,6 +632,7 @@ private fun AbortedScreen(
 ) {
     val reward = state.reward ?: SessionReward(0, 0, 0, 0, null, null, 0)
     val remainingBossHp = (state.world.bossHp - reward.personalDamage).coerceAtLeast(0)
+    val companionStage = CompanionGrowth.from(state.totalFocusMinutes).stage
 
     Column(
         modifier = Modifier
@@ -651,6 +657,7 @@ private fun AbortedScreen(
         Spacer(Modifier.height(12.dp))
         CompanionArtwork(
             modifier = Modifier.size(56.dp),
+            stage = companionStage,
             mood = CompanionMood.Idle,
         )
         Spacer(Modifier.height(12.dp))
@@ -725,6 +732,7 @@ private fun VictoryScreen(
     onDone: () -> Unit,
 ) {
     val reward = state.reward ?: SessionReward(0, 0, 0, 0, null, null, 0)
+    val companionStage = CompanionGrowth.from(state.totalFocusMinutes).stage
 
     Column(
         modifier = Modifier
@@ -762,6 +770,7 @@ private fun VictoryScreen(
                 ) {
                     CompanionArtwork(
                         modifier = Modifier.size(40.dp),
+                        stage = companionStage,
                         mood = CompanionMood.Celebrate,
                     )
                     RaidClashMark(Modifier.size(28.dp))
