@@ -1,8 +1,6 @@
 # Focus Raid
 
-Focus Raid is a focus timer where your real-world concentration powers a shared fantasy world.
-
-While you focus, your companion explores. Your sessions contribute to personal loop-boss progress, world exploration, the shared armory, and scheduled world raids.
+Focus Raid is an Android-native focus timer where real-world concentration powers a shared fantasy world.
 
 ## Product principles
 
@@ -13,40 +11,67 @@ While you focus, your companion explores. Your sessions contribute to personal l
 - During a focus session, the app becomes quiet.
 - The world can be playful; the timer must remain useful.
 
-## MVP vertical slice
+## Android v1 direction
 
-1. Home screen with 25-minute quick start.
-2. One persistent companion.
-3. Tower / Abyss expedition choice.
-4. Local focus timer.
-5. Session result: personal boss damage + discovery + world contribution.
-6. Mock shared armory and next raid card.
-7. Architecture boundaries ready for Firebase Auth, Firestore, and Cloud Run.
+Focus Raid v1 is intentionally Android-only.
 
-## Stack
+- Kotlin
+- Jetpack Compose
+- Material 3 Expressive
+- Wall-clock based resilient timer
+- AlarmManager completion notification
+- Preferences DataStore session recovery
+- Pure Kotlin domain rules
+- Firebase / Firestore / Cloud Run boundary preserved for the next phase
 
-- React
-- TypeScript
-- Vite
-- Vitest
-- PWA-ready web app
-- Firebase integration planned behind service interfaces
+The previous React/Vite PWA prototype is preserved on the `archive/pwa-mvp-v0.1` branch.
 
-## Development
+## Implemented vertical slice
+
+- READY: duration selection, expedition selection, large timer hero, raid CTA, current raid card
+- RAID: 208dp timer hero, pause/resume, early return, quiet reduced-information layout
+- VICTORY: credited focus time, personal damage, world EP, discovery result, repeat CTA
+- Session restoration after process death using an absolute end timestamp
+- Exact completion alarm when exact alarms are permitted, graceful inexact fallback otherwise
+- Notification permission request on Android 13+
+- Home / Raid / Companion / Log bottom navigation
+- Pure Kotlin domain tests
+
+## Build
+
+Recommended toolchain:
+
+- Android Studio Quail 3 or newer
+- JDK 17
+- Gradle 9.5
+- Android SDK 37 (target SDK 36)
+
+If the Gradle wrapper has not been generated in your clone yet:
 
 ```bash
-npm install
-npm run dev
+gradle wrapper --gradle-version 9.5.0
 ```
 
-Run checks:
+Then:
 
 ```bash
-npm run typecheck
-npm test
-npm run build
+./gradlew test
+./gradlew lint
+./gradlew assembleDebug
 ```
 
-## Status
+On Windows:
 
-Initial MVP implementation is in progress.
+```powershell
+gradlew.bat test
+gradlew.bat assembleDebug
+```
+
+## Architecture
+
+See:
+
+- `docs/architecture.md`
+- `docs/design-system.md`
+- `docs/kotlin-migration.md`
+- `docs/rag-baby-sprite.md`
