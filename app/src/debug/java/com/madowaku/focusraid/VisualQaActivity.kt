@@ -9,6 +9,7 @@ import androidx.activity.enableEdgeToEdge
 import com.madowaku.focusraid.core.model.Rarity
 import com.madowaku.focusraid.core.model.SessionPhase
 import com.madowaku.focusraid.core.model.SessionReward
+import com.madowaku.focusraid.ui.CustomDurationSheet
 import com.madowaku.focusraid.ui.FocusRaidAppContent
 import com.madowaku.focusraid.ui.FocusUiState
 import com.madowaku.focusraid.ui.MainTab
@@ -63,6 +64,14 @@ class VisualQaActivity : ComponentActivity() {
                     state = state,
                     tab = MainTab.HOME,
                 )
+                if (phase == "CUSTOM") {
+                    CustomDurationSheet(
+                        minutes = 30,
+                        onMinutesChange = {},
+                        onConfirm = {},
+                        onDismiss = {},
+                    )
+                }
             }
         }
     }
