@@ -8,6 +8,7 @@ import android.content.Intent
 import com.madowaku.focusraid.core.model.Expedition
 import com.madowaku.focusraid.data.SessionPreferences
 import com.madowaku.focusraid.timer.FocusAlarmScheduler
+import com.madowaku.focusraid.timer.FocusCompletionNotifier
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 
@@ -48,11 +49,15 @@ class DurabilityDebugReceiver : BroadcastReceiver() {
 
             ACTION_PROBE -> {
                 val saved = runBlocking { preferences.session.first() }
+                val completionEpochMillis = appContext
+                    .getSharedPreferences(FocusCompletionNotifier.DIAGNOSTIC_PREFS, Context.MODE_PRIVATE)
+                    .getLong(FocusCompletionNotifier.KEY_LAST_POSTED_AT, 0L)
                 setResultCode(Activity.RESULT_OK)
                 setResultData(
                     "phase=${saved.phase};endEpochMillis=${saved.endEpochMillis};" +
                         "pausedRemainingMillis=${saved.pausedRemainingMillis};" +
                         "nowEpochMillis=${System.currentTimeMillis()};" +
+                        "completionEpochMillis=$completionEpochMillis;" +
                         "exact=${scheduler.canScheduleExactAlarms()}",
                 )
             }
@@ -61,6 +66,7 @@ class DurabilityDebugReceiver : BroadcastReceiver() {
                 scheduler.cancel()
                 runBlocking { preferences.saveReady() }
                 appContext.getSystemService(NotificationManager::class.java).cancel(NOTIFICATION_ID)
+                FocusCompletionNotifier.clearDeliveryMarker(appContext)
                 setResultCode(Activity.RESULT_OK)
                 setResultData("cleared=true")
             }
