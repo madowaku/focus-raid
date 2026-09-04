@@ -44,7 +44,7 @@ The previous React/Vite PWA prototype is preserved on the `archive/pwa-mvp-v0.1`
 - `RAG EVOLVED!` result reveal whenever credited focus crosses a growth threshold
 - Home / Raid / Companion / Log bottom navigation
 - Pure Kotlin domain tests
-- 360×800 and 720×1280 emulator visual QA
+- 26 Android emulator visual QA screenshots across 360×800 and 720×1280, including evolution
 
 ## Companion growth
 
