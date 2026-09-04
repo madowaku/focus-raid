@@ -21,6 +21,8 @@ import androidx.compose.runtime.setValue
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.madowaku.focusraid.data.FakeWorldRepository
+import com.madowaku.focusraid.data.FocusRaidDatabase
+import com.madowaku.focusraid.data.RoomSessionHistoryRepository
 import com.madowaku.focusraid.data.SessionPreferences
 import com.madowaku.focusraid.timer.FocusAlarmScheduler
 import com.madowaku.focusraid.ui.FocusRaidRoot
@@ -36,10 +38,15 @@ class MainActivity : ComponentActivity() {
             refreshSystemAccess()
         }
 
+    private val database by lazy {
+        FocusRaidDatabase.create(applicationContext)
+    }
+
     private val viewModel: FocusViewModel by viewModels {
         FocusViewModel.Factory(
             preferences = SessionPreferences(applicationContext),
             worldRepository = FakeWorldRepository(),
+            sessionHistoryRepository = RoomSessionHistoryRepository(database.focusSessionDao()),
             alarmScheduler = FocusAlarmScheduler(applicationContext),
         )
     }
