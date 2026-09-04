@@ -14,6 +14,7 @@ The core focus flow is:
 
 ```text
 READY -> RUNNING <-> PAUSED -> COMPLETED
+                       \-> ABORTED
 ```
 
 READY / RAID / VICTORY are visual states of one session flow. Navigation is hidden while a focus session is active.
@@ -32,6 +33,21 @@ The UI derives remaining time from `endEpochMillis - now`. This survives screen-
 
 `AlarmManager` schedules the completion notification. If exact alarms are allowed, Focus Raid uses an exact alarm; otherwise it uses an idle-safe fallback and still restores the correct elapsed state when the app opens.
 
+`BOOT_COMPLETED` and `MY_PACKAGE_REPLACED` restore the completion alarm from DataStore for an active running session. If the persisted end time already passed while the device was unavailable, Focus Raid posts the completion notification on recovery and resolves the completed session when the app next opens.
+
+### System access
+
+Do not cold-prompt notification permission on app launch.
+
+The first focus start may show a short education dialog when either of these capabilities is unavailable:
+
+- app notifications
+- exact alarms / Alarms & reminders special access
+
+The dialog explains why Focus Raid uses each capability and always allows the user to continue without granting them. The education acknowledgement is persisted so a deliberate opt-out does not block every future session.
+
+When permissions are unavailable, the focus session remains valid because the authoritative end timestamp is persisted independently of the notification path.
+
 ### Persistence
 
 Preferences DataStore stores:
@@ -42,6 +58,7 @@ Preferences DataStore stores:
 - running end timestamp
 - paused remaining duration
 - cumulative focus minutes
+- whether timer system-access education has been acknowledged
 
 Session history can move to Room when the product needs queries that exceed simple aggregate state.
 
