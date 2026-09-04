@@ -180,7 +180,12 @@ internal fun FocusRaidAppContent(
                                 onDone = onDone,
                             )
 
-                            else -> Unit
+                            SessionPhase.ABORTED -> AbortedScreen(
+                                state = state,
+                                onDone = onDone,
+                            )
+
+                            SessionPhase.READY -> Unit
                         }
                     }
                 } else {
@@ -206,10 +211,16 @@ internal fun FocusRaidAppContent(
 @Composable
 private fun FantasyBackground(phase: SessionPhase, content: @Composable () -> Unit) {
     val colors = when (phase) {
-        SessionPhase.RUNNING, SessionPhase.PAUSED -> listOf(
+        SessionPhase.RUNNING -> listOf(
             Color(0xFF080611),
             Color(0xFF120D22),
             Color(0xFF1D1030),
+        )
+
+        SessionPhase.PAUSED -> listOf(
+            Color(0xFF08080D),
+            Color(0xFF111019),
+            Color(0xFF17151F),
         )
 
         SessionPhase.COMPLETED -> listOf(
@@ -218,11 +229,23 @@ private fun FantasyBackground(phase: SessionPhase, content: @Composable () -> Un
             Color(0xFF3A2141),
         )
 
-        else -> listOf(
+        SessionPhase.ABORTED -> listOf(
+            Color(0xFF100A10),
+            Color(0xFF1D111B),
+            Color(0xFF2A1822),
+        )
+
+        SessionPhase.READY -> listOf(
             Color(0xFF0B0816),
             Color(0xFF17102A),
             Color(0xFF26133C),
         )
+    }
+
+    val glowAlpha = when (phase) {
+        SessionPhase.RUNNING -> 0.16f
+        SessionPhase.PAUSED -> 0.08f
+        else -> 0.24f
     }
 
     Box(
@@ -230,7 +253,7 @@ private fun FantasyBackground(phase: SessionPhase, content: @Composable () -> Un
             .fillMaxSize()
             .background(Brush.verticalGradient(colors)),
     ) {
-        Canvas(Modifier.fillMaxSize().alpha(if (phase == SessionPhase.RUNNING) 0.16f else 0.24f)) {
+        Canvas(Modifier.fillMaxSize().alpha(glowAlpha)) {
             drawCircle(
                 Color(0xFF7C4DFF),
                 radius = size.minDimension * 0.34f,
@@ -513,7 +536,7 @@ private fun RaidScreen(
             }
         }
 
-        Spacer(Modifier.weight(0.28f))
+        Spacer(Modifier.weight(if (paused) 0.20f else 0.28f))
         CompanionArtwork(
             modifier = Modifier.size(48.dp),
             mood = if (paused) CompanionMood.Idle else CompanionMood.Focused,
@@ -527,21 +550,43 @@ private fun RaidScreen(
         )
 
         Spacer(Modifier.height(18.dp))
-        Button(
-            onClick = if (paused) onResume else onPause,
-            modifier = Modifier.size(64.dp),
-            shape = CircleShape,
-            contentPadding = PaddingValues(0.dp),
-        ) {
-            Text(if (paused) "▶" else "Ⅱ", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-        }
+        if (paused) {
+            Text(
+                "集中は止まっています",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(12.dp))
+            Button(
+                onClick = onResume,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(64.dp),
+                shape = RoundedCornerShape(32.dp),
+            ) {
+                Text("▶  再開する", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            }
+            TextButton(onClick = onFinishEarly) {
+                Text("セッションを終了")
+            }
+            Spacer(Modifier.weight(0.32f))
+        } else {
+            Button(
+                onClick = onPause,
+                modifier = Modifier.size(64.dp),
+                shape = CircleShape,
+                contentPadding = PaddingValues(0.dp),
+            ) {
+                Text("Ⅱ", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            }
 
-        TextButton(onClick = onFinishEarly) {
-            Text("セッションを終了")
-        }
+            TextButton(onClick = onFinishEarly) {
+                Text("セッションを終了")
+            }
 
-        Spacer(Modifier.weight(0.22f))
-        RaidMiniCard(state)
+            Spacer(Modifier.weight(0.22f))
+            RaidMiniCard(state)
+        }
     }
 }
 
@@ -572,6 +617,104 @@ private fun RaidMiniCard(state: FocusUiState) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+    }
+}
+
+@Composable
+private fun AbortedScreen(
+    state: FocusUiState,
+    onDone: () -> Unit,
+) {
+    val reward = state.reward ?: SessionReward(0, 0, 0, 0, null, null, 0)
+    val remainingBossHp = (state.world.bossHp - reward.personalDamage).coerceAtLeast(0)
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .statusBarsPadding()
+            .padding(horizontal = 16.dp, vertical = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Spacer(Modifier.weight(0.16f))
+        Text(
+            "レイド撤退",
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.secondary,
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "${reward.creditedMinutes}分間 集中しました",
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
+        )
+        Spacer(Modifier.height(12.dp))
+        CompanionArtwork(
+            modifier = Modifier.size(56.dp),
+            mood = CompanionMood.Idle,
+        )
+        Spacer(Modifier.height(12.dp))
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(28.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = .9f),
+            ),
+        ) {
+            Column(
+                modifier = Modifier.padding(18.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    "+${reward.personalDamage} DAMAGE",
+                    fontSize = 36.sp,
+                    fontWeight = FontWeight.Black,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    if (reward.creditedMinutes > 0) {
+                        "途中終了でも、集中した分は戦果として残ります"
+                    } else {
+                        "1分未満だったため、今回は戦果の加算なし"
+                    },
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+                Spacer(Modifier.height(16.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(state.world.bossName, fontWeight = FontWeight.Bold)
+                    BossArtwork(Modifier.size(34.dp))
+                }
+                Spacer(Modifier.height(8.dp))
+                RaidHpBar(remainingBossHp, state.world.bossMaxHp)
+                Spacer(Modifier.height(5.dp))
+                Text(
+                    "${remainingBossHp.toStringWithCommas()} HP",
+                    modifier = Modifier.fillMaxWidth(),
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Start,
+                )
+            }
+        }
+
+        Spacer(Modifier.height(18.dp))
+        Button(
+            onClick = onDone,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(64.dp),
+            shape = RoundedCornerShape(32.dp),
+        ) {
+            Text("ホームへ", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        }
+        Spacer(Modifier.weight(0.18f))
     }
 }
 
