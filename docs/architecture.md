@@ -104,6 +104,35 @@ Current MVP rules:
 - every accumulated 25 focus minutes produces one discovery roll
 - companion growth uses cumulative focus minutes, never streaks or paid boosts
 
+### Footprints
+
+Footprints are deliberately lightweight asynchronous social interaction, not chat.
+
+- A completed focus session may show up to three short footprints left at the current expedition position.
+- A player may leave at most one footprint from the fixed `FootprintPresets` catalog for that completion flow.
+- Free-form text is not part of v1. This avoids moderation, abuse, personal-information and store-policy scope growing into a social network feature.
+- The UI treats footprints as traces from earlier adventurers, not as a feed, ranking or follower system.
+- Tower footprints are keyed by tower floor. Abyss footprints are keyed by depth.
+- `WorldRepository` owns reads and writes so the current fake implementation can be replaced without changing the ViewModel or Compose flow.
+
+The Android MVP currently uses `FakeWorldRepository` seed data so the full read/select/post UX can be exercised before Firebase is connected. The production adapter should persist footprints remotely with an anonymous author id, server timestamp, expedition, checkpoint and preset id. Clients should render text and glyph from the local preset catalog rather than trusting remote free-form display text.
+
+Suggested Firestore shape:
+
+```text
+footprints/{expedition}/{checkpoint}/entries/{entryId}
+  authorUid
+  presetId
+  createdAt
+```
+
+Recommended backend rules:
+
+- authenticated anonymous-or-linked users may create one server-validated preset entry per eligible checkpoint/completion token
+- clients cannot write arbitrary message text or glyphs
+- reads are capped and ordered newest-first
+- retention can prune old entries if the collection becomes noisy
+
 ### Data
 
 `WorldRepository` is currently backed by `FakeWorldRepository` so the complete UI flow is testable without Firebase.
@@ -111,8 +140,8 @@ Current MVP rules:
 Planned backend services remain:
 
 - Firebase Auth: anonymous first, optional linking later
-- Firestore: user summaries, goals, world/current, raids, raid entries
-- Cloud Run: startFocus, finishFocus, submitRaid, worldRollup
+- Firestore: user summaries, goals, world/current, raids, raid entries, footprints
+- Cloud Run: startFocus, finishFocus, submitRaid, leaveFootprint, worldRollup
 - FCM: opt-in raid notifications
 - App Check: protect server endpoints
 
@@ -121,4 +150,5 @@ Planned backend services remain:
 - Do not update one shared world document per user session at large scale.
 - Do not keep realtime Firestore listeners running while focusing.
 - Submit raid results to per-user entry documents and aggregate.
+- Footprints should be fetched only at completion / checkpoint views, not watched continuously.
 - Add sharded counters only when traffic proves they are needed.
