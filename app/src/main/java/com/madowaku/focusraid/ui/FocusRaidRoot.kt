@@ -23,6 +23,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -60,6 +61,11 @@ fun FocusRaidRoot(
     var showFootprintDialog by rememberSaveable { mutableStateOf(false) }
     var showProPaywall by rememberSaveable { mutableStateOf(false) }
 
+    val openProPaywall = {
+        proAccessViewModel.clearPurchaseState()
+        showProPaywall = true
+    }
+
     LaunchedEffect(state.phase) {
         if (state.phase != SessionPhase.RUNNING && state.phase != SessionPhase.PAUSED) {
             showEndConfirmation = false
@@ -86,83 +92,85 @@ fun FocusRaidRoot(
         }
     }
 
-    Box {
-        AnimatedContent(
-            targetState = state.phase,
-            transitionSpec = {
-                when {
-                    initialState == SessionPhase.READY && targetState == SessionPhase.RUNNING -> {
-                        (fadeIn(animationSpec = tween(durationMillis = 620, delayMillis = 70)) +
-                            scaleIn(animationSpec = tween(durationMillis = 620), initialScale = 0.94f)) togetherWith
-                            (fadeOut(animationSpec = tween(durationMillis = 220)) +
-                                scaleOut(animationSpec = tween(durationMillis = 280), targetScale = 1.03f))
-                    }
+    CompositionLocalProvider(
+        LocalProAccessLevel provides proAccess.accessLevel,
+        LocalOpenProPaywall provides openProPaywall,
+    ) {
+        Box {
+            AnimatedContent(
+                targetState = state.phase,
+                transitionSpec = {
+                    when {
+                        initialState == SessionPhase.READY && targetState == SessionPhase.RUNNING -> {
+                            (fadeIn(animationSpec = tween(durationMillis = 620, delayMillis = 70)) +
+                                scaleIn(animationSpec = tween(durationMillis = 620), initialScale = 0.94f)) togetherWith
+                                (fadeOut(animationSpec = tween(durationMillis = 220)) +
+                                    scaleOut(animationSpec = tween(durationMillis = 280), targetScale = 1.03f))
+                        }
 
-                    targetState == SessionPhase.READY -> {
-                        (fadeIn(animationSpec = tween(durationMillis = 420)) +
-                            scaleIn(animationSpec = tween(durationMillis = 420), initialScale = 0.98f)) togetherWith
-                            fadeOut(animationSpec = tween(durationMillis = 220))
-                    }
+                        targetState == SessionPhase.READY -> {
+                            (fadeIn(animationSpec = tween(durationMillis = 420)) +
+                                scaleIn(animationSpec = tween(durationMillis = 420), initialScale = 0.98f)) togetherWith
+                                fadeOut(animationSpec = tween(durationMillis = 220))
+                        }
 
-                    else -> {
-                        fadeIn(animationSpec = tween(durationMillis = 320)) togetherWith
-                            fadeOut(animationSpec = tween(durationMillis = 220))
+                        else -> {
+                            fadeIn(animationSpec = tween(durationMillis = 320)) togetherWith
+                                fadeOut(animationSpec = tween(durationMillis = 220))
+                        }
                     }
+                },
+                label = "focus-raid-root-phase",
+            ) { animatedPhase ->
+                FocusRaidAppContent(
+                    state = state.copy(phase = animatedPhase),
+                    tab = tab,
+                    onTabChange = { tab = it },
+                    onSelectMinutes = viewModel::selectMinutes,
+                    onSelectExpedition = viewModel::selectExpedition,
+                    onTimerClick = {
+                        customDurationMinutes = state.selectedMinutes
+                        showCustomDuration = true
+                    },
+                    onStart = {
+                        if (!systemAccess.isReady && !state.systemAccessEducationSeen) {
+                            showSystemAccessEducation = true
+                        } else {
+                            viewModel.start()
+                        }
+                    },
+                    onPause = viewModel::pause,
+                    onResume = viewModel::resume,
+                    onFinishEarly = { showEndConfirmation = true },
+                    onAgain = viewModel::startAgain,
+                    onDone = viewModel::resetAfterResult,
+                )
+            }
+
+            if (state.phase == SessionPhase.READY) {
+                TextButton(
+                    onClick = openProPaywall,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .statusBarsPadding(),
+                ) {
+                    Text(if (proAccess.accessLevel == AccessLevel.PRO) "PRO" else "FREE")
                 }
-            },
-            label = "focus-raid-root-phase",
-        ) { animatedPhase ->
-            FocusRaidAppContent(
-                state = state.copy(phase = animatedPhase),
-                tab = tab,
-                onTabChange = { tab = it },
-                onSelectMinutes = viewModel::selectMinutes,
-                onSelectExpedition = viewModel::selectExpedition,
-                onTimerClick = {
-                    customDurationMinutes = state.selectedMinutes
-                    showCustomDuration = true
-                },
-                onStart = {
-                    if (!systemAccess.isReady && !state.systemAccessEducationSeen) {
-                        showSystemAccessEducation = true
-                    } else {
-                        viewModel.start()
-                    }
-                },
-                onPause = viewModel::pause,
-                onResume = viewModel::resume,
-                onFinishEarly = { showEndConfirmation = true },
-                onAgain = viewModel::startAgain,
-                onDone = viewModel::resetAfterResult,
-            )
-        }
-
-        if (state.phase == SessionPhase.READY) {
-            TextButton(
-                onClick = {
-                    proAccessViewModel.clearPurchaseState()
-                    showProPaywall = true
-                },
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .statusBarsPadding(),
-            ) {
-                Text(if (proAccess.accessLevel == AccessLevel.PRO) "PRO" else "FREE")
             }
         }
-    }
 
-    if (showProPaywall && state.phase == SessionPhase.READY) {
-        ProPaywallDialog(
-            access = proAccess,
-            purchaseState = purchaseState,
-            onPurchase = onPurchasePro,
-            onRestore = onRestorePurchases,
-            onDismiss = {
-                proAccessViewModel.clearPurchaseState()
-                showProPaywall = false
-            },
-        )
+        if (showProPaywall && state.phase == SessionPhase.READY) {
+            ProPaywallDialog(
+                access = proAccess,
+                purchaseState = purchaseState,
+                onPurchase = onPurchasePro,
+                onRestore = onRestorePurchases,
+                onDismiss = {
+                    proAccessViewModel.clearPurchaseState()
+                    showProPaywall = false
+                },
+            )
+        }
     }
 
     if (showCustomDuration && state.phase == SessionPhase.READY) {
