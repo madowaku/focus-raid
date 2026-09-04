@@ -24,10 +24,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 
 data class FocusUiState(
     val phase: SessionPhase = SessionPhase.READY,
@@ -63,7 +62,7 @@ class FocusViewModel(
     private var endEpochMillis: Long = 0L
     private var activeSessionId: String? = null
     private var tickerJob: Job? = null
-    private val sessionPersistenceMutex = Mutex()
+    private var sessionPersistenceJob: Job? = null
 
     init {
         viewModelScope.launch {
@@ -336,10 +335,10 @@ class FocusViewModel(
     }
 
     private fun persistSession(block: suspend () -> Unit) {
-        viewModelScope.launch {
-            sessionPersistenceMutex.withLock {
-                block()
-            }
+        val previous = sessionPersistenceJob
+        sessionPersistenceJob = viewModelScope.launch {
+            previous?.join()
+            block()
         }
     }
 
