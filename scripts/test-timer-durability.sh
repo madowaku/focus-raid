@@ -31,7 +31,7 @@ clear_state() {
 
 notification_present() {
   adb shell dumpsys notification --noredact 2>/dev/null | tr -d '\r' | \
-    grep -Eq "NotificationRecord\\(.*pkg=${PACKAGE}|key=.*\\|${PACKAGE}\\|2500\\|"
+    grep -Eq "NotificationRecord\\(.*pkg=${PACKAGE}|[[:space:]]0\\|${PACKAGE}\\|2500\\|"
 }
 
 assert_no_notification() {
