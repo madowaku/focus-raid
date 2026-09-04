@@ -5,5 +5,16 @@
             android:name=".VisualQaActivity"
             android:exported="true"
             android:screenOrientation="portrait" />
+
+        <receiver
+            android:name=".DurabilityDebugReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.madowaku.focusraid.debug.SEED_TIMER" />
+                <action android:name="com.madowaku.focusraid.debug.PROBE_TIMER" />
+                <action android:name="com.madowaku.focusraid.debug.CLEAR_TIMER" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>
