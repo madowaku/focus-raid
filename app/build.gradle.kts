@@ -4,6 +4,19 @@ plugins {
     id("com.google.devtools.ksp")
 }
 
+val firebaseProjectId = providers.gradleProperty("FOCUS_RAID_FIREBASE_PROJECT_ID")
+    .orElse(providers.environmentVariable("FOCUS_RAID_FIREBASE_PROJECT_ID"))
+    .getOrElse("")
+val firebaseApiKey = providers.gradleProperty("FOCUS_RAID_FIREBASE_API_KEY")
+    .orElse(providers.environmentVariable("FOCUS_RAID_FIREBASE_API_KEY"))
+    .getOrElse("")
+val firebaseAppId = providers.gradleProperty("FOCUS_RAID_FIREBASE_APP_ID")
+    .orElse(providers.environmentVariable("FOCUS_RAID_FIREBASE_APP_ID"))
+    .getOrElse("")
+
+fun quotedBuildConfig(value: String): String =
+    "\"${value.replace("\\", "\\\\").replace("\"", "\\\"")}\""
+
 android {
     namespace = "com.madowaku.focusraid"
     compileSdk = 37
@@ -17,6 +30,10 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
+
+        buildConfigField("String", "FIREBASE_PROJECT_ID", quotedBuildConfig(firebaseProjectId))
+        buildConfigField("String", "FIREBASE_API_KEY", quotedBuildConfig(firebaseApiKey))
+        buildConfigField("String", "FIREBASE_APP_ID", quotedBuildConfig(firebaseAppId))
     }
 
     buildFeatures {
@@ -52,6 +69,12 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3:1.5.0-alpha27")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
+
+    val firebaseBom = platform("com.google.firebase:firebase-bom:34.4.0")
+    implementation(firebaseBom)
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
 
