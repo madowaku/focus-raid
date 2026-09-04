@@ -39,6 +39,22 @@ class VisualQaActivity : ComponentActivity() {
                 remainingSeconds = 18 * 60 + 42,
             )
 
+            "ABORTED" -> FocusUiState(
+                phase = SessionPhase.ABORTED,
+                selectedMinutes = 25,
+                durationSeconds = 25 * 60,
+                remainingSeconds = 0,
+                reward = SessionReward(
+                    creditedMinutes = 12,
+                    personalDamage = 12,
+                    worldEp = 12,
+                    defeated = 0,
+                    rarity = null,
+                    discovery = null,
+                    armoryPoints = 0,
+                ),
+            )
+
             "VICTORY" -> FocusUiState(
                 phase = SessionPhase.COMPLETED,
                 selectedMinutes = 25,
