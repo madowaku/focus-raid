@@ -3,6 +3,7 @@ package com.madowaku.focusraid.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.madowaku.focusraid.core.domain.FocusActivitySummaries
 import com.madowaku.focusraid.core.domain.FocusRules
 import com.madowaku.focusraid.core.model.Expedition
 import com.madowaku.focusraid.core.model.Footprint
@@ -35,8 +36,9 @@ data class FocusUiState(
     val remainingSeconds: Int = 25 * 60,
     val durationSeconds: Int = 25 * 60,
     val reward: SessionReward? = null,
-    val totalFocusMinutes: Int = 645,
-    val streakDays: Int = 12,
+    val totalFocusMinutes: Int = 0,
+    val todayFocusMinutes: Int = 0,
+    val streakDays: Int = 0,
     val world: WorldSnapshot = WorldSnapshot(),
     val systemAccessEducationSeen: Boolean = false,
     val footprints: List<Footprint> = emptyList(),
@@ -67,7 +69,15 @@ class FocusViewModel(
     init {
         viewModelScope.launch {
             sessionHistoryRepository.recentSessions.collect { entries ->
-                _uiState.value = _uiState.value.copy(sessionHistory = entries)
+                val activity = FocusActivitySummaries.from(
+                    entries = entries,
+                    nowEpochMillis = nowMillis(),
+                )
+                _uiState.value = _uiState.value.copy(
+                    sessionHistory = entries,
+                    todayFocusMinutes = activity.todayMinutes,
+                    streakDays = activity.currentStreakDays,
+                )
             }
         }
         viewModelScope.launch {
