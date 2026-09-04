@@ -329,8 +329,10 @@ class FocusViewModel(
                     ),
                 )
             }
-            preferences.addFocusMinutes(reward.creditedMinutes)
-            preferences.saveReady()
+            preferences.commitFinishedSession(
+                sessionId = sessionId,
+                creditedMinutes = reward.creditedMinutes,
+            )
         }
     }
 
