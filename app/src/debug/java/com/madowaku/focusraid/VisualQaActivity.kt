@@ -31,6 +31,13 @@ class VisualQaActivity : ComponentActivity() {
                 remainingSeconds = 18 * 60 + 42,
             )
 
+            "PAUSED" -> FocusUiState(
+                phase = SessionPhase.PAUSED,
+                selectedMinutes = 25,
+                durationSeconds = 25 * 60,
+                remainingSeconds = 18 * 60 + 42,
+            )
+
             "VICTORY" -> FocusUiState(
                 phase = SessionPhase.COMPLETED,
                 selectedMinutes = 25,
