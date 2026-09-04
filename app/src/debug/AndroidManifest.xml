@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <activity
+            android:name=".VisualQaActivity"
+            android:exported="true"
+            android:screenOrientation="portrait" />
+
+        <receiver
+            android:name=".DurabilityDebugReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.madowaku.focusraid.debug.SEED_TIMER" />
+                <action android:name="com.madowaku.focusraid.debug.PROBE_TIMER" />
+                <action android:name="com.madowaku.focusraid.debug.CLEAR_TIMER" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>
