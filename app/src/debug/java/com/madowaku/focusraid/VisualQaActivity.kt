@@ -85,6 +85,12 @@ class VisualQaActivity : ComponentActivity() {
                 ),
             )
 
+            "COMPANION" -> FocusUiState(
+                totalFocusMinutes = 645,
+                todayFocusMinutes = 50,
+                streakDays = 4,
+            )
+
             "LOG" -> FocusUiState(
                 totalFocusMinutes = 682,
                 todayFocusMinutes = 70,
@@ -129,11 +135,17 @@ class VisualQaActivity : ComponentActivity() {
             else -> FocusUiState()
         }
 
+        val tab = when (phase) {
+            "COMPANION" -> MainTab.COMPANION
+            "LOG" -> MainTab.LOG
+            else -> MainTab.HOME
+        }
+
         setContent {
             FocusRaidTheme {
                 FocusRaidAppContent(
                     state = state,
-                    tab = if (phase == "LOG") MainTab.LOG else MainTab.HOME,
+                    tab = tab,
                 )
                 if (phase == "CUSTOM") {
                     CustomDurationSheet(
