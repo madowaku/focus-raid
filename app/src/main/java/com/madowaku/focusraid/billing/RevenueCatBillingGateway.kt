@@ -46,14 +46,21 @@ object RevenueCatRuntime {
 class RevenueCatBillingGateway(
     private val configured: () -> Boolean = { RevenueCatRuntime.isConfigured },
 ) : BillingGateway {
-    override suspend fun refresh(): Result<BillingSnapshot> = runCatching {
-        ensureConfigured()
-        val customerInfo = awaitCustomerInfo()
-        val product = runCatching { awaitProPackage().toProProduct() }.getOrNull()
-        BillingSnapshot(
-            isPro = customerInfo.hasProEntitlement(),
-            product = product,
-        )
+    override suspend fun refresh(): Result<BillingSnapshot> {
+        if (!configured()) {
+            return Result.failure(
+                IllegalStateException("購入機能はまだ設定されていません"),
+            )
+        }
+
+        return runCatching {
+            val customerInfo = awaitCustomerInfo()
+            val product = runCatching { awaitProPackage().toProProduct() }.getOrNull()
+            BillingSnapshot(
+                isPro = customerInfo.hasProEntitlement(),
+                product = product,
+            )
+        }
     }
 
     override suspend fun purchasePro(activity: Activity): BillingActionResult {
@@ -168,10 +175,6 @@ class RevenueCatBillingGateway(
 
     private fun CustomerInfo.hasProEntitlement(): Boolean =
         entitlements[BillingConfig.ENTITLEMENT_ID]?.isActive == true
-
-    private fun ensureConfigured() {
-        check(configured()) { "RevenueCat API key is not configured" }
-    }
 
     private fun unavailableFailure(): BillingActionResult.Failure =
         BillingActionResult.Failure("購入機能はまだ設定されていません")
