@@ -35,6 +35,7 @@ class SessionPreferences(private val context: Context) {
         val totalFocusMinutes = intPreferencesKey("total_focus_minutes")
         val systemAccessEducationSeen = booleanPreferencesKey("system_access_education_seen")
         val sessionId = stringPreferencesKey("session_id")
+        val lastCreditedSessionId = stringPreferencesKey("last_credited_session_id")
     }
 
     val session: Flow<PersistedSession> = context.focusRaidDataStore.data.map { prefs ->
@@ -95,10 +96,17 @@ class SessionPreferences(private val context: Context) {
         }
     }
 
-    suspend fun addFocusMinutes(minutes: Int) {
+    suspend fun commitFinishedSession(sessionId: String, creditedMinutes: Int) {
         context.focusRaidDataStore.edit {
-            val current = it[Keys.totalFocusMinutes] ?: 645
-            it[Keys.totalFocusMinutes] = current + minutes.coerceAtLeast(0)
+            if (it[Keys.lastCreditedSessionId] != sessionId) {
+                val current = it[Keys.totalFocusMinutes] ?: 645
+                it[Keys.totalFocusMinutes] = current + creditedMinutes.coerceAtLeast(0)
+                it[Keys.lastCreditedSessionId] = sessionId
+            }
+            it[Keys.phase] = SessionPhase.READY.name
+            it[Keys.endEpochMillis] = 0L
+            it[Keys.pausedRemainingMillis] = 0L
+            it.remove(Keys.sessionId)
         }
     }
 
