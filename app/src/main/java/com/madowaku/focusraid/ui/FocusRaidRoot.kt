@@ -7,12 +7,15 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -26,6 +29,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.madowaku.focusraid.core.model.Expedition
+import com.madowaku.focusraid.core.model.FootprintPresets
 import com.madowaku.focusraid.core.model.SessionPhase
 
 @Composable
@@ -41,6 +46,7 @@ fun FocusRaidRoot(
     var customDurationMinutes by rememberSaveable { mutableStateOf(state.selectedMinutes) }
     var showEndConfirmation by rememberSaveable { mutableStateOf(false) }
     var showSystemAccessEducation by rememberSaveable { mutableStateOf(false) }
+    var showFootprintDialog by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(state.phase) {
         if (state.phase != SessionPhase.RUNNING && state.phase != SessionPhase.PAUSED) {
@@ -49,6 +55,11 @@ fun FocusRaidRoot(
         if (state.phase != SessionPhase.READY) {
             showCustomDuration = false
             showSystemAccessEducation = false
+        }
+        if (state.phase == SessionPhase.COMPLETED) {
+            showFootprintDialog = true
+        } else {
+            showFootprintDialog = false
         }
     }
 
@@ -140,6 +151,119 @@ fun FocusRaidRoot(
             },
         )
     }
+
+    if (showFootprintDialog && state.phase == SessionPhase.COMPLETED) {
+        FootprintDialog(
+            state = state,
+            onSelectPreset = viewModel::selectFootprintPreset,
+            onLeaveFootprint = viewModel::leaveFootprint,
+            onDismiss = { showFootprintDialog = false },
+        )
+    }
+}
+
+@Composable
+private fun FootprintDialog(
+    state: FocusUiState,
+    onSelectPreset: (String) -> Unit,
+    onLeaveFootprint: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val location = when (state.expedition) {
+        Expedition.TOWER -> "天空塔 ${state.world.towerFloor}F"
+        Expedition.ABYSS -> "深層迷宮 ${state.world.abyssDepth}m"
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text("この場所の足跡")
+        },
+        text = {
+            Column {
+                Text(
+                    location,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Spacer(Modifier.height(12.dp))
+
+                if (state.footprints.isEmpty()) {
+                    Text(
+                        "まだ足跡はありません。最初のひとことを残せます。",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                } else {
+                    state.footprints.take(3).forEach { footprint ->
+                        Text(
+                            "${footprint.glyph}  ${footprint.text}  ·  ${footprint.relativeLabel}",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                        Spacer(Modifier.height(8.dp))
+                    }
+                }
+
+                Spacer(Modifier.height(10.dp))
+                if (state.footprintPosted) {
+                    Text(
+                        "✓ あなたの足跡を残しました",
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                } else {
+                    Text(
+                        "あなたも定型メッセージを1つ残せます",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    FootprintPresets.all.take(6).chunked(2).forEach { rowPresets ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            rowPresets.forEach { preset ->
+                                FilterChip(
+                                    selected = state.selectedFootprintPresetId == preset.id,
+                                    onClick = { onSelectPreset(preset.id) },
+                                    label = {
+                                        Text(
+                                            "${preset.glyph} ${preset.text}",
+                                            maxLines = 1,
+                                        )
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+                            if (rowPresets.size == 1) {
+                                Spacer(Modifier.weight(1f))
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            if (state.footprintPosted) {
+                Button(onClick = onDismiss) {
+                    Text("閉じる")
+                }
+            } else {
+                Button(
+                    onClick = onLeaveFootprint,
+                    enabled = state.selectedFootprintPresetId != null,
+                ) {
+                    Text("足跡を残す")
+                }
+            }
+        },
+        dismissButton = {
+            if (!state.footprintPosted) {
+                TextButton(onClick = onDismiss) {
+                    Text("今は残さない")
+                }
+            }
+        },
+    )
 }
 
 @Composable
