@@ -37,6 +37,7 @@ capture PAUSED 360 800 paused-360x800
 capture END_CONFIRM 360 800 end-confirm-360x800
 capture ABORTED 360 800 aborted-360x800
 capture VICTORY 360 800 victory-360x800
+capture LOG 360 800 log-360x800
 capture READY 720 1280 ready-720x1280
 capture CUSTOM 720 1280 custom-720x1280
 capture SYSTEM_ACCESS 720 1280 system-access-720x1280
@@ -45,6 +46,7 @@ capture PAUSED 720 1280 paused-720x1280
 capture END_CONFIRM 720 1280 end-confirm-720x1280
 capture ABORTED 720 1280 aborted-720x1280
 capture VICTORY 720 1280 victory-720x1280
+capture LOG 720 1280 log-720x1280
 
 python3 - <<'PY'
 from pathlib import Path
@@ -59,6 +61,7 @@ expected = {
     "end-confirm-360x800.png": (360, 800),
     "aborted-360x800.png": (360, 800),
     "victory-360x800.png": (360, 800),
+    "log-360x800.png": (360, 800),
     "ready-720x1280.png": (720, 1280),
     "custom-720x1280.png": (720, 1280),
     "system-access-720x1280.png": (720, 1280),
@@ -67,6 +70,7 @@ expected = {
     "end-confirm-720x1280.png": (720, 1280),
     "aborted-720x1280.png": (720, 1280),
     "victory-720x1280.png": (720, 1280),
+    "log-720x1280.png": (720, 1280),
 }
 
 root = Path("artifacts/visual")
