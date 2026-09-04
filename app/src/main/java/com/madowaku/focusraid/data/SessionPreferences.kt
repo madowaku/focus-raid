@@ -20,7 +20,7 @@ data class PersistedSession(
     val phase: SessionPhase = SessionPhase.READY,
     val endEpochMillis: Long = 0L,
     val pausedRemainingMillis: Long = 0L,
-    val totalFocusMinutes: Int = 645,
+    val totalFocusMinutes: Int = 0,
     val systemAccessEducationSeen: Boolean = false,
     val sessionId: String? = null,
 )
@@ -49,7 +49,7 @@ class SessionPreferences(private val context: Context) {
                 ?: SessionPhase.READY,
             endEpochMillis = prefs[Keys.endEpochMillis] ?: 0L,
             pausedRemainingMillis = prefs[Keys.pausedRemainingMillis] ?: 0L,
-            totalFocusMinutes = prefs[Keys.totalFocusMinutes] ?: 645,
+            totalFocusMinutes = prefs[Keys.totalFocusMinutes] ?: 0,
             systemAccessEducationSeen = prefs[Keys.systemAccessEducationSeen] ?: false,
             sessionId = prefs[Keys.sessionId],
         )
@@ -99,7 +99,7 @@ class SessionPreferences(private val context: Context) {
     suspend fun commitFinishedSession(sessionId: String, creditedMinutes: Int) {
         context.focusRaidDataStore.edit {
             if (it[Keys.lastCreditedSessionId] != sessionId) {
-                val current = it[Keys.totalFocusMinutes] ?: 645
+                val current = it[Keys.totalFocusMinutes] ?: 0
                 it[Keys.totalFocusMinutes] = current + creditedMinutes.coerceAtLeast(0)
                 it[Keys.lastCreditedSessionId] = sessionId
             }
