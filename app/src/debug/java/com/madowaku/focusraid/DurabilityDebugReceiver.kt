@@ -30,20 +30,22 @@ class DurabilityDebugReceiver : BroadcastReceiver() {
                 val durationMillis = intent.getLongExtra(EXTRA_DURATION_MILLIS, 10_000L)
                     .coerceIn(2_000L, 120_000L)
                 val endEpochMillis = System.currentTimeMillis() + durationMillis
+                val sessionId = "durability-$endEpochMillis"
 
                 runBlocking {
                     preferences.saveRunning(
                         minutes = 1,
                         expedition = Expedition.TOWER,
                         endEpochMillis = endEpochMillis,
+                        sessionId = sessionId,
                     )
                 }
                 scheduler.schedule(endEpochMillis)
 
                 setResultCode(Activity.RESULT_OK)
                 setResultData(
-                    "seeded=true;endEpochMillis=$endEpochMillis;durationMillis=$durationMillis;" +
-                        "exact=${scheduler.canScheduleExactAlarms()}",
+                    "seeded=true;sessionId=$sessionId;endEpochMillis=$endEpochMillis;" +
+                        "durationMillis=$durationMillis;exact=${scheduler.canScheduleExactAlarms()}",
                 )
             }
 
@@ -54,7 +56,8 @@ class DurabilityDebugReceiver : BroadcastReceiver() {
                     .getLong(FocusCompletionNotifier.KEY_LAST_POSTED_AT, 0L)
                 setResultCode(Activity.RESULT_OK)
                 setResultData(
-                    "phase=${saved.phase};endEpochMillis=${saved.endEpochMillis};" +
+                    "phase=${saved.phase};sessionId=${saved.sessionId};" +
+                        "endEpochMillis=${saved.endEpochMillis};" +
                         "pausedRemainingMillis=${saved.pausedRemainingMillis};" +
                         "nowEpochMillis=${System.currentTimeMillis()};" +
                         "completionEpochMillis=$completionEpochMillis;" +
