@@ -59,8 +59,10 @@ abstract class FocusRaidDatabase : RoomDatabase() {
 class RoomSessionHistoryRepository(
     private val dao: FocusSessionDao,
 ) : SessionHistoryRepository {
+    // Keep enough local history in memory to derive long streaks without widening the UI itself.
+    // The Adventure Log still renders only the most recent entries.
     override val recentSessions: Flow<List<SessionHistoryEntry>> =
-        dao.observeRecent(50).map { rows -> rows.map(FocusSessionEntity::toDomain) }
+        dao.observeRecent(400).map { rows -> rows.map(FocusSessionEntity::toDomain) }
 
     override suspend fun record(entry: SessionHistoryEntry) {
         dao.insert(entry.toEntity())
