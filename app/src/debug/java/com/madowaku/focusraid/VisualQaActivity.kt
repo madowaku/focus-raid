@@ -6,6 +6,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import com.madowaku.focusraid.core.domain.CompanionEvolution
+import com.madowaku.focusraid.core.domain.CompanionStage
 import com.madowaku.focusraid.core.model.Expedition
 import com.madowaku.focusraid.core.model.Rarity
 import com.madowaku.focusraid.core.model.SessionHistoryEntry
@@ -74,6 +76,27 @@ class VisualQaActivity : ComponentActivity() {
                 selectedMinutes = 25,
                 durationSeconds = 25 * 60,
                 remainingSeconds = 0,
+                reward = SessionReward(
+                    creditedMinutes = 25,
+                    personalDamage = 25,
+                    worldEp = 25,
+                    defeated = 1,
+                    rarity = Rarity.RARE,
+                    discovery = "古代の鍵",
+                    armoryPoints = 2,
+                ),
+            )
+
+            "EVOLUTION" -> FocusUiState(
+                phase = SessionPhase.COMPLETED,
+                selectedMinutes = 25,
+                durationSeconds = 25 * 60,
+                remainingSeconds = 0,
+                totalFocusMinutes = 720,
+                companionEvolution = CompanionEvolution(
+                    from = CompanionStage.HATCHLING,
+                    to = CompanionStage.FIRST_GROWTH,
+                ),
                 reward = SessionReward(
                     creditedMinutes = 25,
                     personalDamage = 25,
