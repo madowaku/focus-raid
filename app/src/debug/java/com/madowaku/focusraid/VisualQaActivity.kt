@@ -13,6 +13,7 @@ import com.madowaku.focusraid.ui.CustomDurationSheet
 import com.madowaku.focusraid.ui.FocusRaidAppContent
 import com.madowaku.focusraid.ui.FocusUiState
 import com.madowaku.focusraid.ui.MainTab
+import com.madowaku.focusraid.ui.SessionExitConfirmDialog
 import com.madowaku.focusraid.ui.theme.FocusRaidTheme
 
 class VisualQaActivity : ComponentActivity() {
@@ -37,6 +38,13 @@ class VisualQaActivity : ComponentActivity() {
                 selectedMinutes = 25,
                 durationSeconds = 25 * 60,
                 remainingSeconds = 18 * 60 + 42,
+            )
+
+            "END_CONFIRM" -> FocusUiState(
+                phase = SessionPhase.RUNNING,
+                selectedMinutes = 25,
+                durationSeconds = 25 * 60,
+                remainingSeconds = 13 * 60,
             )
 
             "ABORTED" -> FocusUiState(
@@ -86,6 +94,13 @@ class VisualQaActivity : ComponentActivity() {
                         onMinutesChange = {},
                         onConfirm = {},
                         onDismiss = {},
+                    )
+                }
+                if (phase == "END_CONFIRM") {
+                    SessionExitConfirmDialog(
+                        state = state,
+                        onDismiss = {},
+                        onConfirm = {},
                     )
                 }
             }
