@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -64,7 +65,7 @@ import com.madowaku.focusraid.core.model.SessionPhase
 import com.madowaku.focusraid.core.model.SessionReward
 import kotlin.math.max
 
-private enum class MainTab(val label: String, val glyph: String) {
+internal enum class MainTab(val label: String, val glyph: String) {
     HOME("ホーム", "⌂"),
     RAID("レイド", "⚔"),
     COMPANION("相棒", "◆"),
@@ -75,6 +76,36 @@ private enum class MainTab(val label: String, val glyph: String) {
 fun FocusRaidApp(viewModel: FocusViewModel) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var tab by rememberSaveable { mutableStateOf(MainTab.HOME) }
+
+    FocusRaidAppContent(
+        state = state,
+        tab = tab,
+        onTabChange = { tab = it },
+        onSelectMinutes = viewModel::selectMinutes,
+        onSelectExpedition = viewModel::selectExpedition,
+        onStart = viewModel::start,
+        onPause = viewModel::pause,
+        onResume = viewModel::resume,
+        onFinishEarly = viewModel::finishEarly,
+        onAgain = viewModel::startAgain,
+        onDone = viewModel::resetAfterResult,
+    )
+}
+
+@Composable
+internal fun FocusRaidAppContent(
+    state: FocusUiState,
+    tab: MainTab = MainTab.HOME,
+    onTabChange: (MainTab) -> Unit = {},
+    onSelectMinutes: (Int) -> Unit = {},
+    onSelectExpedition: (Expedition) -> Unit = {},
+    onStart: () -> Unit = {},
+    onPause: () -> Unit = {},
+    onResume: () -> Unit = {},
+    onFinishEarly: () -> Unit = {},
+    onAgain: () -> Unit = {},
+    onDone: () -> Unit = {},
+) {
     val inSession = state.phase != SessionPhase.READY
 
     Scaffold(
@@ -88,7 +119,7 @@ fun FocusRaidApp(viewModel: FocusViewModel) {
                     MainTab.entries.forEach { item ->
                         NavigationBarItem(
                             selected = tab == item,
-                            onClick = { tab = item },
+                            onClick = { onTabChange(item) },
                             icon = { Text(item.glyph, fontSize = 20.sp) },
                             label = { Text(item.label, fontSize = 11.sp) },
                             colors = NavigationBarItemDefaults.colors(
@@ -100,7 +131,7 @@ fun FocusRaidApp(viewModel: FocusViewModel) {
             }
         },
     ) { padding ->
-        FantasyBackground {
+        FantasyBackground(phase = state.phase) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -111,15 +142,17 @@ fun FocusRaidApp(viewModel: FocusViewModel) {
                         when (phase) {
                             SessionPhase.RUNNING, SessionPhase.PAUSED -> RaidScreen(
                                 state = state,
-                                onPause = viewModel::pause,
-                                onResume = viewModel::resume,
-                                onFinishEarly = viewModel::finishEarly,
+                                onPause = onPause,
+                                onResume = onResume,
+                                onFinishEarly = onFinishEarly,
                             )
+
                             SessionPhase.COMPLETED -> VictoryScreen(
                                 state = state,
-                                onAgain = viewModel::startAgain,
-                                onDone = viewModel::resetAfterResult,
+                                onAgain = onAgain,
+                                onDone = onDone,
                             )
+
                             else -> Unit
                         }
                     }
@@ -127,10 +160,11 @@ fun FocusRaidApp(viewModel: FocusViewModel) {
                     when (tab) {
                         MainTab.HOME -> ReadyScreen(
                             state = state,
-                            onSelectMinutes = viewModel::selectMinutes,
-                            onSelectExpedition = viewModel::selectExpedition,
-                            onStart = viewModel::start,
+                            onSelectMinutes = onSelectMinutes,
+                            onSelectExpedition = onSelectExpedition,
+                            onStart = onStart,
                         )
+
                         MainTab.RAID -> RaidOverview(state)
                         MainTab.COMPANION -> CompanionOverview(state)
                         MainTab.LOG -> LogOverview(state)
@@ -142,24 +176,48 @@ fun FocusRaidApp(viewModel: FocusViewModel) {
 }
 
 @Composable
-private fun FantasyBackground(content: @Composable () -> Unit) {
+private fun FantasyBackground(phase: SessionPhase, content: @Composable () -> Unit) {
+    val colors = when (phase) {
+        SessionPhase.RUNNING, SessionPhase.PAUSED -> listOf(
+            Color(0xFF080611),
+            Color(0xFF120D22),
+            Color(0xFF1D1030),
+        )
+
+        SessionPhase.COMPLETED -> listOf(
+            Color(0xFF12091D),
+            Color(0xFF28133B),
+            Color(0xFF3A2141),
+        )
+
+        else -> listOf(
+            Color(0xFF0B0816),
+            Color(0xFF17102A),
+            Color(0xFF26133C),
+        )
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        Color(0xFF0B0816),
-                        Color(0xFF17102A),
-                        Color(0xFF26133C),
-                    ),
-                ),
-            ),
+            .background(Brush.verticalGradient(colors)),
     ) {
-        Canvas(Modifier.fillMaxSize().alpha(0.26f)) {
-            drawCircle(Color(0xFF7C4DFF), radius = size.minDimension * 0.34f, center = Offset(size.width * .82f, size.height * .22f))
-            drawCircle(Color(0xFF3CD9C5), radius = size.minDimension * 0.22f, center = Offset(size.width * .08f, size.height * .76f))
-            drawCircle(Color(0xFFFF7A96), radius = size.minDimension * 0.18f, center = Offset(size.width * .92f, size.height * .88f))
+        Canvas(Modifier.fillMaxSize().alpha(if (phase == SessionPhase.RUNNING) 0.16f else 0.24f)) {
+            drawCircle(
+                Color(0xFF7C4DFF),
+                radius = size.minDimension * 0.34f,
+                center = Offset(size.width * .82f, size.height * .22f),
+            )
+            drawCircle(
+                Color(0xFF3CD9C5),
+                radius = size.minDimension * 0.22f,
+                center = Offset(size.width * .08f, size.height * .76f),
+            )
+            drawCircle(
+                if (phase == SessionPhase.COMPLETED) Color(0xFFFFC857) else Color(0xFFFF7A96),
+                radius = size.minDimension * 0.18f,
+                center = Offset(size.width * .92f, size.height * .88f),
+            )
         }
         content()
     }
@@ -181,30 +239,39 @@ private fun ReadyScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         TopBar(streak = state.streakDays)
-        Spacer(Modifier.height(10.dp))
-
-        CompanionHero(stage = FocusRules.companionStage(state.totalFocusMinutes))
         Spacer(Modifier.height(4.dp))
 
-        TimerRing(
-            text = formatClock(state.selectedMinutes * 60),
-            progress = 1f,
-            diameter = 184,
-        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(218.dp),
+            contentAlignment = Alignment.BottomCenter,
+        ) {
+            TimerRing(
+                text = formatClock(state.selectedMinutes * 60),
+                progress = 1f,
+                diameter = 184,
+            )
+            CompanionHero(
+                stage = FocusRules.companionStage(state.totalFocusMinutes),
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .offset(y = 2.dp),
+            )
+        }
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(8.dp))
         DurationSelector(state.selectedMinutes, onSelectMinutes)
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(8.dp))
         ExpeditionSelector(state.expedition, onSelectExpedition)
 
         Spacer(Modifier.height(12.dp))
         StartButton(onStart)
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(14.dp))
         BossCard(state)
-
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(12.dp))
     }
 }
 
@@ -217,18 +284,11 @@ private fun TopBar(streak: Int) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Column {
-            Text(
-                "Focus Raid",
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-            )
-            Text(
-                "集中を、冒険に変える。",
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+        Text(
+            "Focus Raid",
+            fontSize = 22.sp,
+            fontWeight = FontWeight.Bold,
+        )
         Surface(
             shape = CircleShape,
             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
@@ -243,26 +303,31 @@ private fun TopBar(streak: Int) {
 }
 
 @Composable
-private fun CompanionHero(stage: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+private fun CompanionHero(stage: String, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
         Box(
             modifier = Modifier
                 .size(62.dp)
                 .clip(CircleShape)
-                .background(
-                    Brush.radialGradient(
-                        listOf(Color(0xFFB69CFF), Color.Transparent),
-                    ),
-                ),
+                .background(Brush.radialGradient(listOf(Color(0xFFB69CFF), Color.Transparent))),
             contentAlignment = Alignment.Center,
         ) {
             Text("🐉", fontSize = 42.sp)
         }
-        Text(
-            "ラグ · $stage",
-            fontSize = 12.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        Surface(
+            shape = CircleShape,
+            color = Color(0xCC211735),
+        ) {
+            Text(
+                "ラグ · $stage",
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 
@@ -310,7 +375,7 @@ private fun ExpeditionSelector(selected: Expedition, onSelect: (Expedition) -> U
                 },
                 modifier = Modifier
                     .weight(1f)
-                    .height(48.dp),
+                    .height(44.dp),
             )
         }
     }
@@ -356,9 +421,13 @@ private fun BossCard(state: FocusUiState) {
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text("CURRENT RAID", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
-                Text("${world.raidParticipants}人参加予定", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    "${world.raidParticipants.toStringWithCommas()}人",
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(5.dp))
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -366,18 +435,18 @@ private fun BossCard(state: FocusUiState) {
             ) {
                 Column(Modifier.weight(1f)) {
                     Text(world.bossName, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(10.dp))
+                    Spacer(Modifier.height(9.dp))
                     RaidHpBar(world.bossHp, world.bossMaxHp)
-                    Spacer(Modifier.height(6.dp))
+                    Spacer(Modifier.height(5.dp))
                     Text(
                         "${world.bossHp.toStringWithCommas()} / ${world.bossMaxHp.toStringWithCommas()} HP",
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(7.dp))
                     Text("🎁 25分集中で探索ロール", fontSize = 12.sp)
                 }
-                Text("🐲", fontSize = 56.sp)
+                Text("🐲", fontSize = 48.sp)
             }
         }
     }
@@ -406,20 +475,22 @@ private fun RaidScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text("Focus Raid", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-            Text(
-                if (paused) "PAUSED" else "RAID",
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer)
-                    .padding(horizontal = 14.dp, vertical = 8.dp),
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-            )
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primaryContainer,
+            ) {
+                Text(
+                    if (paused) "PAUSED" else "RAID",
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
         }
 
-        Spacer(Modifier.weight(0.35f))
-        Text("🐉", fontSize = 46.sp)
-        Spacer(Modifier.height(6.dp))
+        Spacer(Modifier.weight(0.28f))
+        Text("🐉", fontSize = 42.sp)
+        Spacer(Modifier.height(4.dp))
 
         TimerRing(
             text = formatClock(state.remainingSeconds),
@@ -428,7 +499,6 @@ private fun RaidScreen(
         )
 
         Spacer(Modifier.height(18.dp))
-
         Button(
             onClick = if (paused) onResume else onPause,
             modifier = Modifier.size(64.dp),
@@ -442,30 +512,37 @@ private fun RaidScreen(
             Text("セッションを終了")
         }
 
-        Spacer(Modifier.weight(0.25f))
+        Spacer(Modifier.weight(0.22f))
+        RaidMiniCard(state)
+    }
+}
 
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = .88f)),
-        ) {
-            Column(Modifier.padding(16.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Text(state.world.bossName, fontWeight = FontWeight.Bold)
-                    Text("🐲", fontSize = 28.sp)
-                }
-                Spacer(Modifier.height(10.dp))
-                RaidHpBar(state.world.bossHp, state.world.bossMaxHp)
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    "今回の貢献  +${max(0, (state.durationSeconds - state.remainingSeconds) / 60)} DAMAGE",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+@Composable
+private fun RaidMiniCard(state: FocusUiState) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = .88f),
+        ),
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(state.world.bossName, fontWeight = FontWeight.Bold)
+                Text("🐲", fontSize = 26.sp)
             }
+            Spacer(Modifier.height(9.dp))
+            RaidHpBar(state.world.bossHp, state.world.bossMaxHp)
+            Spacer(Modifier.height(5.dp))
+            Text(
+                "今回の貢献  +${max(0, (state.durationSeconds - state.remainingSeconds) / 60)} DAMAGE",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
@@ -483,10 +560,10 @@ private fun VictoryScreen(
             .fillMaxSize()
             .statusBarsPadding()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 18.dp),
+            .padding(horizontal = 16.dp, vertical = 14.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text("✦", fontSize = 28.sp, color = MaterialTheme.colorScheme.tertiary)
+        Text("✦", fontSize = 24.sp, color = MaterialTheme.colorScheme.tertiary)
         Text(
             "FOCUS COMPLETE",
             fontSize = 14.sp,
@@ -494,39 +571,32 @@ private fun VictoryScreen(
             color = MaterialTheme.colorScheme.primary,
         )
         Spacer(Modifier.height(8.dp))
-        Text("${reward.creditedMinutes}分", fontSize = 30.sp, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(8.dp))
-        Text("🐉  ⚔  🐲", fontSize = 42.sp)
-        Spacer(Modifier.height(6.dp))
-        Text(
-            "+${reward.personalDamage} DAMAGE",
-            fontSize = 36.sp,
-            fontWeight = FontWeight.Black,
-        )
-        Text(
-            "集中した時間がそのまま戦果になりました",
-            fontSize = 12.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
 
-        Spacer(Modifier.height(18.dp))
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = .9f)),
+            shape = RoundedCornerShape(28.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = .90f),
+            ),
         ) {
-            Column(Modifier.padding(16.dp)) {
-                Text(state.world.bossName, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(10.dp))
-                RaidHpBar(
-                    current = (state.world.bossHp - reward.personalDamage).coerceAtLeast(0),
-                    max = state.world.bossMaxHp,
-                )
-                Spacer(Modifier.height(6.dp))
+            Column(
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 18.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text("${reward.creditedMinutes}分集中", fontSize = 26.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(4.dp))
+                Text("🐉  ⚔  🐲", fontSize = 24.sp)
+                Spacer(Modifier.height(4.dp))
                 Text(
-                    "${(state.world.bossHp - reward.personalDamage).coerceAtLeast(0).toStringWithCommas()} HP",
+                    "+${reward.personalDamage} DAMAGE",
+                    fontSize = 40.sp,
+                    fontWeight = FontWeight.Black,
+                )
+                Text(
+                    "集中した時間がそのまま戦果になりました",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
                 )
             }
         }
@@ -535,23 +605,59 @@ private fun VictoryScreen(
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .85f)),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = .88f),
+            ),
         ) {
             Column(Modifier.padding(16.dp)) {
-                Text("獲得", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(Modifier.height(8.dp))
-                Text("+${reward.worldEp} WORLD EP", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                if (reward.discovery != null) {
-                    Spacer(Modifier.height(6.dp))
-                    Text("🎁 ${reward.rarity} · ${reward.discovery}", fontSize = 15.sp)
-                } else {
-                    Spacer(Modifier.height(6.dp))
-                    Text("探索は次回へ続く", fontSize = 14.sp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(state.world.bossName, fontWeight = FontWeight.Bold)
+                    Text("残HP", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
+                Spacer(Modifier.height(9.dp))
+                RaidHpBar(
+                    current = (state.world.bossHp - reward.personalDamage).coerceAtLeast(0),
+                    max = state.world.bossMaxHp,
+                )
+                Spacer(Modifier.height(5.dp))
+                Text(
+                    "${(state.world.bossHp - reward.personalDamage).coerceAtLeast(0).toStringWithCommas()} HP",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
 
-        Spacer(Modifier.height(18.dp))
+        Spacer(Modifier.height(10.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            RewardMetricCard(
+                title = "WORLD EP",
+                value = "+${reward.worldEp}",
+                modifier = Modifier.weight(1f),
+            )
+            RewardMetricCard(
+                title = "探索",
+                value = reward.discovery ?: "次回へ",
+                modifier = Modifier.weight(1f),
+            )
+        }
+        if (reward.discovery != null) {
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "🎁 ${reward.rarity} · ARMORY +${reward.armoryPoints}",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        Spacer(Modifier.height(16.dp))
         Button(
             onClick = onAgain,
             modifier = Modifier
@@ -563,6 +669,35 @@ private fun VictoryScreen(
         }
         TextButton(onClick = onDone) {
             Text("完了")
+        }
+    }
+}
+
+@Composable
+private fun RewardMetricCard(title: String, value: String, modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier.height(88.dp),
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .80f),
+        ),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(title, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(5.dp))
+            Text(
+                value,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+            )
         }
     }
 }
@@ -607,7 +742,9 @@ private fun SimpleOverview(title: String, glyph: String, body: String) {
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(28.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = .9f)),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = .9f),
+            ),
         ) {
             Column(
                 Modifier.padding(24.dp),
@@ -666,7 +803,9 @@ private fun TimerRing(text: String, progress: Float, diameter: Int) {
                 style = Stroke(width = stroke, cap = StrokeCap.Round),
             )
             drawArc(
-                brush = Brush.sweepGradient(listOf(Color(0xFFB69CFF), Color(0xFFFF7A96), Color(0xFFB69CFF))),
+                brush = Brush.sweepGradient(
+                    listOf(Color(0xFFB69CFF), Color(0xFFFF7A96), Color(0xFFB69CFF)),
+                ),
                 startAngle = -90f,
                 sweepAngle = 360f * animatedProgress.coerceIn(0f, 1f),
                 useCenter = false,
