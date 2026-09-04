@@ -27,6 +27,7 @@ enum class SessionPhase {
     RUNNING,
     PAUSED,
     COMPLETED,
+    ABORTED,
 }
 
 data class WorldSnapshot(
