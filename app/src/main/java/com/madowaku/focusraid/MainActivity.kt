@@ -20,6 +20,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import com.madowaku.focusraid.billing.DefaultProAccessRepository
+import com.madowaku.focusraid.billing.ProAccessViewModel
+import com.madowaku.focusraid.billing.RevenueCatBillingGateway
 import com.madowaku.focusraid.data.FocusRaidDatabase
 import com.madowaku.focusraid.data.RoomSessionHistoryRepository
 import com.madowaku.focusraid.data.SessionPreferences
@@ -46,6 +49,10 @@ class MainActivity : ComponentActivity() {
         WorldRepositoryFactory.create(applicationContext)
     }
 
+    private val proAccessRepository by lazy {
+        DefaultProAccessRepository(RevenueCatBillingGateway())
+    }
+
     private val viewModel: FocusViewModel by viewModels {
         FocusViewModel.Factory(
             preferences = SessionPreferences(applicationContext),
@@ -53,6 +60,10 @@ class MainActivity : ComponentActivity() {
             sessionHistoryRepository = RoomSessionHistoryRepository(database.focusSessionDao()),
             alarmScheduler = FocusAlarmScheduler(applicationContext),
         )
+    }
+
+    private val proAccessViewModel: ProAccessViewModel by viewModels {
+        ProAccessViewModel.Factory(proAccessRepository)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -67,9 +78,12 @@ class MainActivity : ComponentActivity() {
             FocusRaidTheme {
                 FocusRaidRoot(
                     viewModel = viewModel,
+                    proAccessViewModel = proAccessViewModel,
                     systemAccess = systemAccess,
                     onRequestNotificationPermission = ::requestNotificationAccess,
                     onRequestExactAlarmPermission = ::requestExactAlarmAccess,
+                    onPurchasePro = { proAccessViewModel.purchasePro(this) },
+                    onRestorePurchases = proAccessViewModel::restorePurchases,
                 )
             }
         }
