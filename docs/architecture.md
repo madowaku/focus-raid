@@ -119,6 +119,18 @@ Current MVP rules:
 - every accumulated 25 focus minutes produces one discovery roll
 - companion growth uses cumulative focus minutes, never streaks or paid boosts
 
+Companion growth is modeled by `CompanionGrowth`, rather than duplicating thresholds in UI code. The v1 milestones are:
+
+| Total focus time | Stage |
+| ---: | --- |
+| 0–74 min | 卵 |
+| 75–719 min | 幼体 |
+| 720–1,799 min | 第一成長 |
+| 1,800–4,499 min | 第二成長 |
+| 4,500+ min | 成熟 |
+
+The companion screen shows both total shared focus time and progress inside the current stage. Progress never rolls back when a streak breaks. A mature companion keeps accumulating shared focus time even though there is no further stage threshold.
+
 ### Footprints
 
 Footprints are deliberately lightweight asynchronous social interaction, not chat.
