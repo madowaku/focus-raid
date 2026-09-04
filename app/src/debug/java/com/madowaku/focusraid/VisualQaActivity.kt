@@ -87,6 +87,8 @@ class VisualQaActivity : ComponentActivity() {
 
             "LOG" -> FocusUiState(
                 totalFocusMinutes = 682,
+                todayFocusMinutes = 70,
+                streakDays = 4,
                 sessionHistory = listOf(
                     SessionHistoryEntry(
                         sessionId = "visual-log-1",
