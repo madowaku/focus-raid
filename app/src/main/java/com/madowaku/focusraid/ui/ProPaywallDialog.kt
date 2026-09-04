@@ -2,8 +2,8 @@ package com.madowaku.focusraid.ui
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -66,6 +66,12 @@ internal fun ProPaywallDialog(
 
                         PurchaseState.Restoring -> Text(
                             "購入履歴を確認しています…",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+
+                        PurchaseState.Success -> Text(
+                            "復元できるPro購入は見つかりませんでした。",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
