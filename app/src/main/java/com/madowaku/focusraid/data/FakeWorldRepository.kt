@@ -4,9 +4,24 @@ import com.madowaku.focusraid.core.model.Expedition
 import com.madowaku.focusraid.core.model.Footprint
 import com.madowaku.focusraid.core.model.FootprintPresets
 import com.madowaku.focusraid.core.model.WorldSnapshot
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+enum class WorldSyncStatus {
+    LOCAL_PREVIEW,
+    CONNECTING,
+    LIVE,
+    OFFLINE,
+}
 
 interface WorldRepository {
-    fun snapshot(): WorldSnapshot
+    val world: StateFlow<WorldSnapshot>
+    val syncStatus: StateFlow<WorldSyncStatus>
+
+    fun snapshot(): WorldSnapshot = world.value
+
+    suspend fun refresh()
 
     fun footprints(
         expedition: Expedition,
@@ -22,17 +37,23 @@ interface WorldRepository {
 }
 
 class FakeWorldRepository : WorldRepository {
-    private val world = WorldSnapshot()
+    private val initialWorld = WorldSnapshot()
+    private val _world = MutableStateFlow(initialWorld)
+    override val world: StateFlow<WorldSnapshot> = _world.asStateFlow()
+
+    private val _syncStatus = MutableStateFlow(WorldSyncStatus.LOCAL_PREVIEW)
+    override val syncStatus: StateFlow<WorldSyncStatus> = _syncStatus.asStateFlow()
+
     private val footprints = mutableListOf(
-        seed(Expedition.TOWER, world.towerFloor, "waiting", "3日前"),
-        seed(Expedition.TOWER, world.towerFloor, "one_step", "昨日"),
-        seed(Expedition.TOWER, world.towerFloor, "rest", "6時間前"),
-        seed(Expedition.ABYSS, world.abyssDepth, "made_it", "2日前"),
-        seed(Expedition.ABYSS, world.abyssDepth, "keep_going", "昨日"),
-        seed(Expedition.ABYSS, world.abyssDepth, "strong", "4時間前"),
+        seed(Expedition.TOWER, initialWorld.towerFloor, "waiting", "3日前"),
+        seed(Expedition.TOWER, initialWorld.towerFloor, "one_step", "昨日"),
+        seed(Expedition.TOWER, initialWorld.towerFloor, "rest", "6時間前"),
+        seed(Expedition.ABYSS, initialWorld.abyssDepth, "made_it", "2日前"),
+        seed(Expedition.ABYSS, initialWorld.abyssDepth, "keep_going", "昨日"),
+        seed(Expedition.ABYSS, initialWorld.abyssDepth, "strong", "4時間前"),
     )
 
-    override fun snapshot(): WorldSnapshot = world
+    override suspend fun refresh() = Unit
 
     override fun footprints(
         expedition: Expedition,
