@@ -126,11 +126,11 @@ class FocusViewModel(
         val elapsedSeconds = (_uiState.value.durationSeconds - _uiState.value.remainingSeconds)
             .coerceAtLeast(0)
         val creditedMinutes = floor(elapsedSeconds / 60.0).toInt()
-        complete(creditedMinutes)
+        finishSession(creditedMinutes, SessionPhase.ABORTED)
     }
 
     fun resetAfterResult() {
-        if (_uiState.value.phase != SessionPhase.COMPLETED) return
+        if (_uiState.value.phase !in setOf(SessionPhase.COMPLETED, SessionPhase.ABORTED)) return
         val selected = _uiState.value.selectedMinutes
         _uiState.value = _uiState.value.copy(
             phase = SessionPhase.READY,
@@ -207,6 +207,10 @@ class FocusViewModel(
     }
 
     private fun complete(creditedMinutes: Int) {
+        finishSession(creditedMinutes, SessionPhase.COMPLETED)
+    }
+
+    private fun finishSession(creditedMinutes: Int, phase: SessionPhase) {
         alarmScheduler.cancel()
         tickerJob?.cancel()
 
@@ -218,7 +222,7 @@ class FocusViewModel(
         )
 
         _uiState.value = before.copy(
-            phase = SessionPhase.COMPLETED,
+            phase = phase,
             remainingSeconds = 0,
             reward = reward,
             totalFocusMinutes = before.totalFocusMinutes + reward.creditedMinutes,
