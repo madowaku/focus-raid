@@ -11,6 +11,8 @@ import com.madowaku.focusraid.core.model.SessionPhase
 import com.madowaku.focusraid.core.model.SessionReward
 import com.madowaku.focusraid.ui.CustomDurationSheet
 import com.madowaku.focusraid.ui.FocusRaidAppContent
+import com.madowaku.focusraid.ui.FocusSystemAccess
+import com.madowaku.focusraid.ui.FocusSystemAccessDialog
 import com.madowaku.focusraid.ui.FocusUiState
 import com.madowaku.focusraid.ui.MainTab
 import com.madowaku.focusraid.ui.SessionExitConfirmDialog
@@ -94,6 +96,18 @@ class VisualQaActivity : ComponentActivity() {
                         onMinutesChange = {},
                         onConfirm = {},
                         onDismiss = {},
+                    )
+                }
+                if (phase == "SYSTEM_ACCESS") {
+                    FocusSystemAccessDialog(
+                        access = FocusSystemAccess(
+                            notificationsEnabled = false,
+                            exactAlarmsEnabled = false,
+                        ),
+                        onRequestNotificationPermission = {},
+                        onRequestExactAlarmPermission = {},
+                        onDismiss = {},
+                        onContinue = {},
                     )
                 }
                 if (phase == "END_CONFIRM") {
