@@ -70,33 +70,7 @@ jobs:
           arch: x86_64
           profile: pixel_2
           disable-animations: true
-          script: |
-            gradle installDebug --stacktrace
-            mkdir -p artifacts/visual
-            adb shell settings put system font_scale 1.0
-
-            capture() {
-              phase="$1"
-              width="$2"
-              height="$3"
-              output="$4"
-              adb shell am force-stop com.madowaku.focusraid
-              adb shell wm size "${width}x${height}"
-              adb shell wm density 160
-              adb shell am start -W -n com.madowaku.focusraid/.VisualQaActivity --es phase "$phase"
-              sleep 2
-              adb exec-out screencap -p > "artifacts/visual/${output}.png"
-            }
-
-            capture READY 360 800 ready-360x800
-            capture RAID 360 800 raid-360x800
-            capture VICTORY 360 800 victory-360x800
-            capture READY 720 1280 ready-720x1280
-            capture RAID 720 1280 raid-720x1280
-            capture VICTORY 720 1280 victory-720x1280
-
-            adb shell wm size reset
-            adb shell wm density reset
+          script: bash scripts/capture-android-ui.sh
 
       - name: Upload visual QA screenshots
         uses: actions/upload-artifact@v4
