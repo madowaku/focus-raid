@@ -38,7 +38,7 @@ capture VICTORY 720 1280 victory-720x1280
 
 python3 - <<'PY'
 from pathlib import Path
-from PIL import Image
+import struct
 
 expected = {
     "ready-360x800.png": (360, 800),
@@ -50,13 +50,17 @@ expected = {
 }
 
 root = Path("artifacts/visual")
-for name, size in expected.items():
+for name, expected_size in expected.items():
     path = root / name
-    if not path.exists() or path.stat().st_size == 0:
-        raise SystemExit(f"missing screenshot: {name}")
-    actual = Image.open(path).size
-    if actual != size:
-        raise SystemExit(f"unexpected screenshot size for {name}: {actual} != {size}")
+    if not path.exists() or path.stat().st_size < 24:
+        raise SystemExit(f"missing or invalid screenshot: {name}")
+    with path.open("rb") as f:
+        header = f.read(24)
+    if header[:8] != b"\x89PNG\r\n\x1a\n" or header[12:16] != b"IHDR":
+        raise SystemExit(f"not a PNG screenshot: {name}")
+    actual_size = struct.unpack(">II", header[16:24])
+    if actual_size != expected_size:
+        raise SystemExit(f"unexpected screenshot size for {name}: {actual_size} != {expected_size}")
 
 print("visual QA captures verified:", ", ".join(expected))
 PY
