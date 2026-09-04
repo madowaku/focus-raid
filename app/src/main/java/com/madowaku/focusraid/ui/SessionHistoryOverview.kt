@@ -74,13 +74,13 @@ internal fun SessionHistoryOverview(state: FocusUiState) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     HistoryMetric(
-                        label = "完走",
-                        value = completedCount.toString(),
+                        label = "今日",
+                        value = "${state.todayFocusMinutes}m",
                         modifier = Modifier.weight(1f),
                     )
                     HistoryMetric(
-                        label = "撤退",
-                        value = abortedCount.toString(),
+                        label = "連続",
+                        value = "🔥${state.streakDays}",
                         modifier = Modifier.weight(1f),
                     )
                     HistoryMetric(
@@ -89,6 +89,12 @@ internal fun SessionHistoryOverview(state: FocusUiState) {
                         modifier = Modifier.weight(1f),
                     )
                 }
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    "完走 $completedCount  ·  撤退 $abortedCount",
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
 
