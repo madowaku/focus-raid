@@ -35,6 +35,8 @@ The UI derives remaining time from `endEpochMillis - now`. This survives screen-
 
 `BOOT_COMPLETED` and `MY_PACKAGE_REPLACED` restore the completion alarm from DataStore for an active running session. If the persisted end time already passed while the device was unavailable, Focus Raid posts the completion notification on recovery and resolves the completed session when the app next opens.
 
+When exact-alarm special access is granted, `ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED` triggers the same restore path so an already-running focus session can be upgraded from the fallback alarm to an exact completion alarm.
+
 ### System access
 
 Do not cold-prompt notification permission on app launch.
