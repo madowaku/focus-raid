@@ -3,6 +3,8 @@ package com.madowaku.focusraid.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.madowaku.focusraid.core.domain.CompanionEvolution
+import com.madowaku.focusraid.core.domain.CompanionGrowth
 import com.madowaku.focusraid.core.domain.FocusActivitySummaries
 import com.madowaku.focusraid.core.domain.FocusRules
 import com.madowaku.focusraid.core.model.Expedition
@@ -36,6 +38,7 @@ data class FocusUiState(
     val remainingSeconds: Int = 25 * 60,
     val durationSeconds: Int = 25 * 60,
     val reward: SessionReward? = null,
+    val companionEvolution: CompanionEvolution? = null,
     val totalFocusMinutes: Int = 0,
     val todayFocusMinutes: Int = 0,
     val streakDays: Int = 0,
@@ -142,6 +145,7 @@ class FocusViewModel(
             remainingSeconds = seconds,
             durationSeconds = seconds,
             reward = null,
+            companionEvolution = null,
             footprints = emptyList(),
             selectedFootprintPresetId = null,
             footprintPosted = false,
@@ -204,6 +208,7 @@ class FocusViewModel(
             remainingSeconds = selected * 60,
             durationSeconds = selected * 60,
             reward = null,
+            companionEvolution = null,
             footprints = emptyList(),
             selectedFootprintPresetId = null,
             footprintPosted = false,
@@ -224,6 +229,8 @@ class FocusViewModel(
             expedition = saved.expedition,
             durationSeconds = durationSeconds,
             remainingSeconds = durationSeconds,
+            reward = null,
+            companionEvolution = null,
             totalFocusMinutes = saved.totalFocusMinutes,
             world = worldRepository.snapshot(),
             systemAccessEducationSeen = saved.systemAccessEducationSeen,
@@ -297,6 +304,11 @@ class FocusViewModel(
             expedition = before.expedition,
             discoveryProgressMinutes = before.totalFocusMinutes % 25,
         )
+        val updatedTotalFocusMinutes = before.totalFocusMinutes + reward.creditedMinutes
+        val evolution = CompanionGrowth.evolutionBetween(
+            beforeMinutes = before.totalFocusMinutes,
+            afterMinutes = updatedTotalFocusMinutes,
+        )
         val nearbyFootprints = if (phase == SessionPhase.COMPLETED) {
             worldRepository.footprints(
                 expedition = before.expedition,
@@ -313,7 +325,8 @@ class FocusViewModel(
             phase = phase,
             remainingSeconds = 0,
             reward = reward,
-            totalFocusMinutes = before.totalFocusMinutes + reward.creditedMinutes,
+            companionEvolution = evolution,
+            totalFocusMinutes = updatedTotalFocusMinutes,
             footprints = nearbyFootprints,
             selectedFootprintPresetId = null,
             footprintPosted = false,
