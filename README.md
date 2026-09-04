@@ -41,6 +41,7 @@ The previous React/Vite PWA prototype is preserved on the `archive/pwa-mvp-v0.1`
 - Fixed-message Footprints for lightweight asynchronous interaction
 - Companion growth from egg to mature form using cumulative focus minutes
 - Distinct Compose Canvas silhouettes for egg / hatchling / first growth / second growth / mature
+- `RAG EVOLVED!` result reveal whenever credited focus crosses a growth threshold
 - Home / Raid / Companion / Log bottom navigation
 - Pure Kotlin domain tests
 - 360×800 and 720×1280 emulator visual QA
@@ -56,6 +57,8 @@ Rag starts as an egg on a fresh install and visually evolves as credited focus t
 - 4,500 min: mature
 
 The Companion tab shows the current form, progress to the next form, time spent together, today's contribution, and a five-form progression strip. Future forms stay dimmed until unlocked.
+
+When a completed or partially credited session crosses a growth threshold, the result state records the old and new form. A rare `RAG EVOLVED!` card briefly shows the previous silhouette before revealing the newly unlocked form. Evolution never depends on streaks or paid acceleration.
 
 ## Build
 
