@@ -39,13 +39,14 @@ internal fun ProPaywallDialog(
                     Text("✓ Focus Raid Pro は解放済みです。")
                     Spacer(Modifier.height(10.dp))
                     Text(
-                        "すべてのPro向けRaid、テーマ、詳細統計、全期間履歴、カスタマイズを利用できます。",
+                        "星渡り航路を含むPro向けRaid、テーマ、詳細統計、全期間履歴、カスタマイズを利用できます。",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 } else {
                     Text("Focus Raid Pro · 買い切り")
                     Spacer(Modifier.height(14.dp))
-                    Text("🗺  すべてのRaid")
+                    Text("✦  Pro Raid『星渡り航路』")
+                    Text("🗺  今後追加されるPro Raid")
                     Text("📊  詳細統計")
                     Text("🗃  全期間の履歴")
                     Text("🎨  すべてのテーマとカスタマイズ")
