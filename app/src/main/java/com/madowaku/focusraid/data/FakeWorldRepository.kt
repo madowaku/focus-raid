@@ -51,6 +51,8 @@ class FakeWorldRepository : WorldRepository {
         seed(Expedition.ABYSS, initialWorld.abyssDepth, "made_it", "2日前"),
         seed(Expedition.ABYSS, initialWorld.abyssDepth, "keep_going", "昨日"),
         seed(Expedition.ABYSS, initialWorld.abyssDepth, "strong", "4時間前"),
+        seed(Expedition.STAR_ROUTE, 1, "waiting", "昨日"),
+        seed(Expedition.STAR_ROUTE, 1, "fire", "2時間前"),
     )
 
     override suspend fun refresh() = Unit
