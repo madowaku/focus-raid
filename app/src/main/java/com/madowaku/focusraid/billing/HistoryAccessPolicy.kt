@@ -45,6 +45,9 @@ object HistoryAccessPolicy {
         val abyssMinutes = entries
             .filter { it.expedition == Expedition.ABYSS }
             .sumOf { it.creditedMinutes }
+        val starRouteMinutes = entries
+            .filter { it.expedition == Expedition.STAR_ROUTE }
+            .sumOf { it.creditedMinutes }
         val completionRatePercent = if (entries.isEmpty()) {
             0
         } else {
@@ -60,6 +63,7 @@ object HistoryAccessPolicy {
             longestMinutes = longestMinutes,
             towerMinutes = towerMinutes,
             abyssMinutes = abyssMinutes,
+            starRouteMinutes = starRouteMinutes,
         )
     }
 }
@@ -73,4 +77,5 @@ data class DetailedHistoryStats(
     val longestMinutes: Int = 0,
     val towerMinutes: Int = 0,
     val abyssMinutes: Int = 0,
+    val starRouteMinutes: Int = 0,
 )
