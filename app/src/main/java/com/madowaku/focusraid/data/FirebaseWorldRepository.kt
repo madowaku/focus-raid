@@ -184,6 +184,8 @@ class FirebaseWorldRepository private constructor(
                     )
                 }
 
+            FirebaseAppCheckInstaller.install(app)
+
             return FirebaseWorldRepository(
                 auth = FirebaseAuth.getInstance(app),
                 firestore = FirebaseFirestore.getInstance(app),
