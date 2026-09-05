@@ -5,11 +5,22 @@ import org.junit.Test
 
 class StarRouteTest {
     @Test
-    fun `checkpoint advances every 25 accumulated focus minutes`() {
-        assertEquals(1, StarRoute.checkpoint(0))
-        assertEquals(1, StarRoute.checkpoint(24))
-        assertEquals(2, StarRoute.checkpoint(25))
-        assertEquals(5, StarRoute.checkpoint(100))
+    fun `target checkpoint points to the next 25 minute destination`() {
+        assertEquals(1, StarRoute.targetCheckpoint(0))
+        assertEquals(1, StarRoute.targetCheckpoint(24))
+        assertEquals(2, StarRoute.targetCheckpoint(25))
+        assertEquals(3, StarRoute.targetCheckpoint(50))
+        assertEquals(5, StarRoute.targetCheckpoint(100))
+    }
+
+    @Test
+    fun `reached checkpoint names the destination just completed`() {
+        assertEquals(0, StarRoute.reachedCheckpoint(0))
+        assertEquals(1, StarRoute.reachedCheckpoint(1))
+        assertEquals(1, StarRoute.reachedCheckpoint(25))
+        assertEquals(2, StarRoute.reachedCheckpoint(50))
+        assertEquals(3, StarRoute.reachedCheckpoint(75))
+        assertEquals(4, StarRoute.reachedCheckpoint(100))
     }
 
     @Test
