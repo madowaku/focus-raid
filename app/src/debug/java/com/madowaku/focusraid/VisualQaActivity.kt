@@ -6,6 +6,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.CompositionLocalProvider
+import com.madowaku.focusraid.billing.AccessLevel
 import com.madowaku.focusraid.core.domain.CompanionEvolution
 import com.madowaku.focusraid.core.domain.CompanionStage
 import com.madowaku.focusraid.core.model.Expedition
@@ -19,6 +21,7 @@ import com.madowaku.focusraid.ui.FocusRaidAppContent
 import com.madowaku.focusraid.ui.FocusSystemAccess
 import com.madowaku.focusraid.ui.FocusSystemAccessDialog
 import com.madowaku.focusraid.ui.FocusUiState
+import com.madowaku.focusraid.ui.LocalProAccessLevel
 import com.madowaku.focusraid.ui.MainTab
 import com.madowaku.focusraid.ui.SessionExitConfirmDialog
 import com.madowaku.focusraid.ui.theme.FocusRaidTheme
@@ -39,6 +42,13 @@ class VisualQaActivity : ComponentActivity() {
                 selectedMinutes = 25,
                 durationSeconds = 25 * 60,
                 remainingSeconds = 18 * 60 + 42,
+            )
+
+            "STAR_READY" -> FocusUiState(
+                selectedMinutes = 25,
+                expedition = Expedition.STAR_ROUTE,
+                totalFocusMinutes = 50,
+                streakDays = 4,
             )
 
             "STAR_ROUTE" -> FocusUiState(
@@ -225,39 +235,42 @@ class VisualQaActivity : ComponentActivity() {
             phase == "LOG" -> MainTab.LOG
             else -> MainTab.HOME
         }
+        val accessLevel = if (phase.startsWith("STAR")) AccessLevel.PRO else AccessLevel.FREE
 
         setContent {
             FocusRaidTheme {
-                FocusRaidAppContent(
-                    state = state,
-                    tab = tab,
-                )
-                if (phase == "CUSTOM") {
-                    CustomDurationSheet(
-                        minutes = 30,
-                        onMinutesChange = {},
-                        onConfirm = {},
-                        onDismiss = {},
-                    )
-                }
-                if (phase == "SYSTEM_ACCESS") {
-                    FocusSystemAccessDialog(
-                        access = FocusSystemAccess(
-                            notificationsEnabled = false,
-                            exactAlarmsEnabled = false,
-                        ),
-                        onRequestNotificationPermission = {},
-                        onRequestExactAlarmPermission = {},
-                        onDismiss = {},
-                        onContinue = {},
-                    )
-                }
-                if (phase == "END_CONFIRM") {
-                    SessionExitConfirmDialog(
+                CompositionLocalProvider(LocalProAccessLevel provides accessLevel) {
+                    FocusRaidAppContent(
                         state = state,
-                        onDismiss = {},
-                        onConfirm = {},
+                        tab = tab,
                     )
+                    if (phase == "CUSTOM") {
+                        CustomDurationSheet(
+                            minutes = 30,
+                            onMinutesChange = {},
+                            onConfirm = {},
+                            onDismiss = {},
+                        )
+                    }
+                    if (phase == "SYSTEM_ACCESS") {
+                        FocusSystemAccessDialog(
+                            access = FocusSystemAccess(
+                                notificationsEnabled = false,
+                                exactAlarmsEnabled = false,
+                            ),
+                            onRequestNotificationPermission = {},
+                            onRequestExactAlarmPermission = {},
+                            onDismiss = {},
+                            onContinue = {},
+                        )
+                    }
+                    if (phase == "END_CONFIRM") {
+                        SessionExitConfirmDialog(
+                            state = state,
+                            onDismiss = {},
+                            onConfirm = {},
+                        )
+                    }
                 }
             }
         }
