@@ -22,10 +22,11 @@ object FeatureAccess {
         accessLevel == AccessLevel.PRO
 
     fun raidAccess(expedition: Expedition): RaidAccess = when (expedition) {
-        // Both launch expeditions remain free. New expeditions should be classified here explicitly.
         Expedition.TOWER,
         Expedition.ABYSS,
         -> RaidAccess.FREE
+
+        Expedition.STAR_ROUTE -> RaidAccess.PRO
     }
 
     fun canUse(expedition: Expedition, accessLevel: AccessLevel): Boolean =
