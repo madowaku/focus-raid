@@ -8,6 +8,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.CompositionLocalProvider
 import com.madowaku.focusraid.billing.AccessLevel
+import com.madowaku.focusraid.billing.ProAccessState
+import com.madowaku.focusraid.billing.ProProduct
+import com.madowaku.focusraid.billing.PurchaseState
 import com.madowaku.focusraid.core.domain.CompanionEvolution
 import com.madowaku.focusraid.core.domain.CompanionStage
 import com.madowaku.focusraid.core.model.Expedition
@@ -23,6 +26,7 @@ import com.madowaku.focusraid.ui.FocusSystemAccessDialog
 import com.madowaku.focusraid.ui.FocusUiState
 import com.madowaku.focusraid.ui.LocalProAccessLevel
 import com.madowaku.focusraid.ui.MainTab
+import com.madowaku.focusraid.ui.ProPaywallDialog
 import com.madowaku.focusraid.ui.SessionExitConfirmDialog
 import com.madowaku.focusraid.ui.theme.FocusRaidTheme
 
@@ -301,6 +305,21 @@ class VisualQaActivity : ComponentActivity() {
                             state = state,
                             onDismiss = {},
                             onConfirm = {},
+                        )
+                    }
+                    if (phase == "PAYWALL") {
+                        ProPaywallDialog(
+                            access = ProAccessState(
+                                accessLevel = AccessLevel.FREE,
+                                product = ProProduct(
+                                    productId = "focus_raid_pro",
+                                    formattedPrice = "¥XXX",
+                                ),
+                            ),
+                            purchaseState = PurchaseState.Idle,
+                            onPurchase = {},
+                            onRestore = {},
+                            onDismiss = {},
                         )
                     }
                 }
