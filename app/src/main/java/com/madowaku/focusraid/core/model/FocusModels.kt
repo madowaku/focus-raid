@@ -3,6 +3,7 @@ package com.madowaku.focusraid.core.model
 enum class Expedition {
     TOWER,
     ABYSS,
+    STAR_ROUTE,
 }
 
 enum class Rarity {
