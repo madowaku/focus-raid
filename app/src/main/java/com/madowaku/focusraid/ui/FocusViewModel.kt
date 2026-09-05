@@ -408,7 +408,7 @@ class FocusViewModel(
                 val elapsedMinutes = ((state.durationSeconds - state.remainingSeconds).coerceAtLeast(0)) / 60
                 state.totalFocusMinutes + elapsedMinutes
             }
-            StarRoute.checkpoint(locationMinutes)
+            StarRoute.reachedCheckpoint(locationMinutes)
         }
     }
 
