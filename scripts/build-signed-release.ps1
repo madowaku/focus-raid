@@ -32,6 +32,52 @@ function Convert-SecureStringToPlainText {
     return [System.Net.NetworkCredential]::new("", $Value).Password
 }
 
+function Resolve-GradleCommand {
+    param([Parameter(Mandatory = $true)][string]$RepoRoot)
+
+    $wrapper = Join-Path $RepoRoot "gradlew.bat"
+    if (Test-Path $wrapper) {
+        return [pscustomobject]@{
+            Path = $wrapper
+            Label = "Gradle Wrapper"
+        }
+    }
+
+    $fromPath = Get-Command "gradle" -ErrorAction SilentlyContinue
+    if ($null -ne $fromPath) {
+        return [pscustomobject]@{
+            Path = $fromPath.Source
+            Label = "system Gradle"
+        }
+    }
+
+    $knownInstall = Join-Path $HOME "tools\gradle-9.5.0\bin\gradle.bat"
+    if (Test-Path $knownInstall) {
+        return [pscustomobject]@{
+            Path = $knownInstall
+            Label = "local Gradle"
+        }
+    }
+
+    $toolsDir = Join-Path $HOME "tools"
+    if (Test-Path $toolsDir) {
+        $discovered = Get-ChildItem -Path $toolsDir -Directory -Filter "gradle-*" -ErrorAction SilentlyContinue |
+            Sort-Object Name -Descending |
+            ForEach-Object { Join-Path $_.FullName "bin\gradle.bat" } |
+            Where-Object { Test-Path $_ } |
+            Select-Object -First 1
+
+        if ($null -ne $discovered) {
+            return [pscustomobject]@{
+                Path = $discovered
+                Label = "local Gradle"
+            }
+        }
+    }
+
+    return $null
+}
+
 function Resolve-AndroidSdk {
     param(
         [Parameter(Mandatory = $true)][string]$RepoRoot,
@@ -82,18 +128,12 @@ $jarsigner = Get-JavaTool -Name "jarsigner"
 $keystoreFullPath = [System.IO.Path]::GetFullPath($KeystorePath)
 $keyDirectory = Split-Path -Parent $keystoreFullPath
 
-$gradlewPath = Join-Path $repoRoot "gradlew.bat"
-if (Test-Path $gradlewPath) {
-    $gradleCommand = $gradlewPath
-    Write-Host "Using Gradle Wrapper: $gradlewPath" -ForegroundColor DarkGray
-} else {
-    $gradle = Get-Command "gradle" -ErrorAction SilentlyContinue
-    if ($null -eq $gradle) {
-        throw "Neither gradlew.bat nor a system Gradle command was found. Install Gradle 9.5.0+ or add the Gradle Wrapper to the repository."
-    }
-    $gradleCommand = $gradle.Source
-    Write-Host "Using system Gradle: $gradleCommand" -ForegroundColor DarkGray
+$resolvedGradle = Resolve-GradleCommand -RepoRoot $repoRoot
+if ($null -eq $resolvedGradle) {
+    throw "Gradle was not found. Expected gradlew.bat, PATH Gradle, or a local install under '$HOME\tools\gradle-*\bin\gradle.bat'."
 }
+$gradleCommand = $resolvedGradle.Path
+Write-Host "Using $($resolvedGradle.Label): $gradleCommand" -ForegroundColor DarkGray
 
 $androidSdk = Resolve-AndroidSdk -RepoRoot $repoRoot -ExplicitPath $AndroidSdkPath
 if ($null -eq $androidSdk) {
