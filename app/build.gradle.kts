@@ -16,6 +16,9 @@ val firebaseAppId = providers.gradleProperty("FOCUS_RAID_FIREBASE_APP_ID")
 val revenueCatGoogleApiKey = providers.gradleProperty("FOCUS_RAID_REVENUECAT_GOOGLE_API_KEY")
     .orElse(providers.environmentVariable("FOCUS_RAID_REVENUECAT_GOOGLE_API_KEY"))
     .getOrElse("")
+val privacyPolicyUrl = providers.gradleProperty("FOCUS_RAID_PRIVACY_POLICY_URL")
+    .orElse(providers.environmentVariable("FOCUS_RAID_PRIVACY_POLICY_URL"))
+    .getOrElse("")
 
 val uploadKeystorePath = providers.gradleProperty("FOCUS_RAID_UPLOAD_KEYSTORE_PATH")
     .orElse(providers.environmentVariable("FOCUS_RAID_UPLOAD_KEYSTORE_PATH"))
@@ -60,6 +63,11 @@ android {
             "String",
             "REVENUECAT_GOOGLE_API_KEY",
             quotedBuildConfig(revenueCatGoogleApiKey),
+        )
+        buildConfigField(
+            "String",
+            "PRIVACY_POLICY_URL",
+            quotedBuildConfig(privacyPolicyUrl),
         )
     }
 

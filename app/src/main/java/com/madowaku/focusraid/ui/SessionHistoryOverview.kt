@@ -18,14 +18,17 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.madowaku.focusraid.BuildConfig
 import com.madowaku.focusraid.billing.AccessLevel
 import com.madowaku.focusraid.billing.DetailedHistoryStats
 import com.madowaku.focusraid.billing.FeatureAccess
@@ -40,9 +43,13 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 @Composable
-internal fun SessionHistoryOverview(state: FocusUiState) {
+internal fun SessionHistoryOverview(
+    state: FocusUiState,
+    privacyPolicyUrl: String = BuildConfig.PRIVACY_POLICY_URL,
+) {
     val accessLevel = LocalProAccessLevel.current
     val openProPaywall = LocalOpenProPaywall.current
+    val uriHandler = LocalUriHandler.current
     val nowEpochMillis = System.currentTimeMillis()
     val allHistory = state.sessionHistory
     val visibleHistory = remember(allHistory, accessLevel, nowEpochMillis) {
@@ -149,6 +156,16 @@ internal fun SessionHistoryOverview(state: FocusUiState) {
                 buttonLabel = "全期間の履歴を見る",
                 onClick = openProPaywall,
             )
+        }
+
+        if (privacyPolicyUrl.isNotBlank()) {
+            Spacer(Modifier.height(8.dp))
+            TextButton(
+                onClick = { uriHandler.openUri(privacyPolicyUrl) },
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+            ) {
+                Text("プライバシーポリシー")
+            }
         }
 
         Spacer(Modifier.height(16.dp))
