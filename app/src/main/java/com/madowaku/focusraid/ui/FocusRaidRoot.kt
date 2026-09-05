@@ -62,11 +62,14 @@ fun FocusRaidRoot(
     var showSystemAccessEducation by rememberSaveable { mutableStateOf(false) }
     var showFootprintDialog by rememberSaveable { mutableStateOf(false) }
     var showProPaywall by rememberSaveable { mutableStateOf(false) }
+    var pendingProExpeditionName by rememberSaveable { mutableStateOf<String?>(null) }
 
-    val openProPaywall = {
+    val openProPaywallFor: (Expedition?) -> Unit = { requestedExpedition ->
+        pendingProExpeditionName = requestedExpedition?.name
         proAccessViewModel.clearPurchaseState()
         showProPaywall = true
     }
+    val openProPaywall = { openProPaywallFor(null) }
 
     LaunchedEffect(state.phase) {
         if (state.phase != SessionPhase.RUNNING && state.phase != SessionPhase.PAUSED) {
@@ -76,6 +79,7 @@ fun FocusRaidRoot(
             showCustomDuration = false
             showSystemAccessEducation = false
             showProPaywall = false
+            pendingProExpeditionName = null
         }
         if (state.phase == SessionPhase.COMPLETED) {
             showFootprintDialog = true
@@ -89,6 +93,14 @@ fun FocusRaidRoot(
             proAccess.accessLevel == AccessLevel.PRO &&
             purchaseState == PurchaseState.Success
         ) {
+            pendingProExpeditionName
+                ?.let { name -> runCatching { Expedition.valueOf(name) }.getOrNull() }
+                ?.takeIf { expedition -> FeatureAccess.canUse(expedition, AccessLevel.PRO) }
+                ?.let { expedition ->
+                    tab = MainTab.HOME
+                    viewModel.selectExpedition(expedition)
+                }
+            pendingProExpeditionName = null
             showProPaywall = false
             proAccessViewModel.clearPurchaseState()
         }
@@ -133,7 +145,7 @@ fun FocusRaidRoot(
                         if (FeatureAccess.canUse(expedition, proAccess.accessLevel)) {
                             viewModel.selectExpedition(expedition)
                         } else {
-                            openProPaywall()
+                            openProPaywallFor(expedition)
                         }
                     },
                     onTimerClick = {
@@ -142,7 +154,7 @@ fun FocusRaidRoot(
                     },
                     onStart = {
                         if (!FeatureAccess.canUse(state.expedition, proAccess.accessLevel)) {
-                            openProPaywall()
+                            openProPaywallFor(state.expedition)
                         } else if (!systemAccess.isReady && !state.systemAccessEducationSeen) {
                             showSystemAccessEducation = true
                         } else {
@@ -176,6 +188,7 @@ fun FocusRaidRoot(
                 onPurchase = onPurchasePro,
                 onRestore = onRestorePurchases,
                 onDismiss = {
+                    pendingProExpeditionName = null
                     proAccessViewModel.clearPurchaseState()
                     showProPaywall = false
                 },
