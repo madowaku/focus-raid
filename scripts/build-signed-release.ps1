@@ -2,6 +2,7 @@
 param(
     [string]$KeystorePath = (Join-Path $HOME ".focus-raid\focus-raid-upload.jks"),
     [string]$Alias = "focusraid-upload",
+    [string]$AndroidSdkPath = "",
     [switch]$SkipClean
 )
 
@@ -31,6 +32,49 @@ function Convert-SecureStringToPlainText {
     return [System.Net.NetworkCredential]::new("", $Value).Password
 }
 
+function Resolve-AndroidSdk {
+    param(
+        [Parameter(Mandatory = $true)][string]$RepoRoot,
+        [string]$ExplicitPath = ""
+    )
+
+    $candidates = New-Object System.Collections.Generic.List[string]
+
+    if (-not [string]::IsNullOrWhiteSpace($ExplicitPath)) {
+        $candidates.Add($ExplicitPath)
+    }
+    if (-not [string]::IsNullOrWhiteSpace($env:ANDROID_HOME)) {
+        $candidates.Add($env:ANDROID_HOME)
+    }
+    if (-not [string]::IsNullOrWhiteSpace($env:ANDROID_SDK_ROOT)) {
+        $candidates.Add($env:ANDROID_SDK_ROOT)
+    }
+
+    $localPropertiesPath = Join-Path $RepoRoot "local.properties"
+    if (Test-Path $localPropertiesPath) {
+        $sdkLine = Get-Content $localPropertiesPath | Where-Object { $_ -match '^sdk\.dir=' } | Select-Object -First 1
+        if ($null -ne $sdkLine) {
+            $value = $sdkLine.Substring("sdk.dir=".Length)
+            $value = $value -replace '\\\\', '\\'
+            if (-not [string]::IsNullOrWhiteSpace($value)) {
+                $candidates.Add($value)
+            }
+        }
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($env:LOCALAPPDATA)) {
+        $candidates.Add((Join-Path $env:LOCALAPPDATA "Android\Sdk"))
+    }
+
+    foreach ($candidate in ($candidates | Select-Object -Unique)) {
+        if (-not [string]::IsNullOrWhiteSpace($candidate) -and (Test-Path $candidate)) {
+            return [System.IO.Path]::GetFullPath($candidate)
+        }
+    }
+
+    return $null
+}
+
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $keytool = Get-JavaTool -Name "keytool"
 $jarsigner = Get-JavaTool -Name "jarsigner"
@@ -49,6 +93,17 @@ if (Test-Path $gradlewPath) {
     $gradleCommand = $gradle.Source
     Write-Host "Using system Gradle: $gradleCommand" -ForegroundColor DarkGray
 }
+
+$androidSdk = Resolve-AndroidSdk -RepoRoot $repoRoot -ExplicitPath $AndroidSdkPath
+if ($null -eq $androidSdk) {
+    throw "Android SDK was not found. Install/open Android Studio once, or rerun with -AndroidSdkPath 'C:\\Users\\<you>\\AppData\\Local\\Android\\Sdk'."
+}
+
+$localPropertiesPath = Join-Path $repoRoot "local.properties"
+$sdkForProperties = $androidSdk.Replace("\\", "/")
+Set-Content -Path $localPropertiesPath -Value "sdk.dir=$sdkForProperties" -Encoding ASCII
+Write-Host "Using Android SDK: $androidSdk" -ForegroundColor DarkGray
+Write-Host "Wrote local.properties (Git-ignored)." -ForegroundColor DarkGray
 
 if (-not (Test-Path $keystoreFullPath)) {
     New-Item -ItemType Directory -Force -Path $keyDirectory | Out-Null
