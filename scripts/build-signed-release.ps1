@@ -37,6 +37,19 @@ $jarsigner = Get-JavaTool -Name "jarsigner"
 $keystoreFullPath = [System.IO.Path]::GetFullPath($KeystorePath)
 $keyDirectory = Split-Path -Parent $keystoreFullPath
 
+$gradlewPath = Join-Path $repoRoot "gradlew.bat"
+if (Test-Path $gradlewPath) {
+    $gradleCommand = $gradlewPath
+    Write-Host "Using Gradle Wrapper: $gradlewPath" -ForegroundColor DarkGray
+} else {
+    $gradle = Get-Command "gradle" -ErrorAction SilentlyContinue
+    if ($null -eq $gradle) {
+        throw "Neither gradlew.bat nor a system Gradle command was found. Install Gradle 9.5.0+ or add the Gradle Wrapper to the repository."
+    }
+    $gradleCommand = $gradle.Source
+    Write-Host "Using system Gradle: $gradleCommand" -ForegroundColor DarkGray
+}
+
 if (-not (Test-Path $keystoreFullPath)) {
     New-Item -ItemType Directory -Force -Path $keyDirectory | Out-Null
 
@@ -119,7 +132,7 @@ try {
             @("clean", "bundleRelease", "--stacktrace")
         }
 
-        & ".\gradlew.bat" @gradleArgs
+        & $gradleCommand @gradleArgs
         if ($LASTEXITCODE -ne 0) {
             throw "Gradle bundleRelease failed."
         }
