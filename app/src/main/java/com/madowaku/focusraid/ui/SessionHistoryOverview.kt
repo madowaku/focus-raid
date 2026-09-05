@@ -19,7 +19,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -275,6 +274,11 @@ private fun DetailedStatsCard(stats: DetailedHistoryStats) {
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = .76f),
             )
+            Text(
+                "星渡り航路 ${stats.starRouteMinutes}分",
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = .76f),
+            )
         }
     }
 }
@@ -362,6 +366,7 @@ private fun SessionHistoryCard(entry: SessionHistoryEntry) {
     val expeditionLabel = when (entry.expedition) {
         Expedition.TOWER -> "天空塔"
         Expedition.ABYSS -> "深層迷宮"
+        Expedition.STAR_ROUTE -> "星渡り航路"
     }
 
     Card(
