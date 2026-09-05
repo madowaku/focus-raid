@@ -2,15 +2,17 @@ package com.madowaku.focusraid.core.domain
 
 object StarRoute {
     const val BEACONS_PER_ROUTE = 5
-    private const val MINUTES_PER_CHECKPOINT = 25
+    const val MINUTES_PER_CHECKPOINT = 25
+
+    fun reachedCheckpoint(totalFocusMinutes: Int): Int =
+        totalFocusMinutes.coerceAtLeast(0) / MINUTES_PER_CHECKPOINT
 
     fun targetCheckpoint(totalFocusMinutes: Int): Int =
-        totalFocusMinutes.coerceAtLeast(0) / MINUTES_PER_CHECKPOINT + 1
+        reachedCheckpoint(totalFocusMinutes) + 1
 
-    fun reachedCheckpoint(totalFocusMinutes: Int): Int {
-        val minutes = totalFocusMinutes.coerceAtLeast(0)
-        if (minutes == 0) return 0
-        return (minutes - 1) / MINUTES_PER_CHECKPOINT + 1
+    fun minutesUntilTarget(totalFocusMinutes: Int): Int {
+        val progressMinutes = totalFocusMinutes.coerceAtLeast(0) % MINUTES_PER_CHECKPOINT
+        return MINUTES_PER_CHECKPOINT - progressMinutes
     }
 
     fun litBeacons(progress: Float): Int =
