@@ -10,6 +10,7 @@ Focus Raid is an Android-native focus timer where real-world concentration power
 - World systems reward cooperation, not rankings.
 - During a focus session, the app becomes quiet.
 - The world can be playful; the timer must remain useful.
+- Shared features must stay low-maintenance: preset interaction over free-form moderation.
 
 ## Android v1 direction
 
@@ -23,8 +24,9 @@ Focus Raid v1 is intentionally Android-only.
 - Preferences DataStore session recovery
 - Room session history
 - Pure Kotlin domain rules
-- Optional Firebase Auth + Firestore shared-world reads
-- Cloud Run remains the planned boundary for authoritative world writes
+- Optional Firebase Auth + Firestore shared world and preset footprints
+- RevenueCat-backed one-time Pro entitlement
+- Cloud Run remains the planned boundary for any future authoritative world writes
 
 The previous React/Vite PWA prototype is preserved on the `archive/pwa-mvp-v0.1` branch.
 
@@ -39,16 +41,39 @@ The previous React/Vite PWA prototype is preserved on the `archive/pwa-mvp-v0.1`
 - Notification and exact-alarm education before optional system access
 - Adventure Log backed by Room
 - Today focus minutes and streak derived from actual local history
-- Fixed-message Footprints for lightweight asynchronous interaction
 - Companion growth from egg to mature form using cumulative focus minutes
 - Distinct Compose Canvas silhouettes for egg / hatchling / first growth / second growth / mature
 - `RAG EVOLVED!` result reveal whenever credited focus crosses a growth threshold
-- Anonymous Firebase Auth + one-shot Firestore `world/current` read when backend config is present
-- Local preview fallback when Firebase is unavailable or unconfigured
-- Shared-world refresh only outside active RUNNING / PAUSED sessions
 - Home / Raid / Companion / Log bottom navigation
+- World Raid overview with shared boss, Tower, Abyss, and Pro Star Route progress
+- Star Route as the first real Pro expedition
+- Detailed statistics and full-history access for Pro
+- RevenueCat purchase/restore wiring around entitlement `pro`
+- Anonymous Firebase Auth + one-shot Firestore `world/current` read when backend config is present
+- Preset-only shared Footprints fetched and posted asynchronously after completed sessions
+- One anonymous user footprint per checkpoint, with no free-form social text
+- No fake-user fallback for Footprints when a real Firebase backend is configured but unavailable
+- Shared-world refresh only outside active RUNNING / PAUSED sessions
 - Pure Kotlin domain tests
-- 26 Android emulator visual QA screenshots across 360×800 and 720×1280, including evolution
+- Android emulator visual QA across 360×800 and 720×1280, including Free/Pro, paywall, companion evolution, and footprint states
+
+## Monetization
+
+Focus Raid uses **Free + Pro lifetime purchase**. There is no subscription and no advertising.
+
+The guiding boundary is:
+
+> Focus features stay Free. Pro unlocks more world and deeper records.
+
+The current paywall sells only implemented value:
+
+- Pro Raid: Star Route
+- detailed statistics
+- full history
+
+The Android purchase still goes through Google Play. RevenueCat validates the purchase and exposes the `pro` entitlement to the app. If RevenueCat configuration is absent, the Free app remains usable.
+
+See `docs/billing.md` for configuration and store-test requirements.
 
 ## Companion growth
 
@@ -64,7 +89,7 @@ The Companion tab shows the current form, progress to the next form, time spent 
 
 When a completed or partially credited session crosses a growth threshold, the result state records the old and new form. A rare `RAG EVOLVED!` card briefly shows the previous silhouette before revealing the newly unlocked form. Evolution never depends on streaks or paid acceleration.
 
-## Shared world
+## Shared world and Footprints
 
 The Android client can initialize Firebase without committing `google-services.json`.
 
@@ -76,11 +101,15 @@ FOCUS_RAID_FIREBASE_API_KEY
 FOCUS_RAID_FIREBASE_APP_ID
 ```
 
-When all three exist, Focus Raid signs in anonymously and performs a one-shot server read of `world/current` while the app is outside an active focus session. Missing or failed backend configuration falls back to `FakeWorldRepository`, so cloud availability never blocks the timer.
+When all three exist, Focus Raid signs in anonymously and performs a one-shot server read of `world/current` while the app is outside an active focus session. Completed sessions can then fetch the latest preset Footprints for the reached checkpoint and post one preset Footprint for the current anonymous user.
 
-`WorldRepository` exposes both the latest snapshot and a sync status (`LOCAL_PREVIEW`, `CONNECTING`, `LIVE`, `OFFLINE`). Firestore data is mapped defensively, so incomplete remote documents cannot crash the focus UI.
+Footprint documents store only a preset ID and server timestamp. The displayed message and glyph come from the app's built-in preset list. Free-form text is never written to Firestore.
 
-See `docs/firebase-setup.md` for the Firestore document shape and setup steps.
+If Firebase configuration is missing, the app uses `FakeWorldRepository` for local preview. If a real Firebase backend is configured but a Footprint request fails, Focus Raid shows no remote Footprints rather than pretending seeded users are real.
+
+`WorldRepository` exposes both the latest snapshot and a sync status (`LOCAL_PREVIEW`, `CONNECTING`, `LIVE`, `OFFLINE`). Firestore data is mapped defensively, and all Footprint network work is asynchronous so cloud availability never blocks starting or completing a focus session.
+
+See `docs/firebase-setup.md` for the Firestore shape, preset Footprint model, and Security Rules.
 
 ## Build
 
@@ -112,6 +141,12 @@ gradlew.bat test
 gradlew.bat assembleDebug
 ```
 
+## Release gate
+
+Automated CI protects the timer and core UI, but production credentials, store purchases, Firebase Security Rules deployment, privacy policy, Google Play Data Safety, release signing, and final device testing are manual release gates.
+
+See `docs/release-readiness.md` before creating the public Play release.
+
 ## Architecture
 
 See:
@@ -122,3 +157,5 @@ See:
 - `docs/rag-baby-sprite.md`
 - `docs/companion-growth.md`
 - `docs/firebase-setup.md`
+- `docs/billing.md`
+- `docs/release-readiness.md`

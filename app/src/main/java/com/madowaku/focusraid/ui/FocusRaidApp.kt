@@ -63,6 +63,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.madowaku.focusraid.billing.FeatureAccess
 import com.madowaku.focusraid.core.domain.CompanionEvolution
 import com.madowaku.focusraid.core.domain.CompanionGrowth
 import com.madowaku.focusraid.core.domain.CompanionStage
@@ -204,7 +205,7 @@ internal fun FocusRaidAppContent(
                             onStart = onStart,
                         )
 
-                        MainTab.RAID -> RaidOverview(state)
+                        MainTab.RAID -> WorldRaidOverview(state)
                         MainTab.COMPANION -> CompanionProgressOverview(state)
                         MainTab.LOG -> SessionHistoryOverview(state)
                     }
@@ -326,10 +327,19 @@ private fun ReadyScreen(
         ExpeditionSelector(state.expedition, onSelectExpedition)
 
         Spacer(Modifier.height(12.dp))
-        StartButton(onStart)
+        StartButton(expedition = state.expedition, onClick = onStart)
 
         Spacer(Modifier.height(14.dp))
-        BossCard(state)
+        AnimatedContent(
+            targetState = state.expedition,
+            label = "ready-expedition-card",
+        ) { expedition ->
+            if (expedition == Expedition.STAR_ROUTE) {
+                StarRouteLaunchCard(state)
+            } else {
+                BossCard(state)
+            }
+        }
         Spacer(Modifier.height(12.dp))
     }
 }
@@ -413,19 +423,27 @@ private fun DurationSelector(selected: Int, onSelect: (Int) -> Unit) {
 
 @Composable
 private fun ExpeditionSelector(selected: Expedition, onSelect: (Expedition) -> Unit) {
+    val accessLevel = LocalProAccessLevel.current
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Expedition.entries.forEach { expedition ->
+            val locked = !FeatureAccess.canUse(expedition, accessLevel)
+            val label = when (expedition) {
+                Expedition.TOWER -> "天空塔"
+                Expedition.ABYSS -> "深層迷宮"
+                Expedition.STAR_ROUTE -> if (locked) "🔒 星渡り" else "✦ 星渡り"
+            }
             FilterChip(
                 selected = selected == expedition,
                 onClick = { onSelect(expedition) },
                 label = {
                     Text(
-                        if (expedition == Expedition.TOWER) "天空塔" else "深層迷宮",
+                        label,
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Center,
+                        fontSize = 12.sp,
                     )
                 },
                 modifier = Modifier
@@ -438,7 +456,7 @@ private fun ExpeditionSelector(selected: Expedition, onSelect: (Expedition) -> U
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun StartButton(onClick: () -> Unit) {
+private fun StartButton(expedition: Expedition, onClick: () -> Unit) {
     Button(
         onClick = onClick,
         modifier = Modifier
@@ -451,7 +469,7 @@ private fun StartButton(onClick: () -> Unit) {
         ),
     ) {
         Text(
-            "⚔  レイド開始",
+            if (expedition == Expedition.STAR_ROUTE) "✦  星渡りへ出航" else "⚔  レイド開始",
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
         )
@@ -536,7 +554,11 @@ private fun RaidScreen(
                 color = MaterialTheme.colorScheme.primaryContainer,
             ) {
                 Text(
-                    if (paused) "PAUSED" else "RAID",
+                    when {
+                        paused -> "PAUSED"
+                        state.expedition == Expedition.STAR_ROUTE -> "STAR ROUTE"
+                        else -> "RAID"
+                    },
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
@@ -601,6 +623,11 @@ private fun RaidScreen(
 
 @Composable
 private fun RaidMiniCard(state: FocusUiState) {
+    if (state.expedition == Expedition.STAR_ROUTE) {
+        StarRouteProgressCard(state)
+        return
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
@@ -813,6 +840,11 @@ private fun VictoryScreen(
                     textAlign = TextAlign.Center,
                 )
             }
+        }
+
+        if (state.expedition == Expedition.STAR_ROUTE) {
+            Spacer(Modifier.height(12.dp))
+            StarRouteVictoryCard(state)
         }
 
         Spacer(Modifier.height(12.dp))

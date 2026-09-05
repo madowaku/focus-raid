@@ -13,6 +13,31 @@ val firebaseApiKey = providers.gradleProperty("FOCUS_RAID_FIREBASE_API_KEY")
 val firebaseAppId = providers.gradleProperty("FOCUS_RAID_FIREBASE_APP_ID")
     .orElse(providers.environmentVariable("FOCUS_RAID_FIREBASE_APP_ID"))
     .getOrElse("")
+val revenueCatGoogleApiKey = providers.gradleProperty("FOCUS_RAID_REVENUECAT_GOOGLE_API_KEY")
+    .orElse(providers.environmentVariable("FOCUS_RAID_REVENUECAT_GOOGLE_API_KEY"))
+    .getOrElse("")
+val privacyPolicyUrl = providers.gradleProperty("FOCUS_RAID_PRIVACY_POLICY_URL")
+    .orElse(providers.environmentVariable("FOCUS_RAID_PRIVACY_POLICY_URL"))
+    .getOrElse("")
+
+val uploadKeystorePath = providers.gradleProperty("FOCUS_RAID_UPLOAD_KEYSTORE_PATH")
+    .orElse(providers.environmentVariable("FOCUS_RAID_UPLOAD_KEYSTORE_PATH"))
+    .getOrElse("")
+val uploadStorePassword = providers.gradleProperty("FOCUS_RAID_UPLOAD_STORE_PASSWORD")
+    .orElse(providers.environmentVariable("FOCUS_RAID_UPLOAD_STORE_PASSWORD"))
+    .getOrElse("")
+val uploadKeyAlias = providers.gradleProperty("FOCUS_RAID_UPLOAD_KEY_ALIAS")
+    .orElse(providers.environmentVariable("FOCUS_RAID_UPLOAD_KEY_ALIAS"))
+    .getOrElse("")
+val uploadKeyPassword = providers.gradleProperty("FOCUS_RAID_UPLOAD_KEY_PASSWORD")
+    .orElse(providers.environmentVariable("FOCUS_RAID_UPLOAD_KEY_PASSWORD"))
+    .getOrElse("")
+val releaseSigningConfigured = listOf(
+    uploadKeystorePath,
+    uploadStorePassword,
+    uploadKeyAlias,
+    uploadKeyPassword,
+).all { it.isNotBlank() }
 
 fun quotedBuildConfig(value: String): String =
     "\"${value.replace("\\", "\\\\").replace("\"", "\\\"")}\""
@@ -34,6 +59,35 @@ android {
         buildConfigField("String", "FIREBASE_PROJECT_ID", quotedBuildConfig(firebaseProjectId))
         buildConfigField("String", "FIREBASE_API_KEY", quotedBuildConfig(firebaseApiKey))
         buildConfigField("String", "FIREBASE_APP_ID", quotedBuildConfig(firebaseAppId))
+        buildConfigField(
+            "String",
+            "REVENUECAT_GOOGLE_API_KEY",
+            quotedBuildConfig(revenueCatGoogleApiKey),
+        )
+        buildConfigField(
+            "String",
+            "PRIVACY_POLICY_URL",
+            quotedBuildConfig(privacyPolicyUrl),
+        )
+    }
+
+    signingConfigs {
+        if (releaseSigningConfigured) {
+            create("releaseUpload") {
+                storeFile = file(uploadKeystorePath)
+                storePassword = uploadStorePassword
+                keyAlias = uploadKeyAlias
+                keyPassword = uploadKeyPassword
+            }
+        }
+    }
+
+    buildTypes {
+        getByName("release") {
+            if (releaseSigningConfigured) {
+                signingConfig = signingConfigs.getByName("releaseUpload")
+            }
+        }
     }
 
     buildFeatures {
@@ -71,12 +125,15 @@ dependencies {
     implementation("androidx.compose.material3:material3:1.5.0-alpha27")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
+    implementation("com.revenuecat.purchases:purchases:10.15.1")
 
     val firebaseBom = platform("com.google.firebase:firebase-bom:34.4.0")
     implementation(firebaseBom)
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-appcheck-playintegrity")
 
+    debugImplementation("com.google.firebase:firebase-appcheck-debug")
     debugImplementation("androidx.compose.ui:ui-tooling")
 
     testImplementation("junit:junit:4.13.2")

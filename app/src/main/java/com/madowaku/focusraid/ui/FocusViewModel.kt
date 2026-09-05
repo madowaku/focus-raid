@@ -7,6 +7,7 @@ import com.madowaku.focusraid.core.domain.CompanionEvolution
 import com.madowaku.focusraid.core.domain.CompanionGrowth
 import com.madowaku.focusraid.core.domain.FocusActivitySummaries
 import com.madowaku.focusraid.core.domain.FocusRules
+import com.madowaku.focusraid.core.domain.StarRoute
 import com.madowaku.focusraid.core.model.Expedition
 import com.madowaku.focusraid.core.model.Footprint
 import com.madowaku.focusraid.core.model.FootprintPresets
@@ -47,8 +48,11 @@ data class FocusUiState(
     val worldSyncStatus: WorldSyncStatus = WorldSyncStatus.LOCAL_PREVIEW,
     val systemAccessEducationSeen: Boolean = false,
     val footprints: List<Footprint> = emptyList(),
+    val footprintsLoading: Boolean = false,
     val selectedFootprintPresetId: String? = null,
+    val footprintPosting: Boolean = false,
     val footprintPosted: Boolean = false,
+    val footprintPostError: String? = null,
     val sessionHistory: List<SessionHistoryEntry> = emptyList(),
 ) {
     val progress: Float
@@ -133,25 +137,75 @@ class FocusViewModel(
 
     fun selectFootprintPreset(presetId: String) {
         val current = _uiState.value
-        if (current.phase != SessionPhase.COMPLETED || current.footprintPosted) return
+        if (
+            current.phase != SessionPhase.COMPLETED ||
+            current.footprintPosted ||
+            current.footprintPosting
+        ) {
+            return
+        }
         if (FootprintPresets.byId(presetId) == null) return
-        _uiState.value = current.copy(selectedFootprintPresetId = presetId)
+        _uiState.value = current.copy(
+            selectedFootprintPresetId = presetId,
+            footprintPostError = null,
+        )
     }
 
     fun leaveFootprint() {
         val current = _uiState.value
-        if (current.phase != SessionPhase.COMPLETED || current.footprintPosted) return
+        if (
+            current.phase != SessionPhase.COMPLETED ||
+            current.footprintPosted ||
+            current.footprintPosting
+        ) {
+            return
+        }
         val presetId = current.selectedFootprintPresetId ?: return
-        val footprint = worldRepository.leaveFootprint(
-            expedition = current.expedition,
-            checkpoint = checkpointFor(current),
-            presetId = presetId,
-        ) ?: return
+        val expedition = current.expedition
+        val checkpoint = checkpointFor(current)
 
         _uiState.value = current.copy(
-            footprints = (listOf(footprint) + current.footprints).take(3),
-            footprintPosted = true,
+            footprintPosting = true,
+            footprintPostError = null,
         )
+
+        viewModelScope.launch {
+            val footprint = runCatching {
+                worldRepository.leaveFootprint(
+                    expedition = expedition,
+                    checkpoint = checkpoint,
+                    presetId = presetId,
+                )
+            }.getOrNull()
+
+            val latest = _uiState.value
+            val sameLocation = latest.phase == SessionPhase.COMPLETED &&
+                latest.expedition == expedition &&
+                checkpointFor(latest) == checkpoint
+            if (!sameLocation) return@launch
+
+            if (footprint == null) {
+                _uiState.value = latest.copy(
+                    footprintPosting = false,
+                    footprintPostError = "足跡を送信できませんでした。通信を確認してもう一度お試しください。",
+                )
+                return@launch
+            }
+
+            val refreshed = runCatching {
+                worldRepository.footprints(
+                    expedition = expedition,
+                    checkpoint = checkpoint,
+                )
+            }.getOrNull()
+            _uiState.value = latest.copy(
+                footprints = refreshed ?: (listOf(footprint) + latest.footprints).take(3),
+                footprintsLoading = false,
+                footprintPosting = false,
+                footprintPosted = true,
+                footprintPostError = null,
+            )
+        }
     }
 
     fun start() {
@@ -167,8 +221,11 @@ class FocusViewModel(
             reward = null,
             companionEvolution = null,
             footprints = emptyList(),
+            footprintsLoading = false,
             selectedFootprintPresetId = null,
+            footprintPosting = false,
             footprintPosted = false,
+            footprintPostError = null,
         )
         alarmScheduler.schedule(endEpochMillis)
         persistSession {
@@ -241,8 +298,11 @@ class FocusViewModel(
             reward = null,
             companionEvolution = null,
             footprints = emptyList(),
+            footprintsLoading = false,
             selectedFootprintPresetId = null,
+            footprintPosting = false,
             footprintPosted = false,
+            footprintPostError = null,
         )
     }
 
@@ -259,6 +319,12 @@ class FocusViewModel(
             totalFocusMinutes = saved.totalFocusMinutes,
             world = worldRepository.snapshot(),
             systemAccessEducationSeen = saved.systemAccessEducationSeen,
+            footprints = emptyList(),
+            footprintsLoading = false,
+            selectedFootprintPresetId = null,
+            footprintPosting = false,
+            footprintPosted = false,
+            footprintPostError = null,
         )
 
         when (saved.phase) {
@@ -339,13 +405,20 @@ class FocusViewModel(
             beforeMinutes = before.totalFocusMinutes,
             afterMinutes = updatedTotalFocusMinutes,
         )
-        val nearbyFootprints = if (phase == SessionPhase.COMPLETED) {
-            worldRepository.footprints(
-                expedition = before.expedition,
-                checkpoint = checkpointFor(before),
-            )
+        val reachedNewStarRouteCheckpoint = before.expedition != Expedition.STAR_ROUTE ||
+            StarRoute.reachedCheckpoint(updatedTotalFocusMinutes) >
+            StarRoute.reachedCheckpoint(before.totalFocusMinutes)
+        val footprintCheckpoint = if (
+            phase == SessionPhase.COMPLETED &&
+            reachedNewStarRouteCheckpoint
+        ) {
+            if (before.expedition == Expedition.STAR_ROUTE) {
+                StarRoute.reachedCheckpoint(updatedTotalFocusMinutes)
+            } else {
+                checkpointFor(before)
+            }
         } else {
-            emptyList()
+            null
         }
         val sessionId = activeSessionId ?: UUID.randomUUID().toString()
         val completedAtEpochMillis = nowMillis()
@@ -357,9 +430,12 @@ class FocusViewModel(
             reward = reward,
             companionEvolution = evolution,
             totalFocusMinutes = updatedTotalFocusMinutes,
-            footprints = nearbyFootprints,
+            footprints = emptyList(),
+            footprintsLoading = footprintCheckpoint != null,
             selectedFootprintPresetId = null,
+            footprintPosting = false,
             footprintPosted = false,
+            footprintPostError = null,
         )
 
         persistSession {
@@ -387,6 +463,42 @@ class FocusViewModel(
                 creditedMinutes = reward.creditedMinutes,
             )
         }
+
+        footprintCheckpoint?.let { checkpoint ->
+            loadNearbyFootprints(
+                expedition = before.expedition,
+                checkpoint = checkpoint,
+            )
+        }
+    }
+
+    private fun loadNearbyFootprints(
+        expedition: Expedition,
+        checkpoint: Int,
+    ) {
+        viewModelScope.launch {
+            val nearby = runCatching {
+                worldRepository.footprints(
+                    expedition = expedition,
+                    checkpoint = checkpoint,
+                )
+            }.getOrElse { emptyList() }
+
+            val current = _uiState.value
+            val sameLocation = current.phase == SessionPhase.COMPLETED &&
+                current.expedition == expedition &&
+                checkpointFor(current) == checkpoint
+            if (!sameLocation) return@launch
+
+            _uiState.value = if (current.footprintPosting || current.footprintPosted) {
+                current.copy(footprintsLoading = false)
+            } else {
+                current.copy(
+                    footprints = nearby,
+                    footprintsLoading = false,
+                )
+            }
+        }
     }
 
     private fun persistSession(block: suspend () -> Unit) {
@@ -400,6 +512,7 @@ class FocusViewModel(
     private fun checkpointFor(state: FocusUiState): Int = when (state.expedition) {
         Expedition.TOWER -> state.world.towerFloor
         Expedition.ABYSS -> state.world.abyssDepth
+        Expedition.STAR_ROUTE -> StarRoute.reachedCheckpoint(state.totalFocusMinutes)
     }
 
     class Factory(

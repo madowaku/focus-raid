@@ -30,13 +30,25 @@ capture() {
 }
 
 capture READY 360 800 ready-360x800
+capture STAR_READY 360 800 star-ready-360x800
 capture CUSTOM 360 800 custom-360x800
 capture SYSTEM_ACCESS 360 800 system-access-360x800
+capture PAYWALL 360 800 paywall-360x800
 capture RAID 360 800 raid-360x800
+capture RAID_OVERVIEW 360 800 raid-overview-free-360x800
+capture RAID_OVERVIEW_PRO 360 800 raid-overview-pro-360x800
+capture STAR_ROUTE 360 800 star-route-360x800
 capture PAUSED 360 800 paused-360x800
 capture END_CONFIRM 360 800 end-confirm-360x800
 capture ABORTED 360 800 aborted-360x800
 capture VICTORY 360 800 victory-360x800
+capture FOOTPRINT_LOADING 360 800 footprint-loading-360x800
+capture FOOTPRINT_PRESENT 360 800 footprint-present-360x800
+capture FOOTPRINT_POSTING 360 800 footprint-posting-360x800
+capture FOOTPRINT_ERROR 360 800 footprint-error-360x800
+capture FOOTPRINT_POSTED 360 800 footprint-posted-360x800
+capture STAR_VICTORY 360 800 star-victory-360x800
+capture STAR_CONTINUE 360 800 star-continue-360x800
 capture EVOLUTION 360 800 evolution-360x800
 capture COMPANION_EGG 360 800 companion-egg-360x800
 capture COMPANION 360 800 companion-hatchling-360x800
@@ -44,17 +56,28 @@ capture COMPANION_FIRST 360 800 companion-first-360x800
 capture COMPANION_SECOND 360 800 companion-second-360x800
 capture COMPANION_MATURE 360 800 companion-mature-360x800
 capture LOG 360 800 log-360x800
+capture LOG_PRO 360 800 log-pro-360x800
 capture READY 720 1280 ready-720x1280
+capture STAR_READY 720 1280 star-ready-720x1280
 capture CUSTOM 720 1280 custom-720x1280
 capture SYSTEM_ACCESS 720 1280 system-access-720x1280
+capture PAYWALL 720 1280 paywall-720x1280
 capture RAID 720 1280 raid-720x1280
+capture RAID_OVERVIEW 720 1280 raid-overview-free-720x1280
+capture RAID_OVERVIEW_PRO 720 1280 raid-overview-pro-720x1280
+capture STAR_ROUTE 720 1280 star-route-720x1280
 capture PAUSED 720 1280 paused-720x1280
 capture END_CONFIRM 720 1280 end-confirm-720x1280
 capture ABORTED 720 1280 aborted-720x1280
 capture VICTORY 720 1280 victory-720x1280
+capture FOOTPRINT_PRESENT 720 1280 footprint-present-720x1280
+capture FOOTPRINT_POSTED 720 1280 footprint-posted-720x1280
+capture STAR_VICTORY 720 1280 star-victory-720x1280
+capture STAR_CONTINUE 720 1280 star-continue-720x1280
 capture EVOLUTION 720 1280 evolution-720x1280
 capture COMPANION 720 1280 companion-hatchling-720x1280
 capture LOG 720 1280 log-720x1280
+capture LOG_PRO 720 1280 log-pro-720x1280
 
 python3 - <<'PY'
 from pathlib import Path
@@ -62,13 +85,25 @@ import struct
 
 expected = {
     "ready-360x800.png": (360, 800),
+    "star-ready-360x800.png": (360, 800),
     "custom-360x800.png": (360, 800),
     "system-access-360x800.png": (360, 800),
+    "paywall-360x800.png": (360, 800),
     "raid-360x800.png": (360, 800),
+    "raid-overview-free-360x800.png": (360, 800),
+    "raid-overview-pro-360x800.png": (360, 800),
+    "star-route-360x800.png": (360, 800),
     "paused-360x800.png": (360, 800),
     "end-confirm-360x800.png": (360, 800),
     "aborted-360x800.png": (360, 800),
     "victory-360x800.png": (360, 800),
+    "footprint-loading-360x800.png": (360, 800),
+    "footprint-present-360x800.png": (360, 800),
+    "footprint-posting-360x800.png": (360, 800),
+    "footprint-error-360x800.png": (360, 800),
+    "footprint-posted-360x800.png": (360, 800),
+    "star-victory-360x800.png": (360, 800),
+    "star-continue-360x800.png": (360, 800),
     "evolution-360x800.png": (360, 800),
     "companion-egg-360x800.png": (360, 800),
     "companion-hatchling-360x800.png": (360, 800),
@@ -76,17 +111,28 @@ expected = {
     "companion-second-360x800.png": (360, 800),
     "companion-mature-360x800.png": (360, 800),
     "log-360x800.png": (360, 800),
+    "log-pro-360x800.png": (360, 800),
     "ready-720x1280.png": (720, 1280),
+    "star-ready-720x1280.png": (720, 1280),
     "custom-720x1280.png": (720, 1280),
     "system-access-720x1280.png": (720, 1280),
+    "paywall-720x1280.png": (720, 1280),
     "raid-720x1280.png": (720, 1280),
+    "raid-overview-free-720x1280.png": (720, 1280),
+    "raid-overview-pro-720x1280.png": (720, 1280),
+    "star-route-720x1280.png": (720, 1280),
     "paused-720x1280.png": (720, 1280),
     "end-confirm-720x1280.png": (720, 1280),
     "aborted-720x1280.png": (720, 1280),
     "victory-720x1280.png": (720, 1280),
+    "footprint-present-720x1280.png": (720, 1280),
+    "footprint-posted-720x1280.png": (720, 1280),
+    "star-victory-720x1280.png": (720, 1280),
+    "star-continue-720x1280.png": (720, 1280),
     "evolution-720x1280.png": (720, 1280),
     "companion-hatchling-720x1280.png": (720, 1280),
     "log-720x1280.png": (720, 1280),
+    "log-pro-720x1280.png": (720, 1280),
 }
 
 root = Path("artifacts/visual")
