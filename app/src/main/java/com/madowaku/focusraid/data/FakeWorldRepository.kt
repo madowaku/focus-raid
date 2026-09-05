@@ -23,13 +23,13 @@ interface WorldRepository {
 
     suspend fun refresh()
 
-    fun footprints(
+    suspend fun footprints(
         expedition: Expedition,
         checkpoint: Int,
         limit: Int = 3,
     ): List<Footprint>
 
-    fun leaveFootprint(
+    suspend fun leaveFootprint(
         expedition: Expedition,
         checkpoint: Int,
         presetId: String,
@@ -57,7 +57,7 @@ class FakeWorldRepository : WorldRepository {
 
     override suspend fun refresh() = Unit
 
-    override fun footprints(
+    override suspend fun footprints(
         expedition: Expedition,
         checkpoint: Int,
         limit: Int,
@@ -68,7 +68,7 @@ class FakeWorldRepository : WorldRepository {
         .take(limit.coerceAtLeast(0))
         .toList()
 
-    override fun leaveFootprint(
+    override suspend fun leaveFootprint(
         expedition: Expedition,
         checkpoint: Int,
         presetId: String,
