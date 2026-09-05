@@ -55,7 +55,8 @@ function Resolve-AndroidSdk {
         $sdkLine = Get-Content $localPropertiesPath | Where-Object { $_ -match '^sdk\.dir=' } | Select-Object -First 1
         if ($null -ne $sdkLine) {
             $value = $sdkLine.Substring("sdk.dir=".Length)
-            $value = $value -replace '\\\\', '\\'
+            $value = $value -replace '\\\\', '\'
+            $value = $value -replace '/', '\'
             if (-not [string]::IsNullOrWhiteSpace($value)) {
                 $candidates.Add($value)
             }
@@ -96,14 +97,14 @@ if (Test-Path $gradlewPath) {
 
 $androidSdk = Resolve-AndroidSdk -RepoRoot $repoRoot -ExplicitPath $AndroidSdkPath
 if ($null -eq $androidSdk) {
-    throw "Android SDK was not found. Install/open Android Studio once, or rerun with -AndroidSdkPath 'C:\\Users\\<you>\\AppData\\Local\\Android\\Sdk'."
+    throw "Android SDK was not found. Install/open Android Studio once, or rerun with -AndroidSdkPath 'C:\Users\<you>\AppData\Local\Android\Sdk'."
 }
 
 $localPropertiesPath = Join-Path $repoRoot "local.properties"
-$sdkForProperties = $androidSdk.Replace("\\", "/")
+$sdkForProperties = $androidSdk -replace '\\', '/'
 Set-Content -Path $localPropertiesPath -Value "sdk.dir=$sdkForProperties" -Encoding ASCII
 Write-Host "Using Android SDK: $androidSdk" -ForegroundColor DarkGray
-Write-Host "Wrote local.properties (Git-ignored)." -ForegroundColor DarkGray
+Write-Host "Wrote local.properties with forward slashes (Git-ignored)." -ForegroundColor DarkGray
 
 if (-not (Test-Path $keystoreFullPath)) {
     New-Item -ItemType Directory -Force -Path $keyDirectory | Out-Null
