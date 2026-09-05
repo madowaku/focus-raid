@@ -128,7 +128,8 @@ class FocusViewModel(
 
     fun markSystemAccessEducationSeen() {
         if (_uiState.value.systemAccessEducationSeen) return
-        _uiState.value = _uiState.value.copy(systemAccessEducationSeen = true)
+        _uiState.value = _uiState.value.copy(systemAccessEducationSeen = true
+        )
         viewModelScope.launch { preferences.markSystemAccessEducationSeen() }
     }
 
@@ -340,10 +341,18 @@ class FocusViewModel(
             beforeMinutes = before.totalFocusMinutes,
             afterMinutes = updatedTotalFocusMinutes,
         )
-        val nearbyFootprints = if (phase == SessionPhase.COMPLETED) {
+        val reachedNewStarRouteCheckpoint = before.expedition != Expedition.STAR_ROUTE ||
+            StarRoute.reachedCheckpoint(updatedTotalFocusMinutes) >
+            StarRoute.reachedCheckpoint(before.totalFocusMinutes)
+        val nearbyFootprints = if (phase == SessionPhase.COMPLETED && reachedNewStarRouteCheckpoint) {
+            val checkpoint = if (before.expedition == Expedition.STAR_ROUTE) {
+                StarRoute.reachedCheckpoint(updatedTotalFocusMinutes)
+            } else {
+                checkpointFor(before)
+            }
             worldRepository.footprints(
                 expedition = before.expedition,
-                checkpoint = checkpointFor(before),
+                checkpoint = checkpoint,
             )
         } else {
             emptyList()
@@ -401,15 +410,7 @@ class FocusViewModel(
     private fun checkpointFor(state: FocusUiState): Int = when (state.expedition) {
         Expedition.TOWER -> state.world.towerFloor
         Expedition.ABYSS -> state.world.abyssDepth
-        Expedition.STAR_ROUTE -> {
-            val locationMinutes = if (state.phase in setOf(SessionPhase.COMPLETED, SessionPhase.ABORTED)) {
-                state.totalFocusMinutes
-            } else {
-                val elapsedMinutes = ((state.durationSeconds - state.remainingSeconds).coerceAtLeast(0)) / 60
-                state.totalFocusMinutes + elapsedMinutes
-            }
-            StarRoute.reachedCheckpoint(locationMinutes)
-        }
+        Expedition.STAR_ROUTE -> StarRoute.reachedCheckpoint(state.totalFocusMinutes)
     }
 
     class Factory(
