@@ -33,19 +33,21 @@ class HistoryAccessPolicyTest {
         val entries = listOf(
             entry("tower-complete", today, 25, Expedition.TOWER, SessionOutcome.COMPLETED),
             entry("abyss-complete", today, 45, Expedition.ABYSS, SessionOutcome.COMPLETED),
+            entry("star-complete", today, 30, Expedition.STAR_ROUTE, SessionOutcome.COMPLETED),
             entry("tower-abort", today, 10, Expedition.TOWER, SessionOutcome.ABORTED),
         )
 
         val stats = HistoryAccessPolicy.detailedStats(entries)
 
-        assertEquals(3, stats.sessionCount)
-        assertEquals(2, stats.completedCount)
+        assertEquals(4, stats.sessionCount)
+        assertEquals(3, stats.completedCount)
         assertEquals(1, stats.abortedCount)
-        assertEquals(66, stats.completionRatePercent)
-        assertEquals(80.0 / 3.0, stats.averageMinutes, 0.001)
+        assertEquals(75, stats.completionRatePercent)
+        assertEquals(110.0 / 4.0, stats.averageMinutes, 0.001)
         assertEquals(45, stats.longestMinutes)
         assertEquals(35, stats.towerMinutes)
         assertEquals(45, stats.abyssMinutes)
+        assertEquals(30, stats.starRouteMinutes)
     }
 
     private fun entry(
