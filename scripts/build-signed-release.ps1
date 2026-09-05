@@ -122,6 +122,31 @@ function Resolve-AndroidSdk {
     return $null
 }
 
+function Test-ProductionConfigValue {
+    param([Parameter(Mandatory = $true)][string]$Name)
+
+    $environmentValue = [Environment]::GetEnvironmentVariable($Name)
+    if (-not [string]::IsNullOrWhiteSpace($environmentValue)) {
+        return $true
+    }
+
+    $gradlePropertiesPath = Join-Path $HOME ".gradle\gradle.properties"
+    if (-not (Test-Path $gradlePropertiesPath)) {
+        return $false
+    }
+
+    $prefix = "$Name="
+    $line = Get-Content $gradlePropertiesPath | Where-Object {
+        $_.StartsWith($prefix, [System.StringComparison]::Ordinal)
+    } | Select-Object -First 1
+
+    if ($null -eq $line) {
+        return $false
+    }
+
+    return -not [string]::IsNullOrWhiteSpace($line.Substring($prefix.Length))
+}
+
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $keytool = Get-JavaTool -Name "keytool"
 $jarsigner = Get-JavaTool -Name "jarsigner"
@@ -208,9 +233,7 @@ try {
         "FOCUS_RAID_PRIVACY_POLICY_URL"
     )
     $missingProductionConfig = @(
-        $productionConfig | Where-Object {
-            [string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($_))
-        }
+        $productionConfig | Where-Object { -not (Test-ProductionConfigValue -Name $_) }
     )
 
     if ($missingProductionConfig.Count -gt 0) {
