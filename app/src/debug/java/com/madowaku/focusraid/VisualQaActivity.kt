@@ -41,6 +41,15 @@ class VisualQaActivity : ComponentActivity() {
                 remainingSeconds = 18 * 60 + 42,
             )
 
+            "STAR_ROUTE" -> FocusUiState(
+                phase = SessionPhase.RUNNING,
+                selectedMinutes = 25,
+                expedition = Expedition.STAR_ROUTE,
+                durationSeconds = 25 * 60,
+                remainingSeconds = 18 * 60 + 42,
+                totalFocusMinutes = 50,
+            )
+
             "PAUSED" -> FocusUiState(
                 phase = SessionPhase.PAUSED,
                 selectedMinutes = 25,
@@ -83,6 +92,24 @@ class VisualQaActivity : ComponentActivity() {
                     defeated = 1,
                     rarity = Rarity.RARE,
                     discovery = "古代の鍵",
+                    armoryPoints = 2,
+                ),
+            )
+
+            "STAR_VICTORY" -> FocusUiState(
+                phase = SessionPhase.COMPLETED,
+                selectedMinutes = 25,
+                expedition = Expedition.STAR_ROUTE,
+                durationSeconds = 25 * 60,
+                remainingSeconds = 0,
+                totalFocusMinutes = 75,
+                reward = SessionReward(
+                    creditedMinutes = 25,
+                    personalDamage = 25,
+                    worldEp = 25,
+                    defeated = 1,
+                    rarity = Rarity.RARE,
+                    discovery = "彗星のコンパス",
                     armoryPoints = 2,
                 ),
             )
@@ -164,6 +191,17 @@ class VisualQaActivity : ComponentActivity() {
                         damage = 45,
                         rarity = null,
                         discovery = null,
+                    ),
+                    SessionHistoryEntry(
+                        sessionId = "visual-log-star",
+                        completedAtEpochMillis = now - 5 * 60 * 60 * 1000L,
+                        plannedMinutes = 25,
+                        creditedMinutes = 25,
+                        expedition = Expedition.STAR_ROUTE,
+                        outcome = SessionOutcome.COMPLETED,
+                        damage = 25,
+                        rarity = Rarity.RARE,
+                        discovery = "彗星のコンパス",
                     ),
                     SessionHistoryEntry(
                         sessionId = "visual-log-3",
