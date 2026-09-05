@@ -15,7 +15,7 @@ Free must remain a complete focus timer and progression experience. Pro expands 
 - Core focus / break timer features
 - Pause, resume, skip, notifications, and background timing
 - Level / XP / streak with no progression cap
-- Launch Free raids
+- Launch Free raids: `TOWER` and `ABYSS`
 - Basic statistics
 - All session data is stored, while history visibility is limited to today plus the previous 6 calendar days
 - Basic themes
@@ -24,7 +24,8 @@ Free must remain a complete focus timer and progression experience. Pro expands 
 
 ### Pro lifetime
 
-- All Pro raids
+- First Pro raid: `STAR_ROUTE` / 星渡り航路
+- Future Pro raids
 - Detailed statistics
 - Full-history visibility
 - All themes
@@ -43,11 +44,17 @@ The Android app currently enforces these boundaries:
 - Free history shows the current calendar day plus the previous 6 calendar days.
 - Pro history shows every locally stored session.
 - Free users see a locked detailed-statistics card and a locked full-history card that lead to the Pro paywall.
-- Pro users see completion rate, average credited minutes, longest session, completed / aborted counts, and Tower / Abyss focused minutes.
-- Both launch expeditions (`TOWER`, `ABYSS`) remain Free.
+- Pro users see completion rate, average credited minutes, longest session, completed / aborted counts, and Tower / Abyss / Star Route focused minutes.
+- Launch expeditions `TOWER` and `ABYSS` remain Free.
+- `STAR_ROUTE` is the first implemented Pro-only raid.
+- Free users can see the locked Star Route selector, but tapping it opens the Pro paywall instead of selecting the raid.
+- Pro users can select and run Star Route normally.
+- Star Route lights five route beacons across one focus session without adding interaction that interrupts focus.
+- Star Route advances a personal route checkpoint every 25 accumulated focus minutes and reuses the normal footprint system at that checkpoint.
+- Star Route has its own discovery pool and dedicated in-session / completion feedback while still contributing to the shared world raid.
 - Every future `Expedition` must be classified exhaustively in `FeatureAccess.raidAccess`; adding an enum value without deciding Free or Pro fails compilation until the policy is updated.
 
-Do not create a fake locked raid merely to advertise Pro. A locked raid should appear only when that raid actually exists in the product.
+Do not create a fake locked raid merely to advertise Pro. A locked raid should appear only when that raid actually exists in the product. Star Route satisfies this rule because the full route, rewards, history, footprints, and completion feedback are implemented.
 
 ## Billing contract
 
@@ -125,6 +132,7 @@ Responsibilities:
 - `ProAccessViewModel`: lifecycle-aware UI bridge.
 - `ProUiContext`: exposes the current access level and paywall action to Compose feature surfaces without coupling them to RevenueCat.
 - `ProPaywallDialog`: Focus Raid Material 3 purchase UI. It never hard-codes the price.
+- `StarRoute`: owns the first Pro raid's checkpoint and five-beacon progression rules.
 
 ## Runtime rules
 
@@ -137,6 +145,7 @@ Responsibilities:
 - Restore success without an active `pro` entitlement is shown as no restorable Pro purchase found.
 - Free timer functionality must continue working if RevenueCat is unavailable.
 - Free and Pro write the same session rows to Room. Entitlement only controls presentation / feature access.
+- A Pro-only expedition must be gated both when selected and again when starting a session.
 
 ## v1.0 non-goals
 
@@ -158,6 +167,9 @@ Do not add these without revisiting the monetization specification:
 - [ ] Clean install starts as Free
 - [ ] Free core timer works without RevenueCat configuration
 - [x] Free launch raids remain usable
+- [x] First real Pro raid (`STAR_ROUTE` / 星渡り航路) is implemented and access-gated
+- [x] Free Star Route selection opens the Pro paywall instead of changing expedition
+- [x] Star Route has dedicated route progress, rewards, history/statistics, and footprint location behavior
 - [x] Pro feature access is centralized through `FeatureAccess`
 - [x] Free history visibility is limited to 7 calendar days without deleting older rows
 - [x] Pro full-history visibility is wired to entitlement access
@@ -170,4 +182,4 @@ Do not add these without revisiting the monetization specification:
 - [ ] Restore after reinstall reactivates Pro for the same Google Play purchase
 - [ ] Restore with no purchase displays a neutral no-purchase result
 - [x] Historic Free data becomes visible when Pro is unlocked
-- [ ] Unit tests, lint, and debug APK build pass on the latest feature-gate commit
+- [ ] Unit tests, lint, debug APK build, visual QA, and timer durability pass on the latest Star Route commit
