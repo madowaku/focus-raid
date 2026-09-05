@@ -33,10 +33,12 @@ capture READY 360 800 ready-360x800
 capture CUSTOM 360 800 custom-360x800
 capture SYSTEM_ACCESS 360 800 system-access-360x800
 capture RAID 360 800 raid-360x800
+capture STAR_ROUTE 360 800 star-route-360x800
 capture PAUSED 360 800 paused-360x800
 capture END_CONFIRM 360 800 end-confirm-360x800
 capture ABORTED 360 800 aborted-360x800
 capture VICTORY 360 800 victory-360x800
+capture STAR_VICTORY 360 800 star-victory-360x800
 capture EVOLUTION 360 800 evolution-360x800
 capture COMPANION_EGG 360 800 companion-egg-360x800
 capture COMPANION 360 800 companion-hatchling-360x800
@@ -48,10 +50,12 @@ capture READY 720 1280 ready-720x1280
 capture CUSTOM 720 1280 custom-720x1280
 capture SYSTEM_ACCESS 720 1280 system-access-720x1280
 capture RAID 720 1280 raid-720x1280
+capture STAR_ROUTE 720 1280 star-route-720x1280
 capture PAUSED 720 1280 paused-720x1280
 capture END_CONFIRM 720 1280 end-confirm-720x1280
 capture ABORTED 720 1280 aborted-720x1280
 capture VICTORY 720 1280 victory-720x1280
+capture STAR_VICTORY 720 1280 star-victory-720x1280
 capture EVOLUTION 720 1280 evolution-720x1280
 capture COMPANION 720 1280 companion-hatchling-720x1280
 capture LOG 720 1280 log-720x1280
@@ -65,10 +69,12 @@ expected = {
     "custom-360x800.png": (360, 800),
     "system-access-360x800.png": (360, 800),
     "raid-360x800.png": (360, 800),
+    "star-route-360x800.png": (360, 800),
     "paused-360x800.png": (360, 800),
     "end-confirm-360x800.png": (360, 800),
     "aborted-360x800.png": (360, 800),
     "victory-360x800.png": (360, 800),
+    "star-victory-360x800.png": (360, 800),
     "evolution-360x800.png": (360, 800),
     "companion-egg-360x800.png": (360, 800),
     "companion-hatchling-360x800.png": (360, 800),
@@ -80,10 +86,12 @@ expected = {
     "custom-720x1280.png": (720, 1280),
     "system-access-720x1280.png": (720, 1280),
     "raid-720x1280.png": (720, 1280),
+    "star-route-720x1280.png": (720, 1280),
     "paused-720x1280.png": (720, 1280),
     "end-confirm-720x1280.png": (720, 1280),
     "aborted-720x1280.png": (720, 1280),
     "victory-720x1280.png": (720, 1280),
+    "star-victory-720x1280.png": (720, 1280),
     "evolution-720x1280.png": (720, 1280),
     "companion-hatchling-720x1280.png": (720, 1280),
     "log-720x1280.png": (720, 1280),
