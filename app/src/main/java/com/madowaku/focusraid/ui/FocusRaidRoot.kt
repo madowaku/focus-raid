@@ -280,18 +280,29 @@ private fun FootprintDialog(
                 )
                 Spacer(Modifier.height(12.dp))
 
-                if (state.footprints.isEmpty()) {
-                    Text(
-                        "まだ足跡はありません。最初のひとことを残せます。",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                } else {
-                    state.footprints.take(3).forEach { footprint ->
+                when {
+                    state.footprintsLoading -> {
                         Text(
-                            "${footprint.glyph}  ${footprint.text}  ·  ${footprint.relativeLabel}",
-                            style = MaterialTheme.typography.bodyMedium,
+                            "この場所の足跡を探しています…",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        Spacer(Modifier.height(8.dp))
+                    }
+
+                    state.footprints.isEmpty() -> {
+                        Text(
+                            "まだ足跡はありません。最初のひとことを残せます。",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+
+                    else -> {
+                        state.footprints.take(3).forEach { footprint ->
+                            Text(
+                                "${footprint.glyph}  ${footprint.text}  ·  ${footprint.relativeLabel}",
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                            Spacer(Modifier.height(8.dp))
+                        }
                     }
                 }
 
@@ -303,10 +314,22 @@ private fun FootprintDialog(
                     )
                 } else {
                     Text(
-                        "あなたも定型メッセージを1つ残せます",
+                        if (state.footprintPosting) {
+                            "足跡を届けています…"
+                        } else {
+                            "あなたも定型メッセージを1つ残せます"
+                        },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    state.footprintPostError?.let { message ->
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            message,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
                     Spacer(Modifier.height(8.dp))
                     FootprintPresets.all.take(6).chunked(2).forEach { rowPresets ->
                         Row(
@@ -317,6 +340,7 @@ private fun FootprintDialog(
                                 FilterChip(
                                     selected = state.selectedFootprintPresetId == preset.id,
                                     onClick = { onSelectPreset(preset.id) },
+                                    enabled = !state.footprintPosting,
                                     label = {
                                         Text(
                                             "${preset.glyph} ${preset.text}",
@@ -342,9 +366,9 @@ private fun FootprintDialog(
             } else {
                 Button(
                     onClick = onLeaveFootprint,
-                    enabled = state.selectedFootprintPresetId != null,
+                    enabled = state.selectedFootprintPresetId != null && !state.footprintPosting,
                 ) {
-                    Text("足跡を残す")
+                    Text(if (state.footprintPosting) "送信中…" else "足跡を残す")
                 }
             }
         },
