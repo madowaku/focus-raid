@@ -5,7 +5,7 @@ import org.junit.Test
 
 class StarRouteTest {
     @Test
-    fun `target checkpoint points to the next 25 minute destination`() {
+    fun `target checkpoint is the next unreached 25 minute marker`() {
         assertEquals(1, StarRoute.targetCheckpoint(0))
         assertEquals(1, StarRoute.targetCheckpoint(24))
         assertEquals(2, StarRoute.targetCheckpoint(25))
@@ -14,13 +14,23 @@ class StarRouteTest {
     }
 
     @Test
-    fun `reached checkpoint names the destination just completed`() {
+    fun `reached checkpoint counts only complete 25 minute blocks`() {
         assertEquals(0, StarRoute.reachedCheckpoint(0))
-        assertEquals(1, StarRoute.reachedCheckpoint(1))
+        assertEquals(0, StarRoute.reachedCheckpoint(24))
         assertEquals(1, StarRoute.reachedCheckpoint(25))
+        assertEquals(1, StarRoute.reachedCheckpoint(49))
         assertEquals(2, StarRoute.reachedCheckpoint(50))
         assertEquals(3, StarRoute.reachedCheckpoint(75))
         assertEquals(4, StarRoute.reachedCheckpoint(100))
+    }
+
+    @Test
+    fun `minutes until target preserves partial focus progress`() {
+        assertEquals(25, StarRoute.minutesUntilTarget(0))
+        assertEquals(15, StarRoute.minutesUntilTarget(10))
+        assertEquals(1, StarRoute.minutesUntilTarget(24))
+        assertEquals(25, StarRoute.minutesUntilTarget(25))
+        assertEquals(10, StarRoute.minutesUntilTarget(40))
     }
 
     @Test
