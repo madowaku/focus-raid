@@ -68,7 +68,10 @@ $newLines = @(
     "FOCUS_RAID_FIREBASE_APP_ID=$appId"
 )
 
-Set-Content -Path $gradleProperties -Value $newLines -Encoding UTF8
+# Windows PowerShell 5's -Encoding UTF8 writes a BOM. Gradle properties can then
+# treat the first key as prefixed by U+FEFF, making only the first property look
+# missing. Firebase config values are ASCII-safe, so write the file without a BOM.
+Set-Content -Path $gradleProperties -Value $newLines -Encoding ASCII
 
 $maskedApiKey = if ($apiKey.Length -gt 8) {
     "$($apiKey.Substring(0,4))...$($apiKey.Substring($apiKey.Length - 4))"
