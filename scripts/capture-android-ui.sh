@@ -42,6 +42,11 @@ capture PAUSED 360 800 paused-360x800
 capture END_CONFIRM 360 800 end-confirm-360x800
 capture ABORTED 360 800 aborted-360x800
 capture VICTORY 360 800 victory-360x800
+capture FOOTPRINT_LOADING 360 800 footprint-loading-360x800
+capture FOOTPRINT_PRESENT 360 800 footprint-present-360x800
+capture FOOTPRINT_POSTING 360 800 footprint-posting-360x800
+capture FOOTPRINT_ERROR 360 800 footprint-error-360x800
+capture FOOTPRINT_POSTED 360 800 footprint-posted-360x800
 capture STAR_VICTORY 360 800 star-victory-360x800
 capture STAR_CONTINUE 360 800 star-continue-360x800
 capture EVOLUTION 360 800 evolution-360x800
@@ -65,6 +70,8 @@ capture PAUSED 720 1280 paused-720x1280
 capture END_CONFIRM 720 1280 end-confirm-720x1280
 capture ABORTED 720 1280 aborted-720x1280
 capture VICTORY 720 1280 victory-720x1280
+capture FOOTPRINT_PRESENT 720 1280 footprint-present-720x1280
+capture FOOTPRINT_POSTED 720 1280 footprint-posted-720x1280
 capture STAR_VICTORY 720 1280 star-victory-720x1280
 capture STAR_CONTINUE 720 1280 star-continue-720x1280
 capture EVOLUTION 720 1280 evolution-720x1280
@@ -90,6 +97,11 @@ expected = {
     "end-confirm-360x800.png": (360, 800),
     "aborted-360x800.png": (360, 800),
     "victory-360x800.png": (360, 800),
+    "footprint-loading-360x800.png": (360, 800),
+    "footprint-present-360x800.png": (360, 800),
+    "footprint-posting-360x800.png": (360, 800),
+    "footprint-error-360x800.png": (360, 800),
+    "footprint-posted-360x800.png": (360, 800),
     "star-victory-360x800.png": (360, 800),
     "star-continue-360x800.png": (360, 800),
     "evolution-360x800.png": (360, 800),
@@ -113,6 +125,8 @@ expected = {
     "end-confirm-720x1280.png": (720, 1280),
     "aborted-720x1280.png": (720, 1280),
     "victory-720x1280.png": (720, 1280),
+    "footprint-present-720x1280.png": (720, 1280),
+    "footprint-posted-720x1280.png": (720, 1280),
     "star-victory-720x1280.png": (720, 1280),
     "star-continue-720x1280.png": (720, 1280),
     "evolution-720x1280.png": (720, 1280),

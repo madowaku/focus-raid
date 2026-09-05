@@ -254,7 +254,7 @@ fun FocusRaidRoot(
 }
 
 @Composable
-private fun FootprintDialog(
+internal fun FootprintDialog(
     state: FocusUiState,
     onSelectPreset: (String) -> Unit,
     onLeaveFootprint: () -> Unit,

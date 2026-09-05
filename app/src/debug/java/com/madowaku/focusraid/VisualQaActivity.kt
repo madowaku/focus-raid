@@ -14,6 +14,7 @@ import com.madowaku.focusraid.billing.PurchaseState
 import com.madowaku.focusraid.core.domain.CompanionEvolution
 import com.madowaku.focusraid.core.domain.CompanionStage
 import com.madowaku.focusraid.core.model.Expedition
+import com.madowaku.focusraid.core.model.Footprint
 import com.madowaku.focusraid.core.model.Rarity
 import com.madowaku.focusraid.core.model.SessionHistoryEntry
 import com.madowaku.focusraid.core.model.SessionOutcome
@@ -24,6 +25,7 @@ import com.madowaku.focusraid.ui.FocusRaidAppContent
 import com.madowaku.focusraid.ui.FocusSystemAccess
 import com.madowaku.focusraid.ui.FocusSystemAccessDialog
 import com.madowaku.focusraid.ui.FocusUiState
+import com.madowaku.focusraid.ui.FootprintDialog
 import com.madowaku.focusraid.ui.LocalProAccessLevel
 import com.madowaku.focusraid.ui.MainTab
 import com.madowaku.focusraid.ui.ProPaywallDialog
@@ -84,6 +86,49 @@ class VisualQaActivity : ComponentActivity() {
                 damage = 12,
                 rarity = null,
                 discovery = null,
+            ),
+        )
+        val visualFootprints = listOf(
+            Footprint(
+                expedition = Expedition.TOWER,
+                checkpoint = 4_281,
+                presetId = "waiting",
+                glyph = "⌁",
+                text = "先で待ってる！",
+                relativeLabel = "18分前",
+            ),
+            Footprint(
+                expedition = Expedition.TOWER,
+                checkpoint = 4_281,
+                presetId = "one_step",
+                glyph = "◆",
+                text = "今日も一歩！",
+                relativeLabel = "2時間前",
+            ),
+            Footprint(
+                expedition = Expedition.TOWER,
+                checkpoint = 4_281,
+                presetId = "rest",
+                glyph = "☕",
+                text = "休憩も大事",
+                relativeLabel = "昨日",
+            ),
+        )
+        val footprintBase = FocusUiState(
+            phase = SessionPhase.COMPLETED,
+            selectedMinutes = 25,
+            durationSeconds = 25 * 60,
+            remainingSeconds = 0,
+            totalFocusMinutes = 707,
+            footprints = visualFootprints,
+            reward = SessionReward(
+                creditedMinutes = 25,
+                personalDamage = 25,
+                worldEp = 25,
+                defeated = 1,
+                rarity = Rarity.RARE,
+                discovery = "古代の鍵",
+                armoryPoints = 2,
             ),
         )
 
@@ -148,20 +193,38 @@ class VisualQaActivity : ComponentActivity() {
                 ),
             )
 
-            "VICTORY" -> FocusUiState(
-                phase = SessionPhase.COMPLETED,
-                selectedMinutes = 25,
-                durationSeconds = 25 * 60,
-                remainingSeconds = 0,
-                reward = SessionReward(
-                    creditedMinutes = 25,
-                    personalDamage = 25,
-                    worldEp = 25,
-                    defeated = 1,
-                    rarity = Rarity.RARE,
-                    discovery = "古代の鍵",
-                    armoryPoints = 2,
-                ),
+            "VICTORY" -> footprintBase.copy(footprints = emptyList())
+
+            "FOOTPRINT_LOADING" -> footprintBase.copy(
+                footprints = emptyList(),
+                footprintsLoading = true,
+            )
+
+            "FOOTPRINT_PRESENT" -> footprintBase
+
+            "FOOTPRINT_POSTING" -> footprintBase.copy(
+                selectedFootprintPresetId = "keep_going",
+                footprintPosting = true,
+            )
+
+            "FOOTPRINT_ERROR" -> footprintBase.copy(
+                selectedFootprintPresetId = "keep_going",
+                footprintPostError = "足跡を送信できませんでした。通信を確認してもう一度お試しください。",
+            )
+
+            "FOOTPRINT_POSTED" -> footprintBase.copy(
+                footprints = listOf(
+                    Footprint(
+                        expedition = Expedition.TOWER,
+                        checkpoint = 4_281,
+                        presetId = "keep_going",
+                        glyph = "✦",
+                        text = "がんばろう！",
+                        relativeLabel = "たった今",
+                    ),
+                ) + visualFootprints.take(2),
+                selectedFootprintPresetId = "keep_going",
+                footprintPosted = true,
             )
 
             "STAR_VICTORY" -> FocusUiState(
@@ -312,13 +375,21 @@ class VisualQaActivity : ComponentActivity() {
                             access = ProAccessState(
                                 accessLevel = AccessLevel.FREE,
                                 product = ProProduct(
-                                    productId = "focus_raid_pro",
+                                    productId = "focus_raid_pro_lifetime",
                                     formattedPrice = "¥XXX",
                                 ),
                             ),
                             purchaseState = PurchaseState.Idle,
                             onPurchase = {},
                             onRestore = {},
+                            onDismiss = {},
+                        )
+                    }
+                    if (phase.startsWith("FOOTPRINT_")) {
+                        FootprintDialog(
+                            state = state,
+                            onSelectPreset = {},
+                            onLeaveFootprint = {},
                             onDismiss = {},
                         )
                     }
