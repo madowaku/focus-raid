@@ -4,7 +4,33 @@ Focus Raid uses Google Play App Signing. Google Play should manage the app-signi
 
 Do not commit the keystore or passwords to this repository. `*.jks` and `*.keystore` are ignored by Git.
 
-## 1. Generate the upload key
+## Recommended Windows flow
+
+The repository includes a PowerShell helper that can create the upload key outside the repository, prompt for passwords without echoing them, build the release bundle, and verify the resulting AAB signature:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\build-signed-release.ps1
+```
+
+Default upload-key location:
+
+```text
+%USERPROFILE%\.focus-raid\focus-raid-upload.jks
+```
+
+Default alias:
+
+```text
+focusraid-upload
+```
+
+If the keystore does not exist, the script creates a dedicated RSA 4096-bit JKS upload key valid for 10,000 days. If it already exists, the same key is reused. **Do not create a new upload key for every release.**
+
+The script temporarily sets the signing environment variables only for the build process and clears them afterward. It never writes passwords to a tracked file.
+
+After a successful build it runs `jarsigner -verify -verbose -certs` and prints the SHA-256 hash of the resulting bundle.
+
+## 1. Generate the upload key manually (alternative)
 
 On Windows PowerShell with JDK 17 available:
 
@@ -45,7 +71,21 @@ Do not put real secret values in scripts committed to Git.
 
 If all four values are present, the `release` build type uses the `releaseUpload` signing config. If any value is missing, Gradle still permits a release-variant compile so CI can catch release-only build failures, but that output is not the Play upload artifact.
 
-## 3. Build the signed AAB
+## 3. Production configuration check
+
+A signed AAB is not automatically a public-release candidate. Before uploading to Google Play, also provide the real production values used by the shipped build:
+
+```text
+FOCUS_RAID_REVENUECAT_GOOGLE_API_KEY
+FOCUS_RAID_FIREBASE_PROJECT_ID
+FOCUS_RAID_FIREBASE_API_KEY
+FOCUS_RAID_FIREBASE_APP_ID
+FOCUS_RAID_PRIVACY_POLICY_URL
+```
+
+The helper script warns when any of these values are missing, but still allows a signing-only test bundle to be produced.
+
+## 4. Build the signed AAB manually
 
 With the signing environment configured:
 
@@ -59,7 +99,7 @@ Expected output:
 app\build\outputs\bundle\release\app-release.aab
 ```
 
-## 4. Verify the signature
+## 5. Verify the signature
 
 Before uploading:
 
@@ -69,7 +109,7 @@ jarsigner -verify -verbose -certs app\build\outputs\bundle\release\app-release.a
 
 Treat a verification failure as a release blocker.
 
-## 5. Google Play App Signing
+## 6. Google Play App Signing
 
 For the first Play release:
 
@@ -81,7 +121,16 @@ For the first Play release:
 
 The upload key can be reset through Play Console if it is lost or compromised when Play App Signing is used. The app-signing key managed by Google is the identity used for final APKs delivered to users.
 
-## 6. Versioning
+## 7. Backup rule
+
+The upload keystore is small but important. Keep at least two copies in separate places, for example:
+
+- the primary copy under `%USERPROFILE%\.focus-raid\`;
+- one encrypted/offline backup on separate storage.
+
+Do not upload the keystore, its passwords, or a plaintext password note to GitHub, Drive links shared publicly, issue trackers, or chat.
+
+## 8. Versioning
 
 The current development version is intentionally not treated as the final public version. Before the first public release, choose the final `versionName` and confirm `versionCode` is valid for Play.
 
