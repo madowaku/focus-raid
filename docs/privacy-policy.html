@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Focus Raid Privacy Policy / プライバシーポリシー</title>
+  <style>
+    :root { color-scheme: light dark; --bg:#0b0816; --card:#17102a; --text:#f5efff; --muted:#c8bdd7; --accent:#b69cff; --line:#392b50; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans JP",sans-serif; background:var(--bg); color:var(--text); line-height:1.72; }
+    main { max-width:900px; margin:0 auto; padding:40px 20px 80px; }
+    h1 { font-size:2rem; margin:0 0 8px; }
+    h2 { margin-top:2.2rem; color:var(--accent); font-size:1.35rem; }
+    h3 { margin-top:1.5rem; font-size:1.05rem; }
+    p, li { color:var(--text); }
+    .meta,.muted { color:var(--muted); }
+    a { color:#d4c7ff; }
+    code { background:#241936; border:1px solid var(--line); padding:.08em .35em; border-radius:6px; }
+    hr { border:0; border-top:1px solid var(--line); margin:3rem 0; }
+    .notice { padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:var(--card); }
+    @media (prefers-color-scheme: light) {
+      :root { --bg:#fbf8ff; --card:#f2ebff; --text:#241b2f; --muted:#655a70; --accent:#6f51b5; --line:#d8cbea; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Focus Raid Privacy Policy<br>プライバシーポリシー</h1>
+  <p class="meta">Effective date / 適用開始日: 2026-09-05<br>Developer / 開発者: <strong>madowaku</strong><br>Contact / お問い合わせ: <a href="mailto:raindrum909@gmail.com">raindrum909@gmail.com</a></p>
+
+  <section lang="ja">
+    <h2>1. このポリシーについて</h2>
+    <p>Focus Raid（以下「本アプリ」）は、madowaku が提供する集中タイマー／習慣化アプリです。本ポリシーは、本アプリが端末内で保存する情報、Firebase を利用した共有機能、Google Play／RevenueCat を利用した購入機能、およびそれらに関するデータの取り扱いを説明します。</p>
+
+    <h2>2. 端末内に保存するデータ</h2>
+    <p>本アプリは、集中セッション履歴、予定時間・実際に集中した時間・完走／途中終了の結果、レベル・経験値・連続日数などの進行情報、選択した集中時間や遠征、タイマー復元状態、ローカル統計に必要な情報を端末内に保存します。</p>
+    <p>これらの集中履歴を、Focus Raid のアプリ処理が Firebase や RevenueCat にアップロードすることはありません。</p>
+    <p>端末内データは、アプリのストレージ消去またはアンインストールで削除できます。ただし Android のバックアップ／復元設定によっては、Google のバックアップ機能等により一部データが復元される場合があります。</p>
+
+    <h2>3. Firebase を利用する共有世界・足跡</h2>
+    <p>本アプリは共有世界と定型メッセージ式の「足跡」のため、Firebase Authentication（匿名認証）と Cloud Firestore を利用します。メールアドレス、パスワード、表示名、電話番号を入力して Focus Raid のアカウントを作成する必要はありません。</p>
+    <p>Firebase はアクセス制御のため匿名ユーザー ID を生成します。Firebase Authentication SDK は、認証・不正利用防止・サービス提供のため、IP アドレス、ユーザーエージェント情報、Firebase Android App ID、Firebase ユーザーエージェント等の技術情報を処理する場合があります。認証済み Firestore リクエストには該当する Firebase 匿名ユーザー ID が含まれます。</p>
+    <p>足跡を残した場合、Firestore に保存するのは、組み込み定型メッセージを示す <code>presetId</code>、サーバー時刻 <code>createdAt</code>、ドキュメント識別に用いる匿名 Firebase UID、遠征／チェックポイントを示すドキュメントパスです。</p>
+    <p>自由入力テキスト、表示名、プロフィール、GPS 位置情報は足跡に保存しません。表示する文章とアイコンは <code>presetId</code> からアプリ内で復元されます。共有世界の <code>world/current</code> はサーバーから読み取る状態であり、端末内の集中履歴をアップロードするものではありません。</p>
+
+    <h2>4. Focus Raid Pro の購入</h2>
+    <p>本アプリは買い切りの Focus Raid Pro のため、Google Play Billing と RevenueCat を利用します。Google Play が決済を処理し、madowaku および Focus Raid はクレジットカード番号等の支払手段情報を直接受け取りません。</p>
+    <p>RevenueCat は、購入検証、Pro 権限の付与・復元、購入状況管理のため、購入履歴、商品／取引情報、権限状態、匿名 App User ID、およびサービス提供に必要な技術情報を処理します。</p>
+    <p>Focus Raid は、氏名、メールアドレス、電話番号などの独自の顧客属性を RevenueCat に送信するようには構成していません。また、広告識別子を利用する RevenueCat 連携を広告目的で使用していません。</p>
+
+    <h2>5. データを利用する目的</h2>
+    <ul>
+      <li>集中タイマー、履歴、進行、復元機能の提供</li>
+      <li>匿名認証と共有世界への安全なアクセス</li>
+      <li>定型足跡の読み書きと不正利用防止</li>
+      <li>Focus Raid Pro の購入検証、権限付与、復元</li>
+      <li>障害調査、サポート、データ削除依頼への対応</li>
+      <li>Firebase／RevenueCat 各サービスの提供、維持、改善に必要な処理</li>
+    </ul>
+
+    <h2>6. 第三者サービスへの提供・共有</h2>
+    <p>機能提供に必要な範囲で Google Firebase、Google Play、RevenueCat を利用します。本アプリはユーザーデータを広告目的で販売しません。現行のリリース構成には広告 SDK、Firebase Analytics、Crashlytics を含めていません。</p>
+    <p>第三者サービスにおけるデータ処理は、それぞれのサービス提供者の規約・プライバシーポリシーにも従います。</p>
+
+    <h2>7. 本アプリが利用しない情報・機能</h2>
+    <p>現行の Focus Raid は、正確な位置情報／概算位置情報、連絡先、カメラ、マイク、写真・動画・音声ファイル、SMS／通話履歴、健康・フィットネス情報、自由文チャット、広告目的のトラッキングをアプリ機能のために利用しません。</p>
+    <p>通知、正確なタイマー、再起動後のタイマー復元等のため、Android の通知・アラーム・再起動通知・バイブレーション等の仕組みを利用します。</p>
+
+    <h2>8. 保存期間と削除</h2>
+    <h3>端末内データ</h3>
+    <p>アプリのストレージを消去する、またはアンインストールするまで保存されます。Android のバックアップ設定により復元される場合があります。</p>
+    <h3>Firebase の匿名ユーザー／足跡データ</h3>
+    <p>共有機能の提供、不正利用防止、サポートに必要な期間保存します。削除を希望する場合は下記メールアドレスへご連絡ください。</p>
+    <h3>RevenueCat の顧客・購入関連データ</h3>
+    <p>購入検証、購入復元、権限管理、サポート、法令上必要な記録保持等のため保存されます。削除可能な RevenueCat 顧客データの削除を希望する場合は下記メールアドレスへご連絡ください。Google Play 側の購入履歴や、法令・会計・不正防止上保持が必要な記録は、当方だけでは削除できない場合があります。</p>
+    <p>削除依頼の際は、購入注文情報や本アプリ内で表示される識別情報など、対象データを確認するための情報があれば添えてください。必要最小限の追加情報をお願いする場合があります。</p>
+
+    <h2>9. セキュリティ</h2>
+    <p>Firebase および RevenueCat との通信は、各サービスが提供する HTTPS 等の暗号化通信を利用します。本アプリは必要な範囲を超えて個人情報を収集しない設計を基本としています。</p>
+
+    <h2>10. お問い合わせ・削除依頼</h2>
+    <div class="notice"><a href="mailto:raindrum909@gmail.com"><strong>raindrum909@gmail.com</strong></a></div>
+
+    <h2>11. 本ポリシーの変更</h2>
+    <p>本アプリの機能、利用 SDK、法令・プラットフォーム要件等の変更に応じて本ポリシーを更新する場合があります。重要な変更がある場合は本ページの更新日を変更し、必要に応じてアプリ内またはストア掲載情報で案内します。</p>
+  </section>
+
+  <hr>
+
+  <section lang="en">
+    <h2>English</h2>
+    <h2>1. About this policy</h2>
+    <p>Focus Raid is a focus timer and habit-building Android app provided by <strong>madowaku</strong>. This policy explains information stored locally by the app, data handled through Firebase for shared features, and purchase-related data processed through Google Play and RevenueCat.</p>
+
+    <h2>2. Data stored locally on your device</h2>
+    <p>Focus Raid stores focus session history, planned and credited focus time, completion/early-exit results, level/XP/streak and progression data, selected focus duration and expedition, active-timer recovery state, and information used to calculate local statistics.</p>
+    <p>Focus Raid's application logic does not upload this focus-session history to Firebase or RevenueCat.</p>
+    <p>You can remove local app data by clearing the app's storage or uninstalling the app. Depending on Android backup and restore settings, some data may later be restored by Android/Google backup services.</p>
+
+    <h2>3. Firebase shared world and preset Footprints</h2>
+    <p>Focus Raid uses Firebase Authentication with anonymous sign-in and Cloud Firestore for the shared world and preset-message Footprints. You do not need to create a Focus Raid account with an email address, password, display name, or phone number.</p>
+    <p>Firebase creates an anonymous user identifier for access control. Firebase Authentication may process technical information such as IP address, user-agent information, Firebase Android App ID, and Firebase user-agent information for authentication, security, abuse prevention, and service operation. Authenticated Firestore requests include the applicable Firebase anonymous user ID.</p>
+    <p>When you leave a Footprint, Focus Raid stores a built-in preset identifier (<code>presetId</code>), a server timestamp (<code>createdAt</code>), the anonymous Firebase UID used as the document identifier, and the expedition/checkpoint represented by the document path.</p>
+    <p>Focus Raid does not store free-form Footprint text, public profile names, profiles, or GPS coordinates. Visible Footprint text and icons are reconstructed locally from the preset ID. The shared <code>world/current</code> state is read from the server and does not upload your local focus-session history.</p>
+
+    <h2>4. Focus Raid Pro purchases</h2>
+    <p>Focus Raid uses Google Play Billing and RevenueCat to provide the one-time Focus Raid Pro purchase. Google Play processes payments. Focus Raid and madowaku do not directly receive your credit-card number or other payment-card details.</p>
+    <p>RevenueCat processes purchase history, product/transaction information, entitlement status, an anonymous App User ID, and technical information needed to validate purchases, unlock or restore Pro access, and operate its service.</p>
+    <p>Focus Raid is not configured to send custom RevenueCat customer attributes such as your name, email address, or phone number, and does not use RevenueCat integrations that rely on advertising identifiers for advertising purposes.</p>
+
+    <h2>5. Why data is used</h2>
+    <ul>
+      <li>provide the focus timer, history, progression, and recovery features;</li>
+      <li>provide anonymous authentication and secure shared-world access;</li>
+      <li>read and write preset Footprints and prevent abuse;</li>
+      <li>validate, unlock, and restore Focus Raid Pro;</li>
+      <li>investigate problems and respond to support or deletion requests; and</li>
+      <li>allow Firebase and RevenueCat to provide, maintain, secure, and improve their services.</li>
+    </ul>
+
+    <h2>6. Service providers and sharing</h2>
+    <p>Focus Raid uses Google Firebase, Google Play, and RevenueCat where needed for app functionality. Focus Raid does not sell user data for advertising. The current release configuration does not include advertising SDKs, Firebase Analytics, or Crashlytics.</p>
+    <p>Data handled by these services is also subject to the applicable provider terms and privacy policies.</p>
+
+    <h2>7. Data and features Focus Raid does not use</h2>
+    <p>The current Focus Raid release does not use precise or approximate location, contacts, camera, microphone, photos/videos/audio files, SMS or call logs, health/fitness data, free-form chat, or advertising tracking for app functionality.</p>
+    <p>Focus Raid uses Android notification, alarm, reboot, and vibration mechanisms as needed to provide timer notifications and reliable timer recovery.</p>
+
+    <h2>8. Retention and deletion</h2>
+    <h3>Local data</h3>
+    <p>Local app data is retained until you clear app storage or uninstall the app, subject to Android backup/restore behavior.</p>
+    <h3>Firebase anonymous identity and Footprints</h3>
+    <p>Server-side data is retained as needed to provide shared features, prevent abuse, and provide support. You may request deletion by contacting the address below.</p>
+    <h3>RevenueCat customer and purchase-related data</h3>
+    <p>Purchase-related records may be retained as needed for purchase validation, restore, entitlement management, support, fraud prevention, and applicable legal/accounting requirements. You may request deletion of RevenueCat customer data that can be deleted. Google Play purchase records or records that must be retained for legal, accounting, or fraud-prevention reasons may not be deletable by us alone.</p>
+    <p>When requesting deletion, please include any available information that helps locate the relevant anonymous record, such as purchase order information or identifiers displayed by the app. We may request limited additional information if necessary.</p>
+
+    <h2>9. Security</h2>
+    <p>Communications with Firebase and RevenueCat use encrypted transport provided by those services, including HTTPS. Focus Raid is designed to avoid collecting information that is not necessary for its features.</p>
+
+    <h2>10. Contact and deletion requests</h2>
+    <div class="notice"><a href="mailto:raindrum909@gmail.com"><strong>raindrum909@gmail.com</strong></a></div>
+
+    <h2>11. Changes to this policy</h2>
+    <p>This policy may be updated when Focus Raid's features, SDKs, legal requirements, or platform requirements change. Material updates will be reflected by updating the date on this page and, where appropriate, through the app or store listing.</p>
+  </section>
+</main>
+</body>
+</html>
