@@ -12,6 +12,7 @@ Before promoting a commit to a release candidate, require the latest branch head
   - [ ] `testDebugUnitTest`
   - [ ] `lintDebug`
   - [ ] debug APK build
+  - [ ] release AAB compile gate (`bundleRelease`)
 - [ ] `visual-qa`
   - [ ] 360×800 captures
   - [ ] 720×1280 captures
@@ -24,6 +25,8 @@ Before promoting a commit to a release candidate, require the latest branch head
   - [ ] process kill / restore
   - [ ] reboot / restore
 
+The CI release AAB is a release-variant compile artifact. Unless upload-key credentials are deliberately provided to that environment, it is **not** the signed bundle to upload to Google Play.
+
 Do not mark this section permanently complete in the repository. Re-check it against the exact release candidate commit.
 
 ## 2. RevenueCat + Google Play purchase gate
@@ -35,10 +38,10 @@ entitlement: pro
 product: focus_raid_pro_lifetime
 ```
 
-Provide the RevenueCat Android public SDK key through:
+Provide the RevenueCat Google public SDK key through:
 
 ```text
-FOCUS_RAID_REVENUECAT_ANDROID_API_KEY
+FOCUS_RAID_REVENUECAT_GOOGLE_API_KEY
 ```
 
 Before public release:
@@ -125,14 +128,17 @@ Policy forms can change. Re-open the current official pages when completing the 
 
 ## 5. Release build + signing gate
 
-The current development build is not the public artifact.
+The current development build is not the public artifact. See `docs/release-signing.md` for the upload-key workflow.
 
 Before public release:
 
 - [ ] Choose the public version name/version code for the first release.
+- [ ] Generate and safely back up a dedicated upload key.
 - [ ] Configure release signing without committing keystore files or passwords.
 - [ ] Produce a signed Android App Bundle (`.aab`).
+- [ ] Verify the bundle signature with `jarsigner -verify -verbose -certs`.
 - [ ] Inspect the release bundle for the correct application ID: `com.madowaku.focusraid`.
+- [ ] Configure/confirm Play App Signing for the new app.
 - [ ] Install/test the Play-generated build through an internal or closed testing track.
 - [ ] Cold-install on a real Android device.
 - [ ] Verify notification permission education.

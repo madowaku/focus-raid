@@ -17,6 +17,25 @@ val revenueCatGoogleApiKey = providers.gradleProperty("FOCUS_RAID_REVENUECAT_GOO
     .orElse(providers.environmentVariable("FOCUS_RAID_REVENUECAT_GOOGLE_API_KEY"))
     .getOrElse("")
 
+val uploadKeystorePath = providers.gradleProperty("FOCUS_RAID_UPLOAD_KEYSTORE_PATH")
+    .orElse(providers.environmentVariable("FOCUS_RAID_UPLOAD_KEYSTORE_PATH"))
+    .getOrElse("")
+val uploadStorePassword = providers.gradleProperty("FOCUS_RAID_UPLOAD_STORE_PASSWORD")
+    .orElse(providers.environmentVariable("FOCUS_RAID_UPLOAD_STORE_PASSWORD"))
+    .getOrElse("")
+val uploadKeyAlias = providers.gradleProperty("FOCUS_RAID_UPLOAD_KEY_ALIAS")
+    .orElse(providers.environmentVariable("FOCUS_RAID_UPLOAD_KEY_ALIAS"))
+    .getOrElse("")
+val uploadKeyPassword = providers.gradleProperty("FOCUS_RAID_UPLOAD_KEY_PASSWORD")
+    .orElse(providers.environmentVariable("FOCUS_RAID_UPLOAD_KEY_PASSWORD"))
+    .getOrElse("")
+val releaseSigningConfigured = listOf(
+    uploadKeystorePath,
+    uploadStorePassword,
+    uploadKeyAlias,
+    uploadKeyPassword,
+).all { it.isNotBlank() }
+
 fun quotedBuildConfig(value: String): String =
     "\"${value.replace("\\", "\\\\").replace("\"", "\\\"")}\""
 
@@ -42,6 +61,25 @@ android {
             "REVENUECAT_GOOGLE_API_KEY",
             quotedBuildConfig(revenueCatGoogleApiKey),
         )
+    }
+
+    signingConfigs {
+        if (releaseSigningConfigured) {
+            create("releaseUpload") {
+                storeFile = file(uploadKeystorePath)
+                storePassword = uploadStorePassword
+                keyAlias = uploadKeyAlias
+                keyPassword = uploadKeyPassword
+            }
+        }
+    }
+
+    buildTypes {
+        getByName("release") {
+            if (releaseSigningConfigured) {
+                signingConfig = signingConfigs.getByName("releaseUpload")
+            }
+        }
     }
 
     buildFeatures {
