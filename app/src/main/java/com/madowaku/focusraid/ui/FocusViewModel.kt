@@ -7,6 +7,7 @@ import com.madowaku.focusraid.core.domain.CompanionEvolution
 import com.madowaku.focusraid.core.domain.CompanionGrowth
 import com.madowaku.focusraid.core.domain.FocusActivitySummaries
 import com.madowaku.focusraid.core.domain.FocusRules
+import com.madowaku.focusraid.core.domain.StarRoute
 import com.madowaku.focusraid.core.model.Expedition
 import com.madowaku.focusraid.core.model.Footprint
 import com.madowaku.focusraid.core.model.FootprintPresets
@@ -400,6 +401,15 @@ class FocusViewModel(
     private fun checkpointFor(state: FocusUiState): Int = when (state.expedition) {
         Expedition.TOWER -> state.world.towerFloor
         Expedition.ABYSS -> state.world.abyssDepth
+        Expedition.STAR_ROUTE -> {
+            val locationMinutes = if (state.phase in setOf(SessionPhase.COMPLETED, SessionPhase.ABORTED)) {
+                state.totalFocusMinutes
+            } else {
+                val elapsedMinutes = ((state.durationSeconds - state.remainingSeconds).coerceAtLeast(0)) / 60
+                state.totalFocusMinutes + elapsedMinutes
+            }
+            StarRoute.checkpoint(locationMinutes)
+        }
     }
 
     class Factory(
