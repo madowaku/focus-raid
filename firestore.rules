@@ -53,10 +53,8 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    match /users/{userId}/{document=**} {
-      allow read, write: if signedIn() && request.auth.uid == userId;
-    }
-
+    // Everything else is closed by default. Add new backend paths only when the
+    // shipped client actually needs them, with a dedicated least-privilege rule.
     match /{document=**} {
       allow read, write: if false;
     }
