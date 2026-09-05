@@ -24,7 +24,8 @@ import kotlin.math.max
 
 @Composable
 internal fun StarRouteLaunchCard(state: FocusUiState) {
-    val checkpoint = StarRoute.checkpoint(state.totalFocusMinutes)
+    val checkpoint = StarRoute.targetCheckpoint(state.totalFocusMinutes)
+    val minutesUntilTarget = StarRoute.minutesUntilTarget(state.totalFocusMinutes)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -48,7 +49,7 @@ internal fun StarRouteLaunchCard(state: FocusUiState) {
                 color = MaterialTheme.colorScheme.onTertiaryContainer,
             )
             Text(
-                "次の目的地 · 第${checkpoint}星標",
+                "次の目的地 · 第${checkpoint}星標 · あと${minutesUntilTarget}分",
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = .78f),
             )
@@ -56,7 +57,7 @@ internal fun StarRouteLaunchCard(state: FocusUiState) {
             StarBeaconRoute(0)
             Spacer(Modifier.height(4.dp))
             Text(
-                "集中すると5つの星標が順に灯ります。操作は不要です。",
+                "集中すると5つの航路灯が順に灯ります。操作は不要です。",
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = .78f),
             )
@@ -68,7 +69,9 @@ internal fun StarRouteLaunchCard(state: FocusUiState) {
 internal fun StarRouteProgressCard(state: FocusUiState) {
     val litBeacons = StarRoute.litBeacons(state.progress)
     val elapsedMinutes = max(0, (state.durationSeconds - state.remainingSeconds) / 60)
-    val checkpoint = StarRoute.checkpoint(state.totalFocusMinutes + elapsedMinutes)
+    val accumulatedMinutes = state.totalFocusMinutes + elapsedMinutes
+    val checkpoint = StarRoute.targetCheckpoint(accumulatedMinutes)
+    val minutesUntilTarget = StarRoute.minutesUntilTarget(accumulatedMinutes)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -86,7 +89,7 @@ internal fun StarRouteProgressCard(state: FocusUiState) {
             )
             Spacer(Modifier.height(3.dp))
             Text(
-                "星渡り航路 · 第${checkpoint}星標",
+                "星渡り航路 · 第${checkpoint}星標へ",
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onTertiaryContainer,
@@ -95,7 +98,7 @@ internal fun StarRouteProgressCard(state: FocusUiState) {
             StarBeaconRoute(litBeacons)
             Spacer(Modifier.height(8.dp))
             Text(
-                "$litBeacons / ${StarRoute.BEACONS_PER_ROUTE} 星標点灯  ·  航行 ${elapsedMinutes}分",
+                "$litBeacons / ${StarRoute.BEACONS_PER_ROUTE} 航路灯点灯  ·  あと${minutesUntilTarget}分",
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = .78f),
             )
@@ -105,7 +108,13 @@ internal fun StarRouteProgressCard(state: FocusUiState) {
 
 @Composable
 internal fun StarRouteVictoryCard(state: FocusUiState) {
-    val checkpoint = StarRoute.checkpoint(state.totalFocusMinutes)
+    val creditedMinutes = state.reward?.creditedMinutes?.coerceAtLeast(0) ?: 0
+    val beforeTotalMinutes = (state.totalFocusMinutes - creditedMinutes).coerceAtLeast(0)
+    val beforeCheckpoint = StarRoute.reachedCheckpoint(beforeTotalMinutes)
+    val reachedCheckpoint = StarRoute.reachedCheckpoint(state.totalFocusMinutes)
+    val newlyReached = (reachedCheckpoint - beforeCheckpoint).coerceAtLeast(0)
+    val targetCheckpoint = StarRoute.targetCheckpoint(state.totalFocusMinutes)
+    val minutesUntilTarget = StarRoute.minutesUntilTarget(state.totalFocusMinutes)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -123,7 +132,11 @@ internal fun StarRouteVictoryCard(state: FocusUiState) {
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                "第${checkpoint}星標へ到達",
+                if (newlyReached > 0) {
+                    "第${reachedCheckpoint}星標へ到達"
+                } else {
+                    "第${targetCheckpoint}星標へ航行中"
+                },
                 modifier = Modifier.fillMaxWidth(),
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Black,
@@ -134,7 +147,11 @@ internal fun StarRouteVictoryCard(state: FocusUiState) {
             StarBeaconRoute(StarRoute.BEACONS_PER_ROUTE)
             Spacer(Modifier.height(6.dp))
             Text(
-                "集中した時間が、次の航路を照らしました。",
+                when {
+                    newlyReached > 1 -> "一度の集中で${newlyReached}つの星標を越えました。"
+                    newlyReached == 1 -> "集中した時間が、新しい星標を照らしました。"
+                    else -> "次の星標まであと${minutesUntilTarget}分。航路はここから続きます。"
+                },
                 modifier = Modifier.fillMaxWidth(),
                 fontSize = 11.sp,
                 textAlign = TextAlign.Center,
