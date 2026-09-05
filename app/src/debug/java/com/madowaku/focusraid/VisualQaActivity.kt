@@ -36,12 +36,66 @@ class VisualQaActivity : ComponentActivity() {
 
         val phase = intent.getStringExtra(EXTRA_PHASE)?.uppercase().orEmpty()
         val now = System.currentTimeMillis()
+        val visualHistory = listOf(
+            SessionHistoryEntry(
+                sessionId = "visual-log-1",
+                completedAtEpochMillis = now - 18 * 60 * 1000L,
+                plannedMinutes = 25,
+                creditedMinutes = 25,
+                expedition = Expedition.TOWER,
+                outcome = SessionOutcome.COMPLETED,
+                damage = 25,
+                rarity = Rarity.RARE,
+                discovery = "古代の鍵",
+            ),
+            SessionHistoryEntry(
+                sessionId = "visual-log-2",
+                completedAtEpochMillis = now - 2 * 60 * 60 * 1000L,
+                plannedMinutes = 45,
+                creditedMinutes = 45,
+                expedition = Expedition.ABYSS,
+                outcome = SessionOutcome.COMPLETED,
+                damage = 45,
+                rarity = null,
+                discovery = null,
+            ),
+            SessionHistoryEntry(
+                sessionId = "visual-log-star",
+                completedAtEpochMillis = now - 5 * 60 * 60 * 1000L,
+                plannedMinutes = 25,
+                creditedMinutes = 25,
+                expedition = Expedition.STAR_ROUTE,
+                outcome = SessionOutcome.COMPLETED,
+                damage = 25,
+                rarity = Rarity.RARE,
+                discovery = "彗星のコンパス",
+            ),
+            SessionHistoryEntry(
+                sessionId = "visual-log-3",
+                completedAtEpochMillis = now - 24 * 60 * 60 * 1000L,
+                plannedMinutes = 25,
+                creditedMinutes = 12,
+                expedition = Expedition.TOWER,
+                outcome = SessionOutcome.ABORTED,
+                damage = 12,
+                rarity = null,
+                discovery = null,
+            ),
+        )
+
         val state = when (phase) {
             "RAID" -> FocusUiState(
                 phase = SessionPhase.RUNNING,
                 selectedMinutes = 25,
                 durationSeconds = 25 * 60,
                 remainingSeconds = 18 * 60 + 42,
+            )
+
+            "RAID_OVERVIEW", "RAID_OVERVIEW_PRO" -> FocusUiState(
+                totalFocusMinutes = 682,
+                todayFocusMinutes = 70,
+                streakDays = 4,
+                sessionHistory = visualHistory,
             )
 
             "STAR_READY" -> FocusUiState(
@@ -193,56 +247,11 @@ class VisualQaActivity : ComponentActivity() {
                 streakDays = 21,
             )
 
-            "LOG" -> FocusUiState(
+            "LOG", "LOG_PRO" -> FocusUiState(
                 totalFocusMinutes = 682,
                 todayFocusMinutes = 70,
                 streakDays = 4,
-                sessionHistory = listOf(
-                    SessionHistoryEntry(
-                        sessionId = "visual-log-1",
-                        completedAtEpochMillis = now - 18 * 60 * 1000L,
-                        plannedMinutes = 25,
-                        creditedMinutes = 25,
-                        expedition = Expedition.TOWER,
-                        outcome = SessionOutcome.COMPLETED,
-                        damage = 25,
-                        rarity = Rarity.RARE,
-                        discovery = "古代の鍵",
-                    ),
-                    SessionHistoryEntry(
-                        sessionId = "visual-log-2",
-                        completedAtEpochMillis = now - 2 * 60 * 60 * 1000L,
-                        plannedMinutes = 45,
-                        creditedMinutes = 45,
-                        expedition = Expedition.ABYSS,
-                        outcome = SessionOutcome.COMPLETED,
-                        damage = 45,
-                        rarity = null,
-                        discovery = null,
-                    ),
-                    SessionHistoryEntry(
-                        sessionId = "visual-log-star",
-                        completedAtEpochMillis = now - 5 * 60 * 60 * 1000L,
-                        plannedMinutes = 25,
-                        creditedMinutes = 25,
-                        expedition = Expedition.STAR_ROUTE,
-                        outcome = SessionOutcome.COMPLETED,
-                        damage = 25,
-                        rarity = Rarity.RARE,
-                        discovery = "彗星のコンパス",
-                    ),
-                    SessionHistoryEntry(
-                        sessionId = "visual-log-3",
-                        completedAtEpochMillis = now - 24 * 60 * 60 * 1000L,
-                        plannedMinutes = 25,
-                        creditedMinutes = 12,
-                        expedition = Expedition.TOWER,
-                        outcome = SessionOutcome.ABORTED,
-                        damage = 12,
-                        rarity = null,
-                        discovery = null,
-                    ),
-                ),
+                sessionHistory = visualHistory,
             )
 
             else -> FocusUiState()
@@ -250,10 +259,15 @@ class VisualQaActivity : ComponentActivity() {
 
         val tab = when {
             phase.startsWith("COMPANION") -> MainTab.COMPANION
-            phase == "LOG" -> MainTab.LOG
+            phase.startsWith("RAID_OVERVIEW") -> MainTab.RAID
+            phase.startsWith("LOG") -> MainTab.LOG
             else -> MainTab.HOME
         }
-        val accessLevel = if (phase.startsWith("STAR")) AccessLevel.PRO else AccessLevel.FREE
+        val accessLevel = if (phase.startsWith("STAR") || phase.endsWith("_PRO")) {
+            AccessLevel.PRO
+        } else {
+            AccessLevel.FREE
+        }
 
         setContent {
             FocusRaidTheme {
