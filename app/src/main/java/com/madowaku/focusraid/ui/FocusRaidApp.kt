@@ -327,10 +327,19 @@ private fun ReadyScreen(
         ExpeditionSelector(state.expedition, onSelectExpedition)
 
         Spacer(Modifier.height(12.dp))
-        StartButton(onStart)
+        StartButton(expedition = state.expedition, onClick = onStart)
 
         Spacer(Modifier.height(14.dp))
-        BossCard(state)
+        AnimatedContent(
+            targetState = state.expedition,
+            label = "ready-expedition-card",
+        ) { expedition ->
+            if (expedition == Expedition.STAR_ROUTE) {
+                StarRouteLaunchCard(state)
+            } else {
+                BossCard(state)
+            }
+        }
         Spacer(Modifier.height(12.dp))
     }
 }
@@ -447,7 +456,7 @@ private fun ExpeditionSelector(selected: Expedition, onSelect: (Expedition) -> U
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun StartButton(onClick: () -> Unit) {
+private fun StartButton(expedition: Expedition, onClick: () -> Unit) {
     Button(
         onClick = onClick,
         modifier = Modifier
@@ -460,7 +469,7 @@ private fun StartButton(onClick: () -> Unit) {
         ),
     ) {
         Text(
-            "⚔  レイド開始",
+            if (expedition == Expedition.STAR_ROUTE) "✦  星渡りへ出航" else "⚔  レイド開始",
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
         )
