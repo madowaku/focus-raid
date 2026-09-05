@@ -124,6 +124,24 @@ class VisualQaActivity : ComponentActivity() {
                 ),
             )
 
+            "STAR_CONTINUE" -> FocusUiState(
+                phase = SessionPhase.COMPLETED,
+                selectedMinutes = 15,
+                expedition = Expedition.STAR_ROUTE,
+                durationSeconds = 15 * 60,
+                remainingSeconds = 0,
+                totalFocusMinutes = 15,
+                reward = SessionReward(
+                    creditedMinutes = 15,
+                    personalDamage = 15,
+                    worldEp = 15,
+                    defeated = 0,
+                    rarity = null,
+                    discovery = null,
+                    armoryPoints = 0,
+                ),
+            )
+
             "EVOLUTION" -> FocusUiState(
                 phase = SessionPhase.COMPLETED,
                 selectedMinutes = 25,
