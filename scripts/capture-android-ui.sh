@@ -33,6 +33,7 @@ capture READY 360 800 ready-360x800
 capture STAR_READY 360 800 star-ready-360x800
 capture CUSTOM 360 800 custom-360x800
 capture SYSTEM_ACCESS 360 800 system-access-360x800
+capture PAYWALL 360 800 paywall-360x800
 capture RAID 360 800 raid-360x800
 capture RAID_OVERVIEW 360 800 raid-overview-free-360x800
 capture RAID_OVERVIEW_PRO 360 800 raid-overview-pro-360x800
@@ -55,6 +56,7 @@ capture READY 720 1280 ready-720x1280
 capture STAR_READY 720 1280 star-ready-720x1280
 capture CUSTOM 720 1280 custom-720x1280
 capture SYSTEM_ACCESS 720 1280 system-access-720x1280
+capture PAYWALL 720 1280 paywall-720x1280
 capture RAID 720 1280 raid-720x1280
 capture RAID_OVERVIEW 720 1280 raid-overview-free-720x1280
 capture RAID_OVERVIEW_PRO 720 1280 raid-overview-pro-720x1280
@@ -79,6 +81,7 @@ expected = {
     "star-ready-360x800.png": (360, 800),
     "custom-360x800.png": (360, 800),
     "system-access-360x800.png": (360, 800),
+    "paywall-360x800.png": (360, 800),
     "raid-360x800.png": (360, 800),
     "raid-overview-free-360x800.png": (360, 800),
     "raid-overview-pro-360x800.png": (360, 800),
@@ -101,6 +104,7 @@ expected = {
     "star-ready-720x1280.png": (720, 1280),
     "custom-720x1280.png": (720, 1280),
     "system-access-720x1280.png": (720, 1280),
+    "paywall-720x1280.png": (720, 1280),
     "raid-720x1280.png": (720, 1280),
     "raid-overview-free-720x1280.png": (720, 1280),
     "raid-overview-pro-720x1280.png": (720, 1280),
