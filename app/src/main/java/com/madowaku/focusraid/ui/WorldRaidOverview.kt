@@ -70,14 +70,14 @@ internal fun WorldRaidOverview(state: FocusUiState) {
             ExpeditionLocationCard(
                 eyebrow = "SKY",
                 title = "天空塔",
-                location = "${state.world.towerFloor}F",
+                location = "${state.world.towerFloor.raidNumber()}F",
                 glyph = "△",
                 modifier = Modifier.weight(1f),
             )
             ExpeditionLocationCard(
                 eyebrow = "ABYSS",
                 title = "深層迷宮",
-                location = "${state.world.abyssDepth}m",
+                location = "${state.world.abyssDepth.raidNumber()}m",
                 glyph = "▽",
                 modifier = Modifier.weight(1f),
             )
@@ -134,7 +134,7 @@ private fun WorldBossOverviewCard(state: FocusUiState) {
                     color = MaterialTheme.colorScheme.primaryContainer,
                 ) {
                     Text(
-                        "${world.raidParticipants}人",
+                        "${world.raidParticipants.raidNumber()}人",
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
@@ -164,7 +164,7 @@ private fun WorldBossOverviewCard(state: FocusUiState) {
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
-                    "${world.bossHp} / ${world.bossMaxHp} HP",
+                    "${world.bossHp.raidNumber()} / ${world.bossMaxHp.raidNumber()} HP",
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -296,7 +296,7 @@ private fun StarRouteOverviewCard(
                 color = MaterialTheme.colorScheme.onTertiaryContainer,
             )
             Text(
-                "星渡りで集中した時間 ${starRouteMinutes}分",
+                "累計集中 ${state.totalFocusMinutes.raidNumber()}分を反映 · 実航行 ${starRouteMinutes.raidNumber()}分",
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = .76f),
             )
@@ -369,3 +369,5 @@ private fun LockedStarRouteOverviewCard(onUnlock: () -> Unit) {
         }
     }
 }
+
+private fun Int.raidNumber(): String = "%,d".format(this)
