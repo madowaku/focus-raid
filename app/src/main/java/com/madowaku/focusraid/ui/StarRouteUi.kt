@@ -23,10 +23,52 @@ import com.madowaku.focusraid.core.domain.StarRoute
 import kotlin.math.max
 
 @Composable
+internal fun StarRouteLaunchCard(state: FocusUiState) {
+    val checkpoint = StarRoute.checkpoint(state.totalFocusMinutes)
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = .84f),
+        ),
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Text(
+                "✦  PRO EXPEDITION",
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = .72f),
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "星渡り航路",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Black,
+                color = MaterialTheme.colorScheme.onTertiaryContainer,
+            )
+            Text(
+                "次の目的地 · 第${checkpoint}星標",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = .78f),
+            )
+            Spacer(Modifier.height(10.dp))
+            StarBeaconRoute(0)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "集中すると5つの星標が順に灯ります。操作は不要です。",
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = .78f),
+            )
+        }
+    }
+}
+
+@Composable
 internal fun StarRouteProgressCard(state: FocusUiState) {
     val litBeacons = StarRoute.litBeacons(state.progress)
-    val checkpoint = StarRoute.checkpoint(state.totalFocusMinutes)
     val elapsedMinutes = max(0, (state.durationSeconds - state.remainingSeconds) / 60)
+    val checkpoint = StarRoute.checkpoint(state.totalFocusMinutes + elapsedMinutes)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
