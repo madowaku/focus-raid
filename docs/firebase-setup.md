@@ -2,21 +2,57 @@
 
 Focus Raid reads the shared raid snapshot from Firebase and can share preset-only footprints while keeping the focus timer and progression fully local.
 
-The Android build intentionally does not require `google-services.json`. Firebase is initialized explicitly from three build values so CI and local preview builds can continue to run without backend credentials.
+The Android build intentionally does not require `google-services.json` at runtime. Firebase is initialized explicitly from three build values so CI and local preview builds can continue to run without backend credentials.
 
-## 1. Create or select a Firebase project
+## Production checklist
 
-Enable:
+Before a public Google Play release, all of these must be complete:
 
-- Firebase Authentication
-- Anonymous sign-in
-- Cloud Firestore
+- create/select the production Firebase project
+- register Android package `com.madowaku.focusraid`
+- enable Firebase Authentication anonymous sign-in
+- create the default Cloud Firestore database
+- create `world/current`
+- deploy and verify this repository's `firestore.rules`
+- import the Firebase Android config into local Gradle properties
+- verify a real device can read the world and read/write preset Footprints
+- register Firebase App Check with Play Integrity
+- verify App Check metrics from an internal-test Play build
+- enable App Check enforcement for Cloud Firestore and Authentication only after valid production traffic is confirmed
 
-Deploy `firestore.rules` before exposing the project to users.
+Do not enable enforcement before the internal-test build is successfully producing valid App Check tokens.
 
-## 2. Create `world/current`
+## 1. Create the Firebase project and Android app
 
-Create this Firestore document:
+In Firebase Console, create a dedicated production project for Focus Raid or select the intended existing project.
+
+Register an Android app with the exact package/application ID:
+
+```text
+com.madowaku.focusraid
+```
+
+The package name is case-sensitive and cannot be changed for that Firebase Android app after registration.
+
+Download the generated `google-services.json`. Focus Raid does **not** commit or load this file directly; the helper script can use it once as a convenient source for the three identifiers the app already expects.
+
+## 2. Enable Authentication
+
+In Firebase Console:
+
+```text
+Security → Authentication → Sign-in method → Anonymous → Enable
+```
+
+Focus Raid does not create email/password or social accounts. The anonymous Firebase UID is used only to authenticate protected backend requests and to own one Footprint document per checkpoint.
+
+If Identity Platform automatic cleanup for old anonymous users is enabled later, evaluate the effect on old Footprint ownership before turning it on. Deleting an Auth account does not automatically delete its Firestore Footprint documents.
+
+## 3. Create Cloud Firestore
+
+Create the default Cloud Firestore database. Use production rules rather than open/test-mode rules before distributing the app.
+
+The client reads the shared world document:
 
 ```text
 world/current
@@ -37,11 +73,24 @@ Suggested initial fields:
 }
 ```
 
-Numeric Firestore values are mapped defensively. Missing or invalid fields fall back to the local preview values rather than breaking the timer UI.
+Numeric Firestore values are mapped defensively. Missing or invalid fields fall back to local preview values rather than breaking the timer UI.
 
-## 3. Configure the Android build
+## 4. Import the Android Firebase identifiers locally
 
-Provide these values through Gradle properties or environment variables:
+From the repository root on Windows PowerShell, after downloading `google-services.json`:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\configure-firebase.ps1 `
+  -GoogleServicesJson "C:\path\to\google-services.json"
+```
+
+The script verifies that the file contains an Android client for:
+
+```text
+com.madowaku.focusraid
+```
+
+It extracts and stores these values in the current user's `~/.gradle/gradle.properties`:
 
 ```text
 FOCUS_RAID_FIREBASE_PROJECT_ID
@@ -49,35 +98,49 @@ FOCUS_RAID_FIREBASE_API_KEY
 FOCUS_RAID_FIREBASE_APP_ID
 ```
 
-A convenient local option is `~/.gradle/gradle.properties`:
+The API key in Firebase Android configuration is not treated as a server secret, but project-specific configuration should still not be pasted into issue trackers or committed merely to make builds work.
 
-```properties
-FOCUS_RAID_FIREBASE_PROJECT_ID=your-project-id
-FOCUS_RAID_FIREBASE_API_KEY=your-web-or-android-api-key
-FOCUS_RAID_FIREBASE_APP_ID=1:1234567890:android:example
+The app-level Gradle build reads the values from Gradle properties or environment variables. If any of the three are absent, `WorldRepositoryFactory` deliberately selects `FakeWorldRepository`.
+
+## 5. Deploy Firestore Security Rules
+
+This repository owns the production rules source:
+
+```text
+firestore.rules
 ```
 
-Do not commit account-specific configuration just to make preview builds work. If any of the three values are absent, `WorldRepositoryFactory` deliberately selects `FakeWorldRepository`.
+and maps it through:
 
-## Runtime behavior
+```text
+firebase.json
+```
 
-When Firebase configuration is present:
+Deploy only the Firestore rules from the repository root:
 
-1. the app restores the local focus session first
-2. if no focus session is running or paused, it signs in anonymously
-3. it performs a one-shot server read of `world/current`
-4. the shared world snapshot replaces the local preview snapshot
-5. after a completed session, nearby preset footprints are fetched asynchronously
-6. a selected footprint is written without blocking the VICTORY screen
-7. after a result is dismissed and the app returns to READY, it refreshes the shared snapshot again
+```powershell
+firebase login
+firebase deploy --only firestore:rules --project YOUR_FIREBASE_PROJECT_ID
+```
 
-There is no realtime Firestore listener during focus. RUNNING and PAUSED remain isolated from network-driven world changes.
+Firebase CLI deployments overwrite the active Firestore rules with the rules from the repository, so avoid maintaining a different long-lived copy only in the Firebase Console.
 
-If authentication or Firestore fails, the timer and local progression continue. Cloud state is never allowed to block starting or completing a focus session.
+The current rules enforce:
 
-When a real Firebase backend is configured, failed footprint reads do **not** fall back to fake seeded users. An empty or failed remote read must never make Focus Raid pretend that other people are present.
+- authenticated reads only
+- `world/**` client writes are always denied
+- only `TOWER`, `ABYSS`, and `STAR_ROUTE` Footprint paths are accepted
+- Footprint document ID must equal the signed-in UID
+- only known preset IDs are accepted
+- only `presetId` and `createdAt` may exist
+- `createdAt` must equal server request time on create
+- updates may change the preset but must preserve the original `createdAt`
+- deletes are denied
+- every other unmatched path is denied by default
 
-## Footprint data model
+There is intentionally no generic writable `/users/**` rule in production.
+
+## 6. Footprint data model
 
 Remote footprints use this path:
 
@@ -102,25 +165,76 @@ Each entry stores only:
 
 The displayed glyph and text are reconstructed from the app's built-in `FootprintPresets`. Free-form text is never stored in Firestore.
 
-The anonymous Firebase UID is used as the document ID, which means one anonymous user owns at most one footprint document per checkpoint. Updating the preset changes only `presetId`; the original `createdAt` value is preserved so repeatedly changing the message cannot push the same user back to the top of the latest-footprints list.
+The anonymous Firebase UID is used as the document ID, so one anonymous user owns at most one Footprint document per checkpoint. Updating the preset does not refresh `createdAt`, preventing repeated edits from pushing the same user back to the top of the latest-footprints list.
 
 The UI reads at most the newest three entries for the current checkpoint.
 
-## Security rules
+## 7. Firebase App Check
 
-`firestore.rules` enforces the social boundary rather than trusting only the Android client:
+Release builds use Firebase App Check with the Play Integrity provider. Debug builds use the Firebase App Check debug provider so local emulator/device development can continue after enforcement is enabled.
 
-- reads require Firebase Authentication
-- `world/**` remains client read-only
-- footprint writes require the document ID to equal the signed-in anonymous UID
-- only the known preset IDs are accepted
-- only `presetId` and `createdAt` may exist in a footprint document
-- `createdAt` must be the server request time on create
-- updates must preserve the original `createdAt`
-- footprint deletion is denied
-- all unmatched paths are denied by default
+Focus Raid initializes App Check for the same named Firebase app (`focus-raid-remote`) before obtaining Firebase Auth or Firestore instances.
 
-Deploy rules with your normal Firebase workflow before distributing a build that has Firebase credentials.
+### Register Play Integrity App Check
+
+For the production Android app:
+
+1. In Google Play Console, open Focus Raid and link the Play Integrity API to the same Google Cloud project backing the Firebase project.
+2. In Firebase Console, open `Security → App Check`.
+3. Register the Android app with the Play Integrity provider.
+4. Add the required SHA-256 signing certificate fingerprint.
+5. Distribute an internal-test build through Google Play.
+6. Confirm App Check metrics show valid requests from the Play-installed build.
+7. Only then enable enforcement for Cloud Firestore and Authentication.
+
+For a Google-Play-only release, start with Firebase's recommended Play Integrity defaults rather than adding unusually strict device-integrity requirements.
+
+### Debug token
+
+When a debug build uses the real Firebase backend, the debug App Check provider logs a debug token. Register that token under:
+
+```text
+Firebase Console → Security → App Check → Manage debug tokens
+```
+
+Never commit or publish a debug token. Delete it in Firebase Console if compromised.
+
+## 8. Runtime behavior
+
+When Firebase configuration is present:
+
+1. the app restores the local focus session first
+2. if no focus session is running or paused, it signs in anonymously
+3. it performs a one-shot server read of `world/current`
+4. the shared world snapshot replaces the local preview snapshot
+5. after a completed session, nearby preset Footprints are fetched asynchronously
+6. a selected Footprint is written without blocking the VICTORY screen
+7. after a result is dismissed and the app returns to READY, it refreshes the shared snapshot again
+
+There is no realtime Firestore listener during focus. RUNNING and PAUSED remain isolated from network-driven world changes.
+
+If Authentication, App Check, or Firestore fails, the timer and local progression continue. Cloud state is never allowed to block starting or completing a focus session.
+
+When a real Firebase backend is configured, failed Footprint reads do **not** fall back to fake seeded users. An empty or failed remote read must never make Focus Raid pretend that other people are present.
+
+## 9. Production smoke test
+
+Before public release, verify from a Play-installed internal-test build:
+
+1. clean install starts without Firebase crash
+2. anonymous sign-in succeeds
+3. shared world status becomes LIVE
+4. `world/current` values appear
+5. complete a short test focus session
+6. VICTORY appears before network work finishes
+7. Footprints load for the reached checkpoint
+8. post one preset Footprint
+9. change the preset and confirm its original timestamp/ordering is preserved
+10. confirm a second test account/device can read it
+11. airplane mode leaves timer/history usable
+12. restore network and confirm the world can refresh again
+13. confirm App Check metrics classify the Play build as valid
+14. after enforcement, repeat world read + Footprint read/write
 
 ## Shared-world write policy
 
@@ -128,4 +242,4 @@ The Android client remains read-only for authoritative shared-world values.
 
 `firestore.rules` denies client writes to `world/**`. Future raid contribution aggregation, if added, should go through a trusted backend such as Cloud Run rather than allowing clients to mutate boss HP or global counters directly.
 
-Preset footprints are the deliberate exception because the accepted values are tightly constrained by Firestore Security Rules and do not contain free-form user content.
+Preset Footprints are the deliberate exception because accepted values are tightly constrained by Security Rules, protected by Auth, and additionally guarded by App Check in production.
