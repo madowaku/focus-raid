@@ -205,7 +205,7 @@ internal fun FocusRaidAppContent(
                             onStart = onStart,
                         )
 
-                        MainTab.RAID -> RaidOverview(state)
+                        MainTab.RAID -> WorldRaidOverview(state)
                         MainTab.COMPANION -> CompanionProgressOverview(state)
                         MainTab.LOG -> SessionHistoryOverview(state)
                     }
