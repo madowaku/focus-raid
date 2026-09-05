@@ -82,7 +82,15 @@ fun FocusRaidRoot(
             pendingProExpeditionName = null
         }
         if (state.phase == SessionPhase.COMPLETED) {
-            showFootprintDialog = true
+            val reachedNewStarRouteCheckpoint = if (state.expedition == Expedition.STAR_ROUTE) {
+                val creditedMinutes = state.reward?.creditedMinutes?.coerceAtLeast(0) ?: 0
+                val beforeTotal = (state.totalFocusMinutes - creditedMinutes).coerceAtLeast(0)
+                StarRoute.reachedCheckpoint(state.totalFocusMinutes) >
+                    StarRoute.reachedCheckpoint(beforeTotal)
+            } else {
+                true
+            }
+            showFootprintDialog = reachedNewStarRouteCheckpoint
         } else {
             showFootprintDialog = false
         }
@@ -255,7 +263,7 @@ private fun FootprintDialog(
     val location = when (state.expedition) {
         Expedition.TOWER -> "天空塔 ${state.world.towerFloor}F"
         Expedition.ABYSS -> "深層迷宮 ${state.world.abyssDepth}m"
-        Expedition.STAR_ROUTE -> "星渡り航路 第${StarRoute.checkpoint(state.totalFocusMinutes)}星標"
+        Expedition.STAR_ROUTE -> "星渡り航路 第${StarRoute.reachedCheckpoint(state.totalFocusMinutes)}星標"
     }
 
     AlertDialog(
