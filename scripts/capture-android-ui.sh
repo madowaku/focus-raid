@@ -30,6 +30,7 @@ capture() {
 }
 
 capture READY 360 800 ready-360x800
+capture STAR_READY 360 800 star-ready-360x800
 capture CUSTOM 360 800 custom-360x800
 capture SYSTEM_ACCESS 360 800 system-access-360x800
 capture RAID 360 800 raid-360x800
@@ -47,6 +48,7 @@ capture COMPANION_SECOND 360 800 companion-second-360x800
 capture COMPANION_MATURE 360 800 companion-mature-360x800
 capture LOG 360 800 log-360x800
 capture READY 720 1280 ready-720x1280
+capture STAR_READY 720 1280 star-ready-720x1280
 capture CUSTOM 720 1280 custom-720x1280
 capture SYSTEM_ACCESS 720 1280 system-access-720x1280
 capture RAID 720 1280 raid-720x1280
@@ -66,6 +68,7 @@ import struct
 
 expected = {
     "ready-360x800.png": (360, 800),
+    "star-ready-360x800.png": (360, 800),
     "custom-360x800.png": (360, 800),
     "system-access-360x800.png": (360, 800),
     "raid-360x800.png": (360, 800),
@@ -83,6 +86,7 @@ expected = {
     "companion-mature-360x800.png": (360, 800),
     "log-360x800.png": (360, 800),
     "ready-720x1280.png": (720, 1280),
+    "star-ready-720x1280.png": (720, 1280),
     "custom-720x1280.png": (720, 1280),
     "system-access-720x1280.png": (720, 1280),
     "raid-720x1280.png": (720, 1280),
