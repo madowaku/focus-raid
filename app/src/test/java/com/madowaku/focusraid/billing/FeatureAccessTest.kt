@@ -17,9 +17,16 @@ class FeatureAccessTest {
 
     @Test
     fun `launch expeditions remain Free`() {
-        Expedition.entries.forEach { expedition ->
+        listOf(Expedition.TOWER, Expedition.ABYSS).forEach { expedition ->
             assertEquals(RaidAccess.FREE, FeatureAccess.raidAccess(expedition))
             assertTrue(FeatureAccess.canUse(expedition, AccessLevel.FREE))
         }
+    }
+
+    @Test
+    fun `Star Route is the first Pro raid`() {
+        assertEquals(RaidAccess.PRO, FeatureAccess.raidAccess(Expedition.STAR_ROUTE))
+        assertFalse(FeatureAccess.canUse(Expedition.STAR_ROUTE, AccessLevel.FREE))
+        assertTrue(FeatureAccess.canUse(Expedition.STAR_ROUTE, AccessLevel.PRO))
     }
 }
