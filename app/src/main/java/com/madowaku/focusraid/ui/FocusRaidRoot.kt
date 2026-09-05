@@ -34,8 +34,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.madowaku.focusraid.billing.AccessLevel
+import com.madowaku.focusraid.billing.FeatureAccess
 import com.madowaku.focusraid.billing.ProAccessViewModel
 import com.madowaku.focusraid.billing.PurchaseState
+import com.madowaku.focusraid.core.domain.StarRoute
 import com.madowaku.focusraid.core.model.Expedition
 import com.madowaku.focusraid.core.model.FootprintPresets
 import com.madowaku.focusraid.core.model.SessionPhase
@@ -127,13 +129,21 @@ fun FocusRaidRoot(
                     tab = tab,
                     onTabChange = { tab = it },
                     onSelectMinutes = viewModel::selectMinutes,
-                    onSelectExpedition = viewModel::selectExpedition,
+                    onSelectExpedition = { expedition ->
+                        if (FeatureAccess.canUse(expedition, proAccess.accessLevel)) {
+                            viewModel.selectExpedition(expedition)
+                        } else {
+                            openProPaywall()
+                        }
+                    },
                     onTimerClick = {
                         customDurationMinutes = state.selectedMinutes
                         showCustomDuration = true
                     },
                     onStart = {
-                        if (!systemAccess.isReady && !state.systemAccessEducationSeen) {
+                        if (!FeatureAccess.canUse(state.expedition, proAccess.accessLevel)) {
+                            openProPaywall()
+                        } else if (!systemAccess.isReady && !state.systemAccessEducationSeen) {
                             showSystemAccessEducation = true
                         } else {
                             viewModel.start()
@@ -232,6 +242,7 @@ private fun FootprintDialog(
     val location = when (state.expedition) {
         Expedition.TOWER -> "天空塔 ${state.world.towerFloor}F"
         Expedition.ABYSS -> "深層迷宮 ${state.world.abyssDepth}m"
+        Expedition.STAR_ROUTE -> "星渡り航路 第${StarRoute.checkpoint(state.totalFocusMinutes)}星標"
     }
 
     AlertDialog(
