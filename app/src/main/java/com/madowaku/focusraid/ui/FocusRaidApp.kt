@@ -4,6 +4,9 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -15,6 +18,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.hideFromAccessibility
+import androidx.compose.ui.semantics.heading
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
@@ -39,6 +50,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -130,6 +142,7 @@ internal fun FocusRaidAppContent(
     state: FocusUiState,
     tab: MainTab = MainTab.HOME,
     onTabChange: (MainTab) -> Unit = {},
+    onSelectCompanion: (com.madowaku.focusraid.core.domain.CompanionIdentity) -> Unit = {},
     onSelectMinutes: (Int) -> Unit = {},
     onSelectExpedition: (Expedition) -> Unit = {},
     onTimerClick: (() -> Unit)? = null,
@@ -141,7 +154,9 @@ internal fun FocusRaidAppContent(
     onDone: () -> Unit = {},
 ) {
     val inSession = state.phase != SessionPhase.READY
+    val readyToAct = state.initialized && !state.saving && state.persistenceError == null
 
+    CompositionLocalProvider(LocalCompanionIdentity provides state.companion) {
     Scaffold(
         containerColor = Color.Transparent,
         bottomBar = {
@@ -202,17 +217,18 @@ internal fun FocusRaidAppContent(
                             onSelectMinutes = onSelectMinutes,
                             onSelectExpedition = onSelectExpedition,
                             onTimerClick = onTimerClick,
-                            onStart = onStart,
+                            onStart = { if (readyToAct) onStart() },
                         )
 
                         MainTab.RAID -> WorldRaidOverview(state)
-                        MainTab.COMPANION -> CompanionProgressOverview(state)
+                        MainTab.COMPANION -> CompanionProgressOverview(state, onSelectCompanion)
                         MainTab.LOG -> SessionHistoryOverview(state)
                     }
                 }
             }
         }
     }
+}
 }
 
 @Composable
@@ -292,7 +308,6 @@ private fun ReadyScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .statusBarsPadding()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -327,7 +342,10 @@ private fun ReadyScreen(
         ExpeditionSelector(state.expedition, onSelectExpedition)
 
         Spacer(Modifier.height(12.dp))
-        StartButton(expedition = state.expedition, onClick = onStart)
+        StartButton(expedition = state.expedition, onClick = onStart,
+            enabled = state.initialized && !state.saving && state.persistenceError == null)
+        if (!state.initialized || state.saving) Text("記録を確認中…", style = MaterialTheme.typography.bodySmall)
+        WorldStatusLabel(state.worldSyncStatus)
 
         Spacer(Modifier.height(14.dp))
         AnimatedContent(
@@ -346,10 +364,11 @@ private fun ReadyScreen(
 
 @Composable
 private fun TopBar(streak: Int) {
+    Column(modifier = Modifier.fillMaxWidth()) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(56.dp),
+            .heightIn(min = 56.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
@@ -369,6 +388,10 @@ private fun TopBar(streak: Int) {
             )
         }
     }
+    TextButton(onClick = LocalOpenProPaywall.current, modifier = Modifier.align(Alignment.End)) {
+        Text(if (LocalProAccessLevel.current == com.madowaku.focusraid.billing.AccessLevel.PRO) "Pro・購入を確認" else "Free・Proを見る")
+    }
+    }
 }
 
 @Composable
@@ -387,7 +410,7 @@ private fun CompanionHero(stage: CompanionStage, modifier: Modifier = Modifier) 
             color = Color(0xCC211735),
         ) {
             Text(
-                "ラグ · ${stage.label}",
+                "${LocalCompanionIdentity.current.label} · ${stage.label}",
                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -415,7 +438,7 @@ private fun DurationSelector(selected: Int, onSelect: (Int) -> Unit) {
                 },
                 modifier = Modifier
                     .weight(1f)
-                    .height(48.dp),
+                    .heightIn(min = 48.dp),
             )
         }
     }
@@ -448,7 +471,7 @@ private fun ExpeditionSelector(selected: Expedition, onSelect: (Expedition) -> U
                 },
                 modifier = Modifier
                     .weight(1f)
-                    .height(44.dp),
+                    .heightIn(min = 48.dp),
             )
         }
     }
@@ -456,12 +479,13 @@ private fun ExpeditionSelector(selected: Expedition, onSelect: (Expedition) -> U
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun StartButton(expedition: Expedition, onClick: () -> Unit) {
+private fun StartButton(expedition: Expedition, onClick: () -> Unit, enabled: Boolean = true) {
     Button(
         onClick = onClick,
+        enabled = enabled,
         modifier = Modifier
             .fillMaxWidth()
-            .height(64.dp),
+            .heightIn(min = 64.dp),
         contentPadding = PaddingValues(horizontal = 24.dp),
         shapes = ButtonDefaults.shapes(
             shape = RoundedCornerShape(32.dp),
@@ -537,14 +561,14 @@ private fun RaidScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .statusBarsPadding()
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(48.dp),
+                .heightIn(min = 48.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -566,7 +590,7 @@ private fun RaidScreen(
             }
         }
 
-        Spacer(Modifier.weight(if (paused) 0.20f else 0.28f))
+        Spacer(Modifier.height(24.dp))
         CompanionArtwork(
             modifier = Modifier.size(48.dp),
             stage = companionStage,
@@ -592,7 +616,7 @@ private fun RaidScreen(
                 onClick = onResume,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(64.dp),
+                    .heightIn(min = 64.dp),
                 shape = RoundedCornerShape(32.dp),
             ) {
                 Text("▶  再開する", fontSize = 18.sp, fontWeight = FontWeight.Bold)
@@ -600,11 +624,11 @@ private fun RaidScreen(
             TextButton(onClick = onFinishEarly) {
                 Text("セッションを終了")
             }
-            Spacer(Modifier.weight(0.32f))
+            Spacer(Modifier.height(24.dp))
         } else {
             Button(
                 onClick = onPause,
-                modifier = Modifier.size(64.dp),
+                modifier = Modifier.size(64.dp).semantics { contentDescription = "集中を一時停止" },
                 shape = CircleShape,
                 contentPadding = PaddingValues(0.dp),
             ) {
@@ -615,7 +639,7 @@ private fun RaidScreen(
                 Text("セッションを終了")
             }
 
-            Spacer(Modifier.weight(0.22f))
+            Spacer(Modifier.height(24.dp))
             RaidMiniCard(state)
         }
     }
@@ -668,11 +692,11 @@ private fun AbortedScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .statusBarsPadding()
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp, vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(Modifier.weight(0.16f))
+        Spacer(Modifier.height(24.dp))
         Text(
             "レイド撤退",
             fontSize = 14.sp,
@@ -742,7 +766,7 @@ private fun AbortedScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(state.world.bossName, fontWeight = FontWeight.Bold)
-                    BossArtwork(Modifier.size(34.dp))
+                    BossArtwork(Modifier.size(34.dp), presentation = BossPresentation.Damaged)
                 }
                 Spacer(Modifier.height(8.dp))
                 RaidHpBar(remainingBossHp, state.world.bossMaxHp)
@@ -762,12 +786,12 @@ private fun AbortedScreen(
             onClick = onDone,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(64.dp),
+                .heightIn(min = 64.dp),
             shape = RoundedCornerShape(32.dp),
         ) {
             Text("ホームへ", fontSize = 18.sp, fontWeight = FontWeight.Bold)
         }
-        Spacer(Modifier.weight(0.18f))
+        Spacer(Modifier.height(24.dp))
     }
 }
 
@@ -783,7 +807,6 @@ private fun VictoryScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .statusBarsPadding()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp, vertical = 14.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -862,7 +885,7 @@ private fun VictoryScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(state.world.bossName, fontWeight = FontWeight.Bold)
-                    Text("残HP", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("今回の貢献の目安", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Spacer(Modifier.height(9.dp))
                 RaidHpBar(
@@ -879,13 +902,15 @@ private fun VictoryScreen(
         }
 
         Spacer(Modifier.height(10.dp))
+        Text("あなたの${reward.creditedMinutes}分を記録しました。世界への貢献送信は準備中です。",
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             RewardMetricCard(
-                title = "WORLD EP",
-                value = "+${reward.worldEp}",
+                title = "今回の集中",
+                value = "${reward.worldEp}分",
                 modifier = Modifier.weight(1f),
             )
             RewardMetricCard(
@@ -908,7 +933,7 @@ private fun VictoryScreen(
             onClick = onAgain,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(64.dp),
+                .heightIn(min = 64.dp),
             shape = RoundedCornerShape(32.dp),
         ) {
             Text("もう${state.selectedMinutes}分集中する", fontSize = 17.sp, fontWeight = FontWeight.Bold)
@@ -942,7 +967,7 @@ private fun CompanionEvolutionCard(evolution: CompanionEvolution) {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                "RAG EVOLVED!",
+                "${LocalCompanionIdentity.current.label}が成長！",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Black,
                 color = MaterialTheme.colorScheme.onTertiaryContainer,
@@ -970,7 +995,7 @@ private fun CompanionEvolutionCard(evolution: CompanionEvolution) {
                 if (revealNewStage) {
                     "集中時間が、新しい姿を解放しました。"
                 } else {
-                    "ラグの気配が変わっていく…"
+                    "相棒の気配が変わっていく…"
                 },
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = .82f),
@@ -983,7 +1008,7 @@ private fun CompanionEvolutionCard(evolution: CompanionEvolution) {
 @Composable
 private fun RewardMetricCard(title: String, value: String, modifier: Modifier = Modifier) {
     Card(
-        modifier = modifier.height(88.dp),
+        modifier = modifier.heightIn(min = 88.dp),
         shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .80f),
@@ -1041,7 +1066,6 @@ private fun SimpleOverview(title: String, artwork: OverviewArtwork, body: String
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .statusBarsPadding()
             .padding(16.dp),
     ) {
         Text(title, fontSize = 22.sp, fontWeight = FontWeight.Bold)
@@ -1104,6 +1128,10 @@ private fun TimerRing(
 
     val ringModifier = Modifier
         .size(diameter.dp)
+        .semantics(mergeDescendants = true) {
+            contentDescription = "集中タイマー"
+            stateDescription = "${text.substringBefore(':').toInt()}分${text.substringAfter(':').toInt()}秒"
+        }
         .then(
             if (onClick == null) {
                 Modifier
@@ -1144,12 +1172,17 @@ private fun TimerRing(
                 style = Stroke(width = stroke, cap = StrokeCap.Round),
             )
         }
-        Text(
-            text,
-            fontSize = if (diameter >= 200) 68.sp else 60.sp,
-            fontWeight = FontWeight.SemiBold,
-            fontFamily = FontFamily.Monospace,
-            letterSpacing = (-2).sp,
+        BasicText(
+            text = text,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).semantics { hideFromAccessibility() },
+            style = TextStyle(
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = FontFamily.Monospace,
+                textAlign = TextAlign.Center,
+            ),
+            maxLines = 1,
+            autoSize = TextAutoSize.StepBased(minFontSize = 18.sp, maxFontSize = if (diameter >= 200) 68.sp else 60.sp, stepSize = 1.sp),
         )
     }
 }

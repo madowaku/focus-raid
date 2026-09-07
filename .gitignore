@@ -12,3 +12,8 @@ captures/
 .cxx/
 *.jks
 *.keystore
+
+artifacts/
+emulator-*.log
+.kotlin/
+artifacts-*.log

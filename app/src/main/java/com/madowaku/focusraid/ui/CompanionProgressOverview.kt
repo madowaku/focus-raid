@@ -34,7 +34,7 @@ import com.madowaku.focusraid.core.domain.CompanionGrowth
 import com.madowaku.focusraid.core.domain.CompanionStage
 
 @Composable
-internal fun CompanionProgressOverview(state: FocusUiState) {
+internal fun CompanionProgressOverview(state: FocusUiState, onSelect: (com.madowaku.focusraid.core.domain.CompanionIdentity) -> Unit = {}) {
     val growth = CompanionGrowth.from(state.totalFocusMinutes)
     val totalHours = growth.totalMinutes / 60
     val totalRemainderMinutes = growth.totalMinutes % 60
@@ -54,7 +54,7 @@ internal fun CompanionProgressOverview(state: FocusUiState) {
             fontWeight = FontWeight.Bold,
         )
         Text(
-            "集中した時間だけ、ラグは姿を変えながら一緒に育ちます",
+            "集中した時間だけ、仲間は姿を変えながら一緒に育ちます",
             modifier = Modifier.fillMaxWidth(),
             fontSize = 12.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -80,7 +80,7 @@ internal fun CompanionProgressOverview(state: FocusUiState) {
                     mood = CompanionMood.Idle,
                 )
                 Spacer(Modifier.height(8.dp))
-                Text("ラグ", fontSize = 26.sp, fontWeight = FontWeight.Black)
+                Text(state.companion.label, fontSize = 26.sp, fontWeight = FontWeight.Black)
                 Spacer(Modifier.height(5.dp))
                 Surface(
                     shape = CircleShape,
@@ -96,7 +96,7 @@ internal fun CompanionProgressOverview(state: FocusUiState) {
 
                 Spacer(Modifier.height(18.dp))
                 Text(
-                    "一緒に集中した時間",
+                    "仲間と積み上げた時間",
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -169,6 +169,8 @@ internal fun CompanionProgressOverview(state: FocusUiState) {
 
         Spacer(Modifier.height(12.dp))
         GrowthFormsCard(currentStage = growth.stage)
+        CompanionRoster(state, onSelect)
+        InventoryCard(state.sessionHistory)
 
         Spacer(Modifier.height(12.dp))
         Card(

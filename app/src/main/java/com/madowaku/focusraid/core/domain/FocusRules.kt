@@ -6,26 +6,6 @@ import com.madowaku.focusraid.core.model.SessionReward
 import kotlin.math.floor
 
 object FocusRules {
-    private val drops: Map<Expedition, Map<Rarity, List<String>>> = mapOf(
-        Expedition.TOWER to mapOf(
-            Rarity.COMMON to listOf("鉄の剣", "木の弓", "鉄鉱石", "旅人の盾"),
-            Rarity.RARE to listOf("白銀の槍", "氷晶の弓", "騎士の盾"),
-            Rarity.EPIC to listOf("雷撃砲の部品", "蒼天の大槍"),
-            Rarity.LEGENDARY to listOf("星喰らいの大剣"),
-        ),
-        Expedition.ABYSS to mapOf(
-            Rarity.COMMON to listOf("魔力石", "古い地図片", "薬草", "青晶石"),
-            Rarity.RARE to listOf("古代の鍵", "耐火の護符", "月影の水晶"),
-            Rarity.EPIC to listOf("共鳴結晶", "弱点解析器"),
-            Rarity.LEGENDARY to listOf("深淵の羅針盤"),
-        ),
-        Expedition.STAR_ROUTE to mapOf(
-            Rarity.COMMON to listOf("星砂の小瓶", "破れた星図", "導光石", "古い航海札"),
-            Rarity.RARE to listOf("彗星のコンパス", "夜光帆", "星詠みのレンズ"),
-            Rarity.EPIC to listOf("星環炉の欠片", "虚空航路図"),
-            Rarity.LEGENDARY to listOf("天球儀アストラル"),
-        ),
-    )
 
     fun rarityFromRoll(roll: Double): Rarity = when {
         roll < 0.005 -> Rarity.LEGENDARY
@@ -43,7 +23,7 @@ object FocusRules {
         val minutes = creditedMinutes.coerceAtLeast(0)
         val discoveries = floor((discoveryProgressMinutes + minutes) / 25.0).toInt()
         val rarity = if (discoveries > 0) rarityFromRoll(roll) else null
-        val pool = rarity?.let { drops.getValue(expedition).getValue(it) }.orEmpty()
+        val pool = rarity?.let { ItemCatalog.pool(expedition, it) }.orEmpty()
         val discovery = if (pool.isEmpty()) null else pool[(floor(roll * 1000).toInt() % pool.size)]
         val armoryPoints = when (rarity) {
             Rarity.COMMON -> 1

@@ -16,6 +16,8 @@ Before promoting a commit to a release candidate, require the latest branch head
 - [ ] `visual-qa`
   - [ ] 360×800 captures
   - [ ] 720×1280 captures
+  - [ ] 1.3x and 1.5x font captures, including 180-minute timer
+  - [ ] `connectedDebugAndroidTest` (real DataStore/Room replay and UI accessibility)
   - [ ] Free / Pro Raid overview
   - [ ] Pro paywall
   - [ ] Footprint loading / present / posting / error / posted states
@@ -157,6 +159,9 @@ Before publishing store copy, screenshots, or the Shipaton demo:
 - [ ] Clearly describe Pro as a one-time purchase, not a subscription.
 - [ ] Keep the core focus timer fully usable in Free.
 - [ ] Confirm all screenshots correspond to the release candidate UI.
+- [ ] Approve final companion and boss assets; Canvas and generated candidates remain placeholders.
+- [ ] Do not claim authoritative global focus aggregation is live; current client reads world state and posts preset Footprints.
+- [ ] Keep Mord's personal challenge distinct from the shared Volga world raid.
 
 ## 7. Shipaton submission gate
 

@@ -18,12 +18,7 @@ import androidx.compose.ui.semantics.semantics
 import com.madowaku.focusraid.core.domain.CompanionStage
 import kotlin.math.min
 
-enum class CompanionMood {
-    Idle,
-    Focused,
-    Celebrate,
-}
-
+// Procedural placeholder renderer. Production screens use ProductArtwork and ArtworkCatalog.
 private data class CompanionVisualSpec(
     val wingReach: Float,
     val wingRise: Float,
@@ -40,7 +35,7 @@ private data class CompanionVisualSpec(
 )
 
 @Composable
-internal fun CompanionArtwork(
+internal fun FallbackCompanionArtwork(
     modifier: Modifier = Modifier,
     stage: CompanionStage = CompanionStage.HATCHLING,
     mood: CompanionMood = CompanionMood.Idle,
@@ -402,7 +397,7 @@ private fun DrawScope.drawCompanionHorn(
 }
 
 @Composable
-internal fun BossArtwork(modifier: Modifier = Modifier) {
+internal fun FallbackBossArtwork(modifier: Modifier = Modifier) {
     val secondary = MaterialTheme.colorScheme.secondary
     val tertiary = MaterialTheme.colorScheme.tertiary
     val surfaceVariant = MaterialTheme.colorScheme.surfaceVariant

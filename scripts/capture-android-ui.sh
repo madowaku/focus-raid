@@ -8,6 +8,7 @@ OUTPUT_DIR="artifacts/visual"
 cleanup() {
   adb shell wm size reset >/dev/null 2>&1 || true
   adb shell wm density reset >/dev/null 2>&1 || true
+  adb shell settings put system font_scale 1.0 >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
 
@@ -24,7 +25,7 @@ capture() {
   adb shell am force-stop "$PACKAGE"
   adb shell wm size "${width}x${height}"
   adb shell wm density 160
-  adb shell am start -W -n "$ACTIVITY" --es phase "$phase"
+  adb shell am start -W -n "$ACTIVITY" --es phase "$phase" --ez concept_art "${CONCEPT_ART:-false}"
   sleep 2
   adb exec-out screencap -p > "${OUTPUT_DIR}/${output}.png"
 }
@@ -79,7 +80,21 @@ capture COMPANION 720 1280 companion-hatchling-720x1280
 capture LOG 720 1280 log-720x1280
 capture LOG_PRO 720 1280 log-pro-720x1280
 
-python3 - <<'PY'
+# Required accessibility matrix. Essential actions remain reachable by scrolling.
+for scale in 1.3 1.5; do
+  adb shell settings put system font_scale "$scale"
+  for phase in READY TIMER_MAX CUSTOM_MAX RAID PAUSED END_CONFIRM VICTORY ABORTED PAYWALL PAYWALL_ERROR PAYWALL_RESTORING PAYWALL_PURCHASING FOOTPRINT_PRESENT FOOTPRINT_ERROR LOG_PRO; do
+    capture "$phase" 360 800 "${phase,,}-360x800-font-${scale}"
+    capture "$phase" 720 1280 "${phase,,}-720x1280-font-${scale}"
+  done
+done
+adb shell settings put system font_scale 1.0
+CONCEPT_ART=true capture COMPANION 360 800 concept-rag-360x800
+CONCEPT_ART=true capture READY 360 800 concept-volga-360x800
+CONCEPT_ART=true capture COMPANION_MIKO 360 800 concept-miko-360x800
+CONCEPT_ART=true capture RAID_OVERVIEW 360 800 concept-mord-360x800
+
+"${PYTHON:-python3}" - <<'PY'
 from pathlib import Path
 import struct
 
@@ -135,6 +150,14 @@ expected = {
     "log-pro-720x1280.png": (720, 1280),
 }
 
+for scale in ("1.3", "1.5"):
+    for phase in "READY TIMER_MAX CUSTOM_MAX RAID PAUSED END_CONFIRM VICTORY ABORTED PAYWALL PAYWALL_ERROR PAYWALL_RESTORING PAYWALL_PURCHASING FOOTPRINT_PRESENT FOOTPRINT_ERROR LOG_PRO".split():
+        for width, height in ((360, 800), (720, 1280)):
+            expected[f"{phase.lower()}-{width}x{height}-font-{scale}.png"] = (width, height)
+expected["concept-miko-360x800.png"] = (360, 800)
+expected["concept-mord-360x800.png"] = (360, 800)
+expected["concept-rag-360x800.png"] = (360, 800)
+expected["concept-volga-360x800.png"] = (360, 800)
 root = Path("artifacts/visual")
 for name, expected_size in expected.items():
     path = root / name

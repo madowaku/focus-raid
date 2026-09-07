@@ -21,6 +21,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
@@ -50,6 +53,7 @@ internal fun SessionHistoryOverview(
     val accessLevel = LocalProAccessLevel.current
     val openProPaywall = LocalOpenProPaywall.current
     val uriHandler = LocalUriHandler.current
+    var privacyOpenFailed by remember { mutableStateOf(false) }
     val nowEpochMillis = System.currentTimeMillis()
     val allHistory = state.sessionHistory
     val visibleHistory = remember(allHistory, accessLevel, nowEpochMillis) {
@@ -161,11 +165,15 @@ internal fun SessionHistoryOverview(
         if (privacyPolicyUrl.isNotBlank()) {
             Spacer(Modifier.height(8.dp))
             TextButton(
-                onClick = { uriHandler.openUri(privacyPolicyUrl) },
+                onClick = { privacyOpenFailed = runCatching {
+                    require(privacyPolicyUrl.startsWith("https://"))
+                    uriHandler.openUri(privacyPolicyUrl)
+                }.isFailure },
                 modifier = Modifier.align(Alignment.CenterHorizontally),
             ) {
                 Text("プライバシーポリシー")
             }
+            if (privacyOpenFailed) Text("ブラウザを開けませんでした。対応するブラウザを確認して再試行してください。", color = MaterialTheme.colorScheme.error)
         }
 
         Spacer(Modifier.height(16.dp))

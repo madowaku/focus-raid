@@ -28,7 +28,7 @@ class FocusBootReceiver : BroadcastReceiver() {
             try {
                 val appContext = context.applicationContext
                 val saved = SessionPreferences(appContext).session.first()
-                if (saved.phase != SessionPhase.RUNNING || saved.endEpochMillis <= 0L) return@launch
+                if (saved.phase != SessionPhase.RUNNING || saved.finishedEntry != null || saved.endEpochMillis <= 0L) return@launch
 
                 val now = System.currentTimeMillis()
                 if (saved.endEpochMillis > now) {
@@ -36,6 +36,10 @@ class FocusBootReceiver : BroadcastReceiver() {
                 } else {
                     FocusCompletionNotifier.show(appContext)
                 }
+            } catch (_: java.io.IOException) {
+                // Retry recovery on the next app launch.
+            } catch (_: SecurityException) {
+                // Revoked alarm permission must not crash boot recovery.
             } finally {
                 pendingResult.finish()
             }

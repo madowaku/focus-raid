@@ -35,11 +35,10 @@ object RevenueCatRuntime {
         if (BuildConfig.DEBUG) {
             Purchases.logLevel = LogLevel.DEBUG
         }
-        Purchases.configure(
-            PurchasesConfiguration.Builder(context.applicationContext, apiKey).build(),
-        )
-        isConfigured = true
-        return true
+        isConfigured = runCatching {
+            Purchases.configure(PurchasesConfiguration.Builder(context.applicationContext, apiKey).build())
+        }.isSuccess
+        return isConfigured
     }
 }
 
@@ -58,6 +57,7 @@ class RevenueCatBillingGateway(
             val product = runCatching { awaitProPackage().toProProduct() }.getOrNull()
             BillingSnapshot(
                 isPro = customerInfo.hasProEntitlement(),
+                verifiedAtMillis = customerInfo.requestDate.time,
                 product = product,
             )
         }
@@ -66,7 +66,7 @@ class RevenueCatBillingGateway(
     override suspend fun purchasePro(activity: Activity): BillingActionResult {
         if (!configured()) return unavailableFailure()
 
-        val packageToPurchase = runCatching { awaitProPackage() }
+        val packageToPurchase = runCatching { kotlinx.coroutines.withTimeout(15_000) { awaitProPackage() } }
             .getOrElse { return BillingActionResult.Failure(it.userMessage()) }
 
         val params = PurchaseParams.Builder(activity, packageToPurchase).build()
@@ -79,7 +79,7 @@ class RevenueCatBillingGateway(
                             if (userCancelled) {
                                 BillingActionResult.Cancelled
                             } else {
-                                BillingActionResult.Failure(error.message)
+                                BillingActionResult.Failure(DefaultProAccessRepository.ACTION_ERROR)
                             },
                         )
                     }
@@ -90,6 +90,7 @@ class RevenueCatBillingGateway(
                             BillingActionResult.Success(
                                 BillingSnapshot(
                                     isPro = customerInfo.hasProEntitlement(),
+                verifiedAtMillis = customerInfo.requestDate.time,
                                     product = packageToPurchase.toProProduct(),
                                 ),
                             ),
@@ -107,7 +108,7 @@ class RevenueCatBillingGateway(
             Purchases.sharedInstance.restorePurchasesWith(
                 onError = { error ->
                     if (continuation.isActive) {
-                        continuation.resume(BillingActionResult.Failure(error.message))
+                        continuation.resume(BillingActionResult.Failure(DefaultProAccessRepository.ACTION_ERROR))
                     }
                 },
                 onSuccess = { customerInfo ->
@@ -116,6 +117,7 @@ class RevenueCatBillingGateway(
                             BillingActionResult.Success(
                                 BillingSnapshot(
                                     isPro = customerInfo.hasProEntitlement(),
+                verifiedAtMillis = customerInfo.requestDate.time,
                                     product = null,
                                 ),
                             ),
@@ -151,8 +153,11 @@ class RevenueCatBillingGateway(
                 onSuccess = { offerings ->
                     val current = offerings.current
                     val packageToPurchase = current?.availablePackages
-                        ?.firstOrNull { it.product.id == BillingConfig.PRODUCT_ID }
-                        ?: current?.lifetime
+                        ?.firstOrNull {
+                            it.product.id == BillingConfig.PRODUCT_ID &&
+                                it.packageType == com.revenuecat.purchases.PackageType.LIFETIME &&
+                                it.product.type == com.revenuecat.purchases.ProductType.INAPP
+                        }
 
                     if (!continuation.isActive) return@getOfferingsWith
                     if (packageToPurchase == null) {
@@ -180,5 +185,5 @@ class RevenueCatBillingGateway(
         BillingActionResult.Failure("購入機能はまだ設定されていません")
 
     private fun Throwable.userMessage(): String =
-        message ?: "商品情報を取得できませんでした"
+        DefaultProAccessRepository.REFRESH_ERROR
 }

@@ -9,12 +9,17 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.madowaku.focusraid.core.model.Expedition
 import com.madowaku.focusraid.core.model.SessionPhase
+import com.madowaku.focusraid.core.model.SessionHistoryEntry
+import com.madowaku.focusraid.core.model.SessionOutcome
+import com.madowaku.focusraid.core.model.Rarity
+import org.json.JSONObject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 private val Context.focusRaidDataStore by preferencesDataStore(name = "focus_raid")
 
 data class PersistedSession(
+    val companion: com.madowaku.focusraid.core.domain.CompanionIdentity = com.madowaku.focusraid.core.domain.CompanionIdentity.RAG,
     val selectedMinutes: Int = 25,
     val expedition: Expedition = Expedition.TOWER,
     val phase: SessionPhase = SessionPhase.READY,
@@ -23,10 +28,12 @@ data class PersistedSession(
     val totalFocusMinutes: Int = 0,
     val systemAccessEducationSeen: Boolean = false,
     val sessionId: String? = null,
+    val finishedEntry: SessionHistoryEntry? = null,
 )
 
-class SessionPreferences(private val context: Context) {
+class SessionPreferences(private val context: Context) : SessionStore {
     private object Keys {
+        val companion = stringPreferencesKey("companion_identity")
         val selectedMinutes = intPreferencesKey("selected_minutes")
         val expedition = stringPreferencesKey("expedition")
         val phase = stringPreferencesKey("phase")
@@ -36,10 +43,12 @@ class SessionPreferences(private val context: Context) {
         val systemAccessEducationSeen = booleanPreferencesKey("system_access_education_seen")
         val sessionId = stringPreferencesKey("session_id")
         val lastCreditedSessionId = stringPreferencesKey("last_credited_session_id")
+        val finishedEntry = stringPreferencesKey("finished_entry")
     }
 
-    val session: Flow<PersistedSession> = context.focusRaidDataStore.data.map { prefs ->
+    override val session: Flow<PersistedSession> = context.focusRaidDataStore.data.map { prefs ->
         PersistedSession(
+            companion = prefs[Keys.companion]?.let { runCatching { com.madowaku.focusraid.core.domain.CompanionIdentity.valueOf(it) }.getOrNull() } ?: com.madowaku.focusraid.core.domain.CompanionIdentity.RAG,
             selectedMinutes = prefs[Keys.selectedMinutes] ?: 25,
             expedition = prefs[Keys.expedition]
                 ?.let { runCatching { Expedition.valueOf(it) }.getOrNull() }
@@ -52,18 +61,27 @@ class SessionPreferences(private val context: Context) {
             totalFocusMinutes = prefs[Keys.totalFocusMinutes] ?: 0,
             systemAccessEducationSeen = prefs[Keys.systemAccessEducationSeen] ?: false,
             sessionId = prefs[Keys.sessionId],
+            finishedEntry = prefs[Keys.finishedEntry]?.let(::decodeEntry),
         )
     }
 
-    suspend fun setSelectedMinutes(minutes: Int) {
+    override suspend fun ensureSessionIdentity(sessionId: String) {
+        context.focusRaidDataStore.edit { if (it[Keys.sessionId] == null) it[Keys.sessionId] = sessionId }
+    }
+
+    override suspend fun setCompanion(identity: com.madowaku.focusraid.core.domain.CompanionIdentity) {
+        context.focusRaidDataStore.edit { it[Keys.companion] = identity.name }
+    }
+
+    override suspend fun setSelectedMinutes(minutes: Int) {
         context.focusRaidDataStore.edit { it[Keys.selectedMinutes] = minutes }
     }
 
-    suspend fun setExpedition(expedition: Expedition) {
+    override suspend fun setExpedition(expedition: Expedition) {
         context.focusRaidDataStore.edit { it[Keys.expedition] = expedition.name }
     }
 
-    suspend fun saveRunning(
+    override suspend fun saveRunning(
         minutes: Int,
         expedition: Expedition,
         endEpochMillis: Long,
@@ -76,10 +94,11 @@ class SessionPreferences(private val context: Context) {
             it[Keys.endEpochMillis] = endEpochMillis
             it[Keys.pausedRemainingMillis] = 0L
             it[Keys.sessionId] = sessionId
+            it.remove(Keys.finishedEntry)
         }
     }
 
-    suspend fun savePaused(remainingMillis: Long) {
+    override suspend fun savePaused(remainingMillis: Long) {
         context.focusRaidDataStore.edit {
             it[Keys.phase] = SessionPhase.PAUSED.name
             it[Keys.endEpochMillis] = 0L
@@ -87,17 +106,29 @@ class SessionPreferences(private val context: Context) {
         }
     }
 
-    suspend fun saveReady() {
+    override suspend fun saveReady() {
         context.focusRaidDataStore.edit {
             it[Keys.phase] = SessionPhase.READY.name
             it[Keys.endEpochMillis] = 0L
             it[Keys.pausedRemainingMillis] = 0L
             it.remove(Keys.sessionId)
+            it.remove(Keys.finishedEntry)
         }
     }
 
-    suspend fun commitFinishedSession(sessionId: String, creditedMinutes: Int) {
+    override suspend fun stageFinishedSession(entry: SessionHistoryEntry) {
         context.focusRaidDataStore.edit {
+            check(it[Keys.sessionId] == entry.sessionId || it[Keys.finishedEntry]?.let(::decodeEntry)?.sessionId == entry.sessionId) { "Session changed before completion" }
+            // Journal the exact outcome/drop BEFORE Room. Replay cannot reroll or turn an abort
+            // into a full completion if the process dies between the two durable stores.
+            if (it[Keys.finishedEntry] == null) it[Keys.finishedEntry] = encodeEntry(entry)
+        }
+    }
+
+    override suspend fun commitFinishedSession(sessionId: String, creditedMinutes: Int) {
+        context.focusRaidDataStore.edit {
+            // A delayed completion must never clear or credit a different, newer session.
+            if (it[Keys.sessionId] != sessionId) return@edit
             if (it[Keys.lastCreditedSessionId] != sessionId) {
                 val current = it[Keys.totalFocusMinutes] ?: 0
                 it[Keys.totalFocusMinutes] = current + creditedMinutes.coerceAtLeast(0)
@@ -110,9 +141,30 @@ class SessionPreferences(private val context: Context) {
         }
     }
 
-    suspend fun markSystemAccessEducationSeen() {
+    override suspend fun markSystemAccessEducationSeen() {
         context.focusRaidDataStore.edit {
             it[Keys.systemAccessEducationSeen] = true
         }
+    }
+
+    private fun encodeEntry(e: SessionHistoryEntry): String = JSONObject().apply {
+        put("id", e.sessionId)
+        put("at", e.completedAtEpochMillis)
+        put("planned", e.plannedMinutes)
+        put("credited", e.creditedMinutes)
+        put("expedition", e.expedition.name)
+        put("outcome", e.outcome.name)
+        put("damage", e.damage)
+        put("rarity", e.rarity?.name ?: JSONObject.NULL)
+        put("discovery", e.discovery ?: JSONObject.NULL)
+    }.toString()
+
+    private fun decodeEntry(value: String): SessionHistoryEntry = JSONObject(value).let {
+        SessionHistoryEntry(
+            it.getString("id"), it.getLong("at"), it.getInt("planned"), it.getInt("credited"),
+            Expedition.valueOf(it.getString("expedition")), SessionOutcome.valueOf(it.getString("outcome")),
+            it.getInt("damage"), if (it.isNull("rarity")) null else Rarity.valueOf(it.getString("rarity")),
+            if (it.isNull("discovery")) null else it.getString("discovery"),
+        )
     }
 }

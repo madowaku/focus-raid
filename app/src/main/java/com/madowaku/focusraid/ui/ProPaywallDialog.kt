@@ -1,5 +1,7 @@
 package com.madowaku.focusraid.ui
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -31,13 +33,14 @@ internal fun ProPaywallDialog(
     onPurchase: () -> Unit,
     onRestore: () -> Unit,
     onDismiss: () -> Unit,
+    onRetry: () -> Unit = {},
 ) {
     val isPro = access.accessLevel == AccessLevel.PRO
     val busy = purchaseState == PurchaseState.Purchasing ||
         purchaseState == PurchaseState.Restoring
 
     AlertDialog(
-        onDismissRequest = { if (!busy) onDismiss() },
+        onDismissRequest = onDismiss,
         title = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -71,7 +74,7 @@ internal fun ProPaywallDialog(
             }
         },
         text = {
-            Column {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
                 if (isPro) {
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
@@ -95,6 +98,11 @@ internal fun ProPaywallDialog(
                         }
                     }
                 } else {
+                    PurchaseFeedback(
+                        access = access,
+                        purchaseState = purchaseState,
+                    )
+
                     Text(
                         "集中はそのまま。冒険と記録を、もう一段深く。",
                         modifier = Modifier.fillMaxWidth(),
@@ -128,10 +136,7 @@ internal fun ProPaywallDialog(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
 
-                    PurchaseFeedback(
-                        access = access,
-                        purchaseState = purchaseState,
-                    )
+
                 }
             }
         },
@@ -163,10 +168,14 @@ internal fun ProPaywallDialog(
         },
         dismissButton = {
             if (!isPro) {
-                Row(
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
+                    if (access.errorMessage != null || access.product == null) {
+                        TextButton(onClick = onRetry, enabled = !busy && !access.refreshing) { Text("商品情報を再読み込み") }
+                    }
+                    TextButton(onClick = onDismiss) { Text("Freeで続ける") }
                     TextButton(
                         onClick = onRestore,
                         enabled = !busy,

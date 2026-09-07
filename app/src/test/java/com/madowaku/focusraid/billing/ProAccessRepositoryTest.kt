@@ -36,7 +36,7 @@ class ProAccessRepositoryTest {
         repository.refresh()
 
         assertEquals(AccessLevel.PRO, repository.access.value.accessLevel)
-        assertEquals("offline", repository.access.value.errorMessage)
+        assertEquals(DefaultProAccessRepository.REFRESH_ERROR, repository.access.value.errorMessage)
     }
 
     private class FakeBillingGateway(

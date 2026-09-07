@@ -1,5 +1,12 @@
 package com.madowaku.focusraid.ui
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -68,8 +75,17 @@ fun FocusRaidRoot(
         pendingProExpeditionName = requestedExpedition?.name
         proAccessViewModel.clearPurchaseState()
         showProPaywall = true
+        proAccessViewModel.refresh()
     }
     val openProPaywall = { openProPaywallFor(null) }
+
+    BackHandler(enabled = !state.saving && state.persistenceError == null && (state.phase != SessionPhase.READY || tab != MainTab.HOME)) {
+        when (state.phase) {
+            SessionPhase.RUNNING, SessionPhase.PAUSED -> showEndConfirmation = true
+            SessionPhase.COMPLETED, SessionPhase.ABORTED -> { tab = MainTab.HOME; viewModel.resetAfterResult() }
+            SessionPhase.READY -> tab = MainTab.HOME
+        }
+    }
 
     LaunchedEffect(state.phase) {
         if (state.phase != SessionPhase.RUNNING && state.phase != SessionPhase.PAUSED) {
@@ -148,6 +164,7 @@ fun FocusRaidRoot(
                     state = state.copy(phase = animatedPhase),
                     tab = tab,
                     onTabChange = { tab = it },
+                    onSelectCompanion = viewModel::selectCompanion,
                     onSelectMinutes = viewModel::selectMinutes,
                     onSelectExpedition = { expedition ->
                         if (FeatureAccess.canUse(expedition, proAccess.accessLevel)) {
@@ -172,21 +189,15 @@ fun FocusRaidRoot(
                     onPause = viewModel::pause,
                     onResume = viewModel::resume,
                     onFinishEarly = { showEndConfirmation = true },
-                    onAgain = viewModel::startAgain,
+                    onAgain = {
+                        if (FeatureAccess.canUse(state.expedition, proAccess.accessLevel)) viewModel.startAgain()
+                        else { viewModel.resetAfterResult(); openProPaywallFor(state.expedition) }
+                    },
                     onDone = viewModel::resetAfterResult,
                 )
             }
 
-            if (state.phase == SessionPhase.READY) {
-                TextButton(
-                    onClick = openProPaywall,
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .statusBarsPadding(),
-                ) {
-                    Text(if (proAccess.accessLevel == AccessLevel.PRO) "PRO" else "FREE")
-                }
-            }
+
         }
 
         if (showProPaywall && state.phase == SessionPhase.READY) {
@@ -195,6 +206,7 @@ fun FocusRaidRoot(
                 purchaseState = purchaseState,
                 onPurchase = onPurchasePro,
                 onRestore = onRestorePurchases,
+                onRetry = { proAccessViewModel.refresh() },
                 onDismiss = {
                     pendingProExpeditionName = null
                     proAccessViewModel.clearPurchaseState()
@@ -202,6 +214,14 @@ fun FocusRaidRoot(
                 },
             )
         }
+    }
+
+    if (state.persistenceError != null) {
+        AlertDialog(
+            onDismissRequest = {}, title = { Text("記録を保存できません") },
+            text = { Text(state.persistenceError.orEmpty()) },
+            confirmButton = { Button(onClick = viewModel::retryPersistence, enabled = !state.saving) { Text("再試行") } },
+        )
     }
 
     if (showCustomDuration && state.phase == SessionPhase.READY) {
@@ -225,7 +245,8 @@ fun FocusRaidRoot(
             onContinue = {
                 viewModel.markSystemAccessEducationSeen()
                 showSystemAccessEducation = false
-                viewModel.start()
+                if (FeatureAccess.canUse(state.expedition, proAccess.accessLevel)) viewModel.start()
+                else openProPaywallFor(state.expedition)
             },
         )
     }
@@ -248,6 +269,7 @@ fun FocusRaidRoot(
             state = state,
             onSelectPreset = viewModel::selectFootprintPreset,
             onLeaveFootprint = viewModel::leaveFootprint,
+            onRetry = viewModel::retryFootprints,
             onDismiss = { showFootprintDialog = false },
         )
     }
@@ -258,6 +280,7 @@ internal fun FootprintDialog(
     state: FocusUiState,
     onSelectPreset: (String) -> Unit,
     onLeaveFootprint: () -> Unit,
+    onRetry: () -> Unit = {},
     onDismiss: () -> Unit,
 ) {
     val location = when (state.expedition) {
@@ -272,7 +295,7 @@ internal fun FootprintDialog(
             Text("この場所の足跡")
         },
         text = {
-            Column {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
                 Text(
                     location,
                     style = MaterialTheme.typography.labelLarge,
@@ -280,7 +303,14 @@ internal fun FootprintDialog(
                 )
                 Spacer(Modifier.height(12.dp))
 
+                if (state.worldSyncStatus == com.madowaku.focusraid.data.WorldSyncStatus.LOCAL_PREVIEW) {
+                    Text("ローカル体験用の足跡です。他のプレイヤーには送信されません。", style = MaterialTheme.typography.bodySmall)
+                }
                 when {
+                    state.footprintLoadError != null -> {
+                        Text(state.footprintLoadError, color = MaterialTheme.colorScheme.error)
+                        TextButton(onClick = onRetry) { Text("再読み込み") }
+                    }
                     state.footprintsLoading -> {
                         Text(
                             "この場所の足跡を探しています…",
@@ -331,7 +361,7 @@ internal fun FootprintDialog(
                         )
                     }
                     Spacer(Modifier.height(8.dp))
-                    FootprintPresets.all.take(6).chunked(2).forEach { rowPresets ->
+                    FootprintPresets.all.take(6).chunked(1).forEach { rowPresets ->
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -344,14 +374,11 @@ internal fun FootprintDialog(
                                     label = {
                                         Text(
                                             "${preset.glyph} ${preset.text}",
-                                            maxLines = 1,
+                                            maxLines = 2,
                                         )
                                     },
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.weight(1f).heightIn(min = 48.dp),
                                 )
-                            }
-                            if (rowPresets.size == 1) {
-                                Spacer(Modifier.weight(1f))
                             }
                         }
                     }
@@ -396,7 +423,7 @@ internal fun FocusSystemAccessDialog(
             Text("終了通知を確実に届ける")
         },
         text = {
-            Column {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
                 Text(
                     "画面を閉じていても集中終了を知らせるため、通知と正確なアラームを有効にできます。許可しなくてもタイマーは使えます。",
                 )

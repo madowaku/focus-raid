@@ -84,6 +84,32 @@ Room stores durable Adventure Log rows. Each meaningful completed or aborted ses
 
 The same `sessionId` survives pause, resume, process death and reboot. It is also the Room primary key, preventing duplicate history during recovery.
 
+Productization adds an exact finished-entry journal to DataStore. A transition is
+acknowledged in UI only after its durable write completes. Completion freezes the
+session ID, credited minutes, outcome and random discovery before writing Room;
+then it commits cumulative credit and clears the active ID atomically. The journal
+remains until result dismissal or the next start. Recovery can safely replay after
+either write and show the same result without rerolling loot or crediting twice.
+Old builds' already-inserted Room rows are honored during upgrade recovery.
+
+Paused time retains milliseconds; only display rounds to seconds. Legacy identity
+migration changes the ID alone, never temporarily changes PAUSED to RUNNING.
+Alarms notify only after checking the durable current session; they never write
+rewards. MainActivity uses singleTask to prevent two independent timer controllers
+from notification/launcher entry. Storage errors expose retry without acknowledging
+a result that has not been saved.
+
+Footprint work uses bounded network waits and result identity checks, is canceled
+when leaving a result, and cannot overwrite later timer state. Shared-world errors
+retain the last server snapshot or show unavailable values rather than sample
+participants. Unconfigured local preview is explicitly labeled.
+
+RevenueCat snapshot application and local verified-cache writes are serialized.
+Generation checks reject refreshes superseded by purchase/restore, and CustomerInfo
+request dates prevent stale negatives from demoting known Pro. A newer verified
+negative still applies refunds. See `product-art.md` and `adventure-collection.md`
+for the asset boundary and additional user-requested content.
+
 Session-state DataStore writes are serialized in invocation order so a delayed write from a previous session cannot overwrite a newly-started session.
 
 ## Domain

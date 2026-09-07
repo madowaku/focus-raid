@@ -1,5 +1,9 @@
 package com.madowaku.focusraid.ui
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,6 +38,7 @@ internal fun CustomDurationSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -53,14 +58,15 @@ internal fun CustomDurationSheet(
                 Button(
                     onClick = { onMinutesChange((minutes - 1).coerceAtLeast(MIN_MINUTES)) },
                     enabled = minutes > MIN_MINUTES,
-                    modifier = Modifier.size(width = 64.dp, height = 52.dp),
+                    modifier = Modifier.size(width = 64.dp, height = 52.dp).semantics { contentDescription = "1分減らす" },
                 ) {
                     Text("−", fontSize = 24.sp)
                 }
 
                 Text(
                     text = "$minutes 分",
-                    fontSize = 36.sp,
+                    modifier = Modifier.weight(1f),
+                    fontSize = 28.sp,
                     fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center,
                 )
@@ -68,7 +74,7 @@ internal fun CustomDurationSheet(
                 Button(
                     onClick = { onMinutesChange((minutes + 1).coerceAtMost(MAX_MINUTES)) },
                     enabled = minutes < MAX_MINUTES,
-                    modifier = Modifier.size(width = 64.dp, height = 52.dp),
+                    modifier = Modifier.size(width = 64.dp, height = 52.dp).semantics { contentDescription = "1分増やす" },
                 ) {
                     Text("＋", fontSize = 22.sp)
                 }

@@ -124,6 +124,10 @@ reconcile_after_expiry() {
     local output
     output="$(probe)"
     if grep -q "phase=READY" <<<"$output"; then
+      if ! grep -q "finishedId=durability-" <<<"$output"; then
+        log "FAIL: ${scenario} did not preserve the committed result journal"
+        return 1
+      fi
       log "PASS: ${scenario} reconciled expired persisted session to READY after fresh launch"
       adb shell input keyevent KEYCODE_HOME >/dev/null || true
       return 0

@@ -1,0 +1,74 @@
+version: 2
+goal:
+  title: Focus Raid v0.1 Productization Sprint
+  slug: v0.1-productization
+  kind: specific
+  tranche: Resolve code-side P0/P1 findings and verify release-candidate gates for issue 5.
+  status: done
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+active_task: null
+tasks:
+  - id: T001
+    type: pm
+    assignee: PM
+    status: done
+    objective: Audit timer, persistence, billing, shared world, UX, and verification environment.
+    allowed_files: [docs/goals/v0.1-productization]
+    receipt:
+      result: done
+      summary: 'P0: optimistic persistence and two-store aborted reward recovery; P1: stale footprint state, purchase-refresh race, arbitrary lifetime SKU, absent retry/back handling, large-font clipping. Existing Room key and Free history policy are preserved.'
+      evidence: [app/src/main/java/com/madowaku/focusraid/ui/FocusViewModel.kt, app/src/main/java/com/madowaku/focusraid/billing/RevenueCatBillingGateway.kt]
+  - id: T002
+    type: pm
+    assignee: PM
+    status: done
+    objective: Implement audited correctness, failure UX, accessibility, artwork, and regression fixes.
+    allowed_files: [app, scripts, docs, .github, README.md, .gitignore]
+    receipt:
+      result: done
+      summary: Durable finish journal, precise pause recovery, billing ordering/cache and SKU fixes, failure/back/accessibility UX, asset catalog, earned Miko/Mord/inventory, and focused regressions implemented.
+      evidence: [app/src/main, app/src/test, app/src/androidTest, docs/product-art.md]
+  - id: T003
+    type: pm
+    assignee: PM
+    status: done
+    objective: Execute build and device gates, fix failures, and document exact evidence.
+    allowed_files: [app, scripts, docs, .github, README.md, .gitignore]
+    receipt:
+      result: done
+      summary: 52 JVM and 9 device tests passed; lint 0 errors; debug/release builds passed; 113 PNG gate and 40 latest-state recaptures verified; all 4 durability cases passed.
+      evidence: [docs/productization-report.md, artifacts/timer-durability/report.txt, app/build/reports]
+  - id: T999
+    type: pm
+    assignee: PM
+    status: done
+    objective: Final issue 5 acceptance audit against implementation and fresh verification.
+    allowed_files: [docs, README.md]
+    receipt:
+      result: done
+      decision: complete
+      summary: PM checked issue 5 acceptance against final code, bounded Judge review and fresh local gates. No known audited code-side P0/P1 remains. External Play/Firebase/signing/art and shared aggregation remain explicitly unverified.
+      evidence: [docs/productization-report.md, docs/goals/v0.1-productization/notes/T999-review.md]
+checks:
+  dirty_fingerprint: unknown
+  last_verification:
+    result: pass
+    task: T003
+    commands:
+      - gradle testDebugUnitTest lintDebug assembleDebug bundleRelease
+      - gradle connectedDebugAndroidTest
+      - bash scripts/test-timer-durability.sh
+      - PYTHON=python bash scripts/capture-android-ui.sh
+      - PYTHON=python bash artifacts/final-capture.sh
+      - git diff --check

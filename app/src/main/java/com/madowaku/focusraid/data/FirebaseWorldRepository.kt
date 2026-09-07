@@ -15,6 +15,8 @@ import com.madowaku.focusraid.core.model.Expedition
 import com.madowaku.focusraid.core.model.Footprint
 import com.madowaku.focusraid.core.model.FootprintPresets
 import com.madowaku.focusraid.core.model.WorldSnapshot
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,7 +27,7 @@ class FirebaseWorldRepository private constructor(
     private val firestore: FirebaseFirestore,
     private val fallback: WorldRepository,
 ) : WorldRepository {
-    private val _world = MutableStateFlow(fallback.snapshot())
+    private val _world = MutableStateFlow(unavailableWorld())
     override val world: StateFlow<WorldSnapshot> = _world.asStateFlow()
 
     private val _syncStatus = MutableStateFlow(WorldSyncStatus.CONNECTING)
@@ -33,7 +35,8 @@ class FirebaseWorldRepository private constructor(
 
     override suspend fun refresh() {
         _syncStatus.value = WorldSyncStatus.CONNECTING
-        runCatching {
+        try {
+            withTimeout(12_000) {
             ensureSignedIn()
             val document = firestore
                 .collection(WORLD_COLLECTION)
@@ -43,11 +46,15 @@ class FirebaseWorldRepository private constructor(
             check(document.exists()) { "world/current does not exist" }
             _world.value = RemoteWorldMapping.fromMap(
                 values = document.data.orEmpty(),
-                fallback = fallback.snapshot(),
+                fallback = unavailableWorld(),
             )
             _syncStatus.value = WorldSyncStatus.LIVE
-        }.onFailure {
-            _world.value = fallback.snapshot()
+            }
+        } catch (_: kotlinx.coroutines.TimeoutCancellationException) {
+            _syncStatus.value = WorldSyncStatus.OFFLINE
+        } catch (e: CancellationException) { throw e
+        } catch (_: Exception) {
+            // Retain the last server snapshot, never substitute invented participants.
             _syncStatus.value = WorldSyncStatus.OFFLINE
         }
     }
@@ -59,12 +66,12 @@ class FirebaseWorldRepository private constructor(
     ): List<Footprint> {
         if (limit <= 0) return emptyList()
 
-        return runCatching {
+        return withTimeout(12_000) {
             ensureSignedIn()
             footprintEntries(expedition, checkpoint)
                 .orderBy(CREATED_AT_FIELD, Query.Direction.DESCENDING)
                 .limit(limit.toLong())
-                .get()
+                .get(Source.SERVER)
                 .await()
                 .documents
                 .mapNotNull { document ->
@@ -79,9 +86,6 @@ class FirebaseWorldRepository private constructor(
                         relativeLabel = relativeLabel(document.getTimestamp(CREATED_AT_FIELD)),
                     )
                 }
-        }.getOrElse {
-            // When a real backend is configured, never invent other people's footprints on failure.
-            emptyList()
         }
     }
 
@@ -92,10 +96,10 @@ class FirebaseWorldRepository private constructor(
     ): Footprint? {
         val preset = FootprintPresets.byId(presetId) ?: return null
 
-        return runCatching {
+        return withTimeout(12_000) {
             val userId = ensureSignedIn()
             val document = footprintEntries(expedition, checkpoint).document(userId)
-            val existing = document.get().await()
+            val existing = document.get(Source.SERVER).await()
             val existingCreatedAt = existing.getTimestamp(CREATED_AT_FIELD)
 
             if (existing.exists()) {
@@ -118,7 +122,7 @@ class FirebaseWorldRepository private constructor(
                 text = preset.text,
                 relativeLabel = relativeLabel(existingCreatedAt),
             )
-        }.getOrNull()
+        }
     }
 
     private suspend fun ensureSignedIn(): String {
@@ -149,6 +153,11 @@ class FirebaseWorldRepository private constructor(
     }
 
     companion object {
+        internal fun unavailableWorld() = WorldSnapshot(
+            focusNow = 0, raidParticipants = 0, bossHp = 0, bossMaxHp = 0,
+            towerFloor = 1, abyssDepth = 0, armoryReady = 0,
+        )
+
         private const val FIREBASE_APP_NAME = "focus-raid-remote"
         private const val WORLD_COLLECTION = "world"
         private const val CURRENT_WORLD_DOCUMENT = "current"
@@ -195,9 +204,22 @@ class FirebaseWorldRepository private constructor(
     }
 }
 
+/** A configured but unavailable backend never falls back to simulated people. */
+internal class UnavailableWorldRepository : WorldRepository {
+    override val world = MutableStateFlow(FirebaseWorldRepository.unavailableWorld())
+    override val syncStatus = MutableStateFlow(WorldSyncStatus.OFFLINE)
+    override suspend fun refresh() = Unit
+    override suspend fun footprints(expedition: Expedition, checkpoint: Int, limit: Int): List<Footprint> =
+        throw java.io.IOException("Shared world unavailable")
+    override suspend fun leaveFootprint(expedition: Expedition, checkpoint: Int, presetId: String): Footprint? = null
+}
+
 object WorldRepositoryFactory {
     fun create(context: Context): WorldRepository {
-        val fallback = FakeWorldRepository()
-        return FirebaseWorldRepository.createOrNull(context, fallback) ?: fallback
+        val hasConfiguration = listOf(BuildConfig.FIREBASE_PROJECT_ID, BuildConfig.FIREBASE_API_KEY,
+            BuildConfig.FIREBASE_APP_ID).any { it.isNotBlank() }
+        if (!hasConfiguration) return FakeWorldRepository()
+        return runCatching { FirebaseWorldRepository.createOrNull(context) }.getOrNull()
+            ?: UnavailableWorldRepository()
     }
 }

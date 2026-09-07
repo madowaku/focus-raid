@@ -50,7 +50,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private val proAccessRepository by lazy {
-        DefaultProAccessRepository(RevenueCatBillingGateway())
+        DefaultProAccessRepository(RevenueCatBillingGateway(), com.madowaku.focusraid.billing.LocalProAccessCache(applicationContext))
     }
 
     private val viewModel: FocusViewModel by viewModels {

@@ -8,6 +8,7 @@ data class ProProduct(
 data class BillingSnapshot(
     val isPro: Boolean,
     val product: ProProduct? = null,
+    val verifiedAtMillis: Long = 0L,
 )
 
 sealed interface BillingActionResult {

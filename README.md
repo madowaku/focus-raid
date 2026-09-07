@@ -2,6 +2,8 @@
 
 Focus Raid is an Android-native focus timer where real-world concentration powers a shared fantasy world.
 
+This Android productization work lives on `feat/v0.1-productization-sprint`, based on PR #4. The older `main` branch is not its implementation baseline.
+
 ## Product principles
 
 - Start focusing within five seconds.
@@ -55,6 +57,11 @@ The previous React/Vite PWA prototype is preserved on the `archive/pwa-mvp-v0.1`
 - No fake-user fallback for Footprints when a real Firebase backend is configured but unavailable
 - Shared-world refresh only outside active RUNNING / PAUSED sessions
 - Pure Kotlin domain tests
+- Durable completion journal and replay-safe partial-session results
+- Retryable storage, billing and Footprint failure states
+- Replaceable artwork catalog with procedural fallbacks and debug-only generated candidates
+- Miko companion unlock/selection, personal Abyss boss Mord, and earned inventory
+- Large-font device tests and captures at 1.3x / 1.5x
 - Android emulator visual QA across 360×800 and 720×1280, including Free/Pro, paywall, companion evolution, and footprint states
 
 ## Monetization
@@ -146,6 +153,12 @@ gradlew.bat assembleDebug
 Automated CI protects the timer and core UI, but production credentials, store purchases, Firebase Security Rules deployment, privacy policy, Google Play Data Safety, release signing, and final device testing are manual release gates.
 
 See `docs/release-readiness.md` before creating the public Play release.
+
+See `docs/productization-report.md` for issue #5 audit and verification results,
+`docs/product-art.md` for artwork replacement, and `docs/adventure-collection.md`
+for companion/boss/item rules. Shared world reads and preset Footprints are live
+integration points; authoritative aggregation of focus contributions is not yet
+implemented and must not be advertised as already reflected in global boss HP.
 
 ## Architecture
 

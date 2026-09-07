@@ -2,7 +2,7 @@ name: Android CI
 
 on:
   push:
-    branches: [main, feat/revenuecat-pro-access]
+    branches: [main, feat/revenuecat-pro-access, feat/v0.1-productization-sprint]
   pull_request:
     branches: [main]
 
@@ -85,13 +85,18 @@ jobs:
           arch: x86_64
           profile: pixel_2
           disable-animations: true
-          script: bash scripts/capture-android-ui.sh
+          script: |
+            gradle connectedDebugAndroidTest --stacktrace
+            bash scripts/capture-android-ui.sh
 
       - name: Upload visual QA screenshots
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: focus-raid-visual-qa
-          path: artifacts/visual/*.png
+          path: |
+            artifacts/visual/*.png
+            app/build/reports/androidTests/connected/**
           if-no-files-found: error
           retention-days: 14
 

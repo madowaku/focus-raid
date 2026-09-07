@@ -6,14 +6,14 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 
-class FocusAlarmScheduler(private val context: Context) {
+class FocusAlarmScheduler(private val context: Context) : SessionAlarm {
     private val alarmManager = context.getSystemService(AlarmManager::class.java)
 
     fun canScheduleExactAlarms(): Boolean {
         return Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()
     }
 
-    fun schedule(endEpochMillis: Long) {
+    override fun schedule(endEpochMillis: Long) {
         val pendingIntent = completionPendingIntent()
         if (!canScheduleExactAlarms()) {
             alarmManager.setAndAllowWhileIdle(
@@ -24,14 +24,15 @@ class FocusAlarmScheduler(private val context: Context) {
             return
         }
 
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
-            endEpochMillis,
-            pendingIntent,
-        )
+        try {
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, endEpochMillis, pendingIntent)
+        } catch (_: SecurityException) {
+            // Special access can be revoked between checking it and scheduling.
+            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, endEpochMillis, pendingIntent)
+        }
     }
 
-    fun cancel() {
+    override fun cancel() {
         alarmManager.cancel(completionPendingIntent())
     }
 

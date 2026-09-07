@@ -59,6 +59,7 @@ class DurabilityDebugReceiver : BroadcastReceiver() {
                     "phase=${saved.phase};sessionId=${saved.sessionId};" +
                         "endEpochMillis=${saved.endEpochMillis};" +
                         "pausedRemainingMillis=${saved.pausedRemainingMillis};" +
+                        "totalFocusMinutes=${saved.totalFocusMinutes};finishedId=${saved.finishedEntry?.sessionId};" +
                         "nowEpochMillis=${System.currentTimeMillis()};" +
                         "completionEpochMillis=$completionEpochMillis;" +
                         "exact=${scheduler.canScheduleExactAlarms()}",

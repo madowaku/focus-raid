@@ -58,7 +58,9 @@ internal fun WorldRaidOverview(state: FocusUiState) {
         )
 
         Spacer(Modifier.height(16.dp))
+        WorldStatusLabel(state.worldSyncStatus)
         WorldBossOverviewCard(state)
+        MordRaidCard(state)
 
         Spacer(Modifier.height(14.dp))
         Text("遠征マップ", fontSize = 16.sp, fontWeight = FontWeight.Bold)
