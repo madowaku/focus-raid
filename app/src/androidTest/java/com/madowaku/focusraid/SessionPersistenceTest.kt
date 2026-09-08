@@ -16,6 +16,9 @@ class SessionPersistenceTest {
     @Test fun journalRoomAndCreditAreReplaySafe() = runBlocking {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val store = SessionPreferences(context)
+        store.setCompanion(com.madowaku.focusraid.core.domain.CompanionIdentity.LUNE)
+        assertEquals(com.madowaku.focusraid.core.domain.CompanionIdentity.LUNE, store.session.first().companion)
+        store.setCompanion(com.madowaku.focusraid.core.domain.CompanionIdentity.RAG)
         store.saveReady()
         val before = store.session.first().totalFocusMinutes
         val id = UUID.randomUUID().toString()

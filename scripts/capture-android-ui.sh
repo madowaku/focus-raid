@@ -94,6 +94,12 @@ CONCEPT_ART=true capture READY 360 800 concept-volga-360x800
 CONCEPT_ART=true capture COMPANION_MIKO 360 800 concept-miko-360x800
 CONCEPT_ART=true capture RAID_OVERVIEW 360 800 concept-mord-360x800
 
+# Production atlas registration and new companion: retained alongside all existing gates.
+for phase in ART_RAG ART_MIKO ART_LUNE ART_BOSSES ART_ITEMS_TOWER ART_ITEMS_ABYSS ART_ITEMS_STAR COMPANION_LUNE; do
+  capture "$phase" 360 800 "${phase,,}-360x800"
+  capture "$phase" 720 1280 "${phase,,}-720x1280"
+done
+
 "${PYTHON:-python3}" - <<'PY'
 from pathlib import Path
 import struct
@@ -158,6 +164,9 @@ expected["concept-miko-360x800.png"] = (360, 800)
 expected["concept-mord-360x800.png"] = (360, 800)
 expected["concept-rag-360x800.png"] = (360, 800)
 expected["concept-volga-360x800.png"] = (360, 800)
+for phase in "ART_RAG ART_MIKO ART_LUNE ART_BOSSES ART_ITEMS_TOWER ART_ITEMS_ABYSS ART_ITEMS_STAR COMPANION_LUNE".split():
+    for width, height in ((360, 800), (720, 1280)):
+        expected[f"{phase.lower()}-{width}x{height}.png"] = (width, height)
 root = Path("artifacts/visual")
 for name, expected_size in expected.items():
     path = root / name

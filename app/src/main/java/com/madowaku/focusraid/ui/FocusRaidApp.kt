@@ -879,10 +879,9 @@ private fun VictoryScreen(
             ),
         ) {
             Column(Modifier.padding(16.dp)) {
-                Row(
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(state.world.bossName, fontWeight = FontWeight.Bold)
                     Text("今回の貢献の目安", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -916,6 +915,7 @@ private fun VictoryScreen(
             RewardMetricCard(
                 title = "探索",
                 value = reward.discovery ?: "次回へ",
+                item = com.madowaku.focusraid.core.domain.ItemCatalog.all.firstOrNull { it.name == reward.discovery },
                 modifier = Modifier.weight(1f),
             )
         }
@@ -1006,9 +1006,9 @@ private fun CompanionEvolutionCard(evolution: CompanionEvolution) {
 }
 
 @Composable
-private fun RewardMetricCard(title: String, value: String, modifier: Modifier = Modifier) {
+private fun RewardMetricCard(title: String, value: String, modifier: Modifier = Modifier, item: com.madowaku.focusraid.core.domain.AdventureItem? = null) {
     Card(
-        modifier = modifier.heightIn(min = 88.dp),
+        modifier = modifier.heightIn(min = 112.dp),
         shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .80f),
@@ -1023,12 +1023,12 @@ private fun RewardMetricCard(title: String, value: String, modifier: Modifier = 
         ) {
             Text(title, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(5.dp))
+            if (item != null) ItemArtwork(item, Modifier.size(44.dp))
             Text(
                 value,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
-                maxLines = 2,
             )
         }
     }

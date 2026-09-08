@@ -28,6 +28,7 @@ internal fun CompanionArtwork(
         ArtworkSource.CanvasFallback -> if (identity == com.madowaku.focusraid.core.domain.CompanionIdentity.RAG) {
             FallbackCompanionArtwork(accessible, stage, mood)
         } else FallbackMikoArtwork(accessible, stage, mood)
+        is ArtworkSource.Atlas -> AtlasArtwork(source, accessible)
         is ArtworkSource.Drawable -> Image(painterResource(source.resourceId), null, accessible, contentScale = ContentScale.Fit)
     }
 }
@@ -48,6 +49,18 @@ internal fun BossArtwork(
             }
             if (identity == BossIdentity.VOLGA) FallbackBossArtwork(pose) else FallbackMordArtwork(pose)
         }
+        is ArtworkSource.Atlas -> AtlasArtwork(source, accessible)
         is ArtworkSource.Drawable -> Image(painterResource(source.resourceId), null, accessible, contentScale = ContentScale.Fit)
+    }
+}
+
+@Composable
+internal fun ItemArtwork(item: com.madowaku.focusraid.core.domain.AdventureItem, modifier: Modifier = Modifier) {
+    val key = ArtworkKey.Item(item.id, item.name)
+    val accessible = modifier.clearAndSetSemantics { contentDescription = key.description() }
+    when (val source = LocalArtworkCatalog.current.resolve(key)) {
+        is ArtworkSource.Atlas -> AtlasArtwork(source, accessible)
+        is ArtworkSource.Drawable -> Image(painterResource(source.resourceId), null, accessible, contentScale = ContentScale.Fit)
+        ArtworkSource.CanvasFallback -> androidx.compose.material3.Text(item.glyph, modifier = accessible)
     }
 }

@@ -159,9 +159,10 @@ Before publishing store copy, screenshots, or the Shipaton demo:
 - [ ] Clearly describe Pro as a one-time purchase, not a subscription.
 - [ ] Keep the core focus timer fully usable in Free.
 - [ ] Confirm all screenshots correspond to the release candidate UI.
-- [ ] Approve final companion and boss assets; Canvas and generated candidates remain placeholders.
+- [x] Replace companion/egg/boss placeholders with the adopted production atlas catalog.
+- [ ] Prepare final store screenshot crops using the adopted artwork.
 - [ ] Do not claim authoritative global focus aggregation is live; current client reads world state and posts preset Footprints.
-- [ ] Keep Mord's personal challenge distinct from the shared Volga world raid.
+- [ ] Keep Mord and Zephyr's personal challenges distinct from the shared Volga world raid.
 
 ## 7. Shipaton submission gate
 

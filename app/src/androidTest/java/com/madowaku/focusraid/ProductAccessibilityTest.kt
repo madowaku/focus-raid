@@ -64,4 +64,16 @@ class ProductAccessibilityTest {
         compose.onNodeWithContentDescription("1分増やす").assertIsNotEnabled()
         compose.onNodeWithText("180 分に設定").performScrollTo().assertIsDisplayed()
     }
+
+    @Test fun illustratedResultLabelsDoNotOverlapAndDoneIsReachable() {
+        var done = false
+        val state = FocusUiState(phase = SessionPhase.COMPLETED,
+            reward = com.madowaku.focusraid.core.domain.FocusRules.resolveSession(25, Expedition.TOWER, 0, .5))
+        show { FocusRaidAppContent(state, onDone = { done = true }) }
+        val boss = compose.onNodeWithText(state.world.bossName).fetchSemanticsNode().boundsInRoot
+        val caption = compose.onNodeWithText("今回の貢献の目安").fetchSemanticsNode().boundsInRoot
+        assertTrue("Boss title must not overlap contribution caption at 1.5 font scale", boss.bottom <= caption.top)
+        compose.onNodeWithText("完了").performScrollTo().assertIsDisplayed().performClick()
+        assertTrue(done)
+    }
 }

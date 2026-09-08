@@ -1,37 +1,53 @@
-# Replaceable product artwork
+# Production artwork
 
-Screens use `CompanionArtwork` / `BossArtwork`. `ArtworkCatalog` resolves an exact
-identity, growth stage and presentation slot to a drawable, or the existing Canvas
-fallback. Drawable entries support Android vectors and raster resources without
-changing screens. No animation dependency was added.
+At the user's follow-up request on 2026-09-08, generated artwork replaces the simple
+companion/egg/boss Canvas drawings in the normal release build. All 45 companion
+states, nine boss states and 36 known items resolve to registered raster artwork.
+The earlier four debug concepts have been replaced by seven release atlases.
 
-Production defaults remain procedural **placeholder artwork**. Generated images
-are unapproved candidates in `app/src/debug/res/drawable-nodpi`, excluded from the
-release variant. Launch `VisualQaActivity` with `--ez concept_art true` to preview
-the candidate catalog. Unfilled states keep their correct procedural fallback;
-an idle image is not silently reused for a celebration or defeated boss.
+Screens still use `CompanionArtwork`, `BossArtwork` and `ItemArtwork`. The catalog
+supports registered atlas frames and individual vector/raster drawables. Procedural
+fallbacks remain only for deliberately unmapped slots; an empty catalog still has
+safe fallback behavior. Unknown legacy item names remain visible, even if no image
+exists for them. No animation or network image dependency was added.
 
-## Candidates generated on 2026-09-08
+## Rendering and registration
 
-Built-in image generation was used, with genuine transparent PNG output. The
-original outputs were copied into the repository without deleting the originals.
-No API-key/CLI fallback was used. These are painted illustrations, not final
-48px pixel sprites; final style, raster size, pose sheets and approval remain open.
+The adopted atlases are opaque midnight-backed painted panels, not transparent
+sprites. Two attempts at alpha generation returned a painted checkerboard; those
+outputs were rejected. Subsequent dark-background artwork was generated with the
+built-in image tool and copied unchanged into `app/src/main/res/drawable-nodpi`.
+No generated PNG pixels were edited in scripts.
 
-| Resource | Slot | Prompt specification |
-|---|---|---|
-| `rag_hatchling_idle_concept.png` | Rag / hatchling / idle | Full-body warm red-orange baby dragon, oversized head, two pale-gold horns, cream muzzle/belly, red wing/orange membrane, thick dark-tipped tail, brown adventurer backpack, short legs, dark eye highlight. Calm right-facing three-quarter pose; crisp chunky painted game art; transparent square; no text/environment. Palette #ef4a35/#ff7352/#b9323a/#ffd58a/#3a2330. |
-| `volga_normal_concept.png` | Volga / normal | Full-body massive charcoal-purple armored ash dragon, swept horns, bat wings, orange ember cracks and eyes, grounded left-facing stance. Ancient and formidable, no horror/gore; painted chunky mobile silhouette; transparent square; no text/environment. |
-| `miko_hatchling_idle_concept.png` | Miko / hatchling / idle | Tiny mint-green leaf fox adventurer, cream muzzle/chest/tail tip, violet eyes, leaf ears, gold leaf clasp, brown satchel and blanket, short legs and curling tail. Calm right-facing pose matching Rag's painted game style; transparent square; no text/environment. |
-| `mord_normal_concept.png` | Mord / normal | Ancient quadruped tortoise-golem of mossy dark-teal rock, root legs, emerald crystal shell, amber eyes, compact powerful left-facing silhouette. Painted fantasy mobile art; emerald/mint/deep-purple palette; transparent square; no text/environment. |
+`ProductionArtworkCatalog.kt` maps identity, growth stage and mood to exact frames.
+`ArtworkFrameRegistration.kt` contains per-frame display bounds. Generated layout
+is not assumed to be a mathematically perfect grid: separate registration retains
+wings/tails and centers eggs/babies without excessive empty space. The read-only
+`scripts/register-art.py` analyzes the originals and regenerates these coordinates;
+Pillow is required to run it. `docs/art-registration.json` records source hashes,
+sizes and normalized bounds. Visually review bounds after replacing an atlas.
 
-All characters were visually inspected after generation. Candidate images are
-static; the active focus screen retains quiet procedural poses by default.
+`AtlasArtwork` draws a source region directly, without allocating cropped copies.
+A shared 48 MiB LRU cache bounds decoded sheet retention; views may retain a sheet
+while it is displayed. The seven production images decode to roughly 42 MiB in
+total. Rendering remains static during focus. Descriptions preserve the companion,
+stage and mood, boss state, or item name.
 
-## Replacing approved assets
+## Assets and generation prompts
 
-1. Add the approved drawable to main resources.
-2. Map its exact `ArtworkKey` in `ArtworkCatalog.Production`.
-3. Run mapping tests and device captures at both target sizes and large fonts.
-4. Preserve descriptive semantics and avoid implying a shared boss was defeated
-   merely because one local focus session finished.
+See [release art/content report](release-art.md) for the adopted files and generation
+prompt set. Originals remain in the Codex generated-images directory; all runtime
+assets are committed inside the repository.
+
+## Replacement workflow
+
+1. Generate/choose replacement art for the required exact identities/states.
+2. Copy it into main resources; keep original generation outputs.
+3. Update registration gutters if necessary, then run `python scripts/register-art.py`.
+4. Run catalog tests, the device decoder/registration test and gallery captures.
+5. Inspect actual timer, result, companion and raid screens at both target sizes.
+
+`VisualQaActivity` phases `ART_RAG`, `ART_MIKO`, `ART_LUNE`, `ART_BOSSES`,
+`ART_ITEMS_TOWER`, `ART_ITEMS_ABYSS`, `ART_ITEMS_STAR` show production renderer
+registration. `COMPANION_LUNE` shows the new companion in the real overview screen.
+The old `concept_art` intent flag no longer swaps in a partial placeholder catalog.

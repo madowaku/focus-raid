@@ -41,6 +41,10 @@ class VisualQaActivity : ComponentActivity() {
         )
 
         val phase = intent.getStringExtra(EXTRA_PHASE)?.uppercase().orEmpty()
+        if (phase.startsWith("ART_")) {
+            setContent { FocusRaidTheme { ArtworkGallery(phase) } }
+            return
+        }
         val now = System.currentTimeMillis()
         val visualHistory = listOf(
             SessionHistoryEntry(
@@ -133,6 +137,7 @@ class VisualQaActivity : ComponentActivity() {
         )
 
         val state = when (phase) {
+            "COMPANION_LUNE" -> FocusUiState(companion = com.madowaku.focusraid.core.domain.CompanionIdentity.LUNE, totalFocusMinutes = 180)
             "COMPANION_MIKO" -> FocusUiState(companion = com.madowaku.focusraid.core.domain.CompanionIdentity.MIKO, totalFocusMinutes = 100)
             "TIMER_MAX" -> FocusUiState(selectedMinutes = 180)
             "CUSTOM_MAX" -> FocusUiState(selectedMinutes = 180)
@@ -343,17 +348,10 @@ class VisualQaActivity : ComponentActivity() {
             FocusRaidTheme {
                 CompositionLocalProvider(
                     LocalProAccessLevel provides accessLevel,
-                    com.madowaku.focusraid.ui.LocalArtworkCatalog provides if (intent.getBooleanExtra("concept_art", false)) {
-                        com.madowaku.focusraid.ui.ArtworkCatalog(mapOf(
-                            com.madowaku.focusraid.ui.ArtworkKey.Boss(com.madowaku.focusraid.ui.BossIdentity.MORD, com.madowaku.focusraid.ui.BossPresentation.Normal) to com.madowaku.focusraid.ui.ArtworkSource.Drawable(R.drawable.mord_normal_concept),
-                            com.madowaku.focusraid.ui.ArtworkKey.Companion(CompanionStage.HATCHLING, com.madowaku.focusraid.ui.CompanionMood.Idle, com.madowaku.focusraid.core.domain.CompanionIdentity.MIKO) to com.madowaku.focusraid.ui.ArtworkSource.Drawable(R.drawable.miko_hatchling_idle_concept),
-                            com.madowaku.focusraid.ui.ArtworkKey.Companion(CompanionStage.HATCHLING, com.madowaku.focusraid.ui.CompanionMood.Idle) to com.madowaku.focusraid.ui.ArtworkSource.Drawable(R.drawable.rag_hatchling_idle_concept),
-                            com.madowaku.focusraid.ui.ArtworkKey.Boss(com.madowaku.focusraid.ui.BossIdentity.VOLGA, com.madowaku.focusraid.ui.BossPresentation.Normal) to com.madowaku.focusraid.ui.ArtworkSource.Drawable(R.drawable.volga_normal_concept),
-                        ))
-                    } else com.madowaku.focusraid.ui.ArtworkCatalog.Production,
+                    com.madowaku.focusraid.ui.LocalArtworkCatalog provides com.madowaku.focusraid.ui.ArtworkCatalog.Production,
                 ) {
                     FocusRaidAppContent(
-                        state = if (intent.getBooleanExtra("concept_art", false) && phase == "RAID_OVERVIEW") state.copy(sessionHistory = emptyList()) else state,
+                        state = state,
                         tab = tab,
                     )
                     if (phase in setOf("CUSTOM", "CUSTOM_MAX")) {
@@ -378,7 +376,7 @@ class VisualQaActivity : ComponentActivity() {
                     }
                     if (phase == "END_CONFIRM") {
                         SessionExitConfirmDialog(
-                            state = if (intent.getBooleanExtra("concept_art", false) && phase == "RAID_OVERVIEW") state.copy(sessionHistory = emptyList()) else state,
+                            state = state,
                             onDismiss = {},
                             onConfirm = {},
                         )
@@ -405,7 +403,7 @@ class VisualQaActivity : ComponentActivity() {
                     }
                     if (phase.startsWith("FOOTPRINT_")) {
                         FootprintDialog(
-                            state = if (intent.getBooleanExtra("concept_art", false) && phase == "RAID_OVERVIEW") state.copy(sessionHistory = emptyList()) else state,
+                            state = state,
                             onSelectPreset = {},
                             onLeaveFootprint = {},
                             onDismiss = {},

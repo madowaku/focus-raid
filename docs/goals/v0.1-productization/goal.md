@@ -15,3 +15,10 @@ support the active task; only one write-capable task is active at a time.
 User scope addition: implement another companion (Miko, earned at 75 cumulative
 minutes), another boss (Mord, local Abyss challenge), and earned inventory.
 World aggregation remains an explicit future server integration, not fake shared credit.
+
+Follow-up tranche (2026-09-08): user authorized replacing simple egg/companion/boss
+art with adopted generated release images, plus one new companion and expanded
+boss/item content. T004 implements all 90 art slots, Lune (180 minutes), Zephyr
+(personal Tower raid, 300 minutes) and six keepsakes. The earlier candidate-only
+art constraint is superseded by this explicit follow-up; all other locked rules
+remain in force. Verify mapping, retained item IDs, device rendering and builds.

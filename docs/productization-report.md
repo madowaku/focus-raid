@@ -1,5 +1,7 @@
 # Issue #5 productization report
 
+Historical receipt for commit `ce139af`. The later user-authorized production-art replacement and content expansion supersede its candidate-art status; see [release-art.md](release-art.md).
+
 Baseline: `6ba27cd5795bb6d0c709b565228fa4a8c9655de8` (PR #4 / `feat/revenuecat-pro-access`). Work branch: `feat/v0.1-productization-sprint`; `main` was not used. Verification date: 2026-09-08, Windows, Java 17, Gradle 9.5.0, Android API 36 x86_64 emulator.
 
 ## Audit and implemented fixes

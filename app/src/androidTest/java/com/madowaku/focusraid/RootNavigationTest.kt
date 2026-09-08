@@ -48,6 +48,15 @@ class RootNavigationTest {
             }
         }
     }
+    @Test fun earnedLuneCanBeSelectedAndAppearsOnHome() {
+        store.session.value = PersistedSession(totalFocusMinutes = 180)
+        show(education = false)
+        compose.onNodeWithText("相棒").performClick()
+        compose.onAllNodesWithText("相棒にする").onLast().performScrollTo().performClick()
+        compose.runOnIdle { assertEquals(CompanionIdentity.LUNE, store.session.value.companion) }
+        pressBack()
+        compose.onNodeWithText("ルネ · 幼体").assertIsDisplayed()
+    }
     @Test fun educationRechecksEntitlementBeforeStartingStarRoute() {
         store.session.value = PersistedSession(expedition = Expedition.STAR_ROUTE)
         show(education = true)

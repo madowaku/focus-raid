@@ -32,4 +32,22 @@ class AdventureCollectionTest {
             assertTrue(ItemCatalog.pool(expedition, rarity).isNotEmpty())
         } }
     }
+
+    @Test fun `Lune unlocks at 180 and Zephyr counts only deduplicated tower minutes`() {
+        assertFalse(AdventureCollection.canSelect(CompanionIdentity.LUNE, 179))
+        assertTrue(AdventureCollection.canSelect(CompanionIdentity.LUNE, 180))
+        val tower = entry("tower", 120, Expedition.TOWER)
+        val progress = AdventureCollection.personalBossProgress(RaidBossIdentity.ZEPHYR,
+            listOf(tower, tower, entry("more", 180, Expedition.TOWER), entry("abyss", 999)))
+        assertEquals(300, progress.creditedMinutes)
+        assertTrue(progress.defeated)
+        assertThrows(IllegalArgumentException::class.java) { AdventureCollection.personalBossProgress(RaidBossIdentity.VOLGA, emptyList()) }
+    }
+    @Test fun `new keepsakes append without changing old stable identifiers`() {
+        assertEquals(36, ItemCatalog.all.size)
+        assertEquals("tower-rare-3", ItemCatalog.all.single { it.name == "騎士の盾" }.id)
+        assertEquals("abyss-common-4", ItemCatalog.all.single { it.name == "青晶石" }.id)
+        assertEquals("star_route-legendary-1", ItemCatalog.all.single { it.name == "天球儀アストラル" }.id)
+        assertEquals("tower-common-5", ItemCatalog.all.single { it.name == "風音の鈴" }.id)
+    }
 }

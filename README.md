@@ -44,7 +44,7 @@ The previous React/Vite PWA prototype is preserved on the `archive/pwa-mvp-v0.1`
 - Adventure Log backed by Room
 - Today focus minutes and streak derived from actual local history
 - Companion growth from egg to mature form using cumulative focus minutes
-- Distinct Compose Canvas silhouettes for egg / hatchling / first growth / second growth / mature
+- Generated production artwork for all five growth stages and three companion moods
 - `RAG EVOLVED!` result reveal whenever credited focus crosses a growth threshold
 - Home / Raid / Companion / Log bottom navigation
 - World Raid overview with shared boss, Tower, Abyss, and Pro Star Route progress
@@ -59,8 +59,8 @@ The previous React/Vite PWA prototype is preserved on the `archive/pwa-mvp-v0.1`
 - Pure Kotlin domain tests
 - Durable completion journal and replay-safe partial-session results
 - Retryable storage, billing and Footprint failure states
-- Replaceable artwork catalog with procedural fallbacks and debug-only generated candidates
-- Miko companion unlock/selection, personal Abyss boss Mord, and earned inventory
+- Replaceable artwork catalog with 90 registered production image frames and a shared bitmap cache
+- Rag, Miko and Lune companion selection; personal bosses Mord and Zephyr; 36 illustrated inventory items
 - Large-font device tests and captures at 1.3x / 1.5x
 - Android emulator visual QA across 360×800 and 720×1280, including Free/Pro, paywall, companion evolution, and footprint states
 
@@ -94,7 +94,7 @@ Rag starts as an egg on a fresh install and visually evolves as credited focus t
 
 The Companion tab shows the current form, progress to the next form, time spent together, today's contribution, and a five-form progression strip. Future forms stay dimmed until unlocked.
 
-When a completed or partially credited session crosses a growth threshold, the result state records the old and new form. A rare `RAG EVOLVED!` card briefly shows the previous silhouette before revealing the newly unlocked form. Evolution never depends on streaks or paid acceleration.
+When a completed or partially credited session crosses a growth threshold, the result state records the old and new form. An evolution card shows the selected companion’s previous artwork before revealing its newly unlocked form. Evolution never depends on streaks or paid acceleration.
 
 ## Shared world and Footprints
 
@@ -172,3 +172,5 @@ See:
 - `docs/firebase-setup.md`
 - `docs/billing.md`
 - `docs/release-readiness.md`
+
+See `docs/release-art.md` for the adopted artwork and Lune/Zephyr/item expansion.

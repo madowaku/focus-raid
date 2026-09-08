@@ -49,29 +49,31 @@ internal fun InventoryCard(entries: List<SessionHistoryEntry>) {
         ListItem(
             headlineContent = { Text(ownedItem.item.name) },
             supportingContent = { Text(ownedItem.item.rarity.name) },
-            leadingContent = { Text(ownedItem.item.glyph) },
+            leadingContent = { ItemArtwork(ownedItem.item, Modifier.size(64.dp)) },
             trailingContent = { Text("×${ownedItem.count}") },
         )
     }
 }
 
 @Composable
-internal fun MordRaidCard(state: FocusUiState) {
-    val progress = AdventureCollection.mordProgress(state.sessionHistory)
+internal fun PersonalRaidCard(state: FocusUiState, boss: RaidBossIdentity) {
+    val progress = AdventureCollection.personalBossProgress(boss, state.sessionHistory)
+    val expedition = if (boss == RaidBossIdentity.MORD) "深層迷宮" else "天空塔"
+    val artworkIdentity = if (boss == RaidBossIdentity.MORD) BossIdentity.MORD else BossIdentity.ZEPHYR
     Card(Modifier.fillMaxWidth().padding(top = 14.dp)) {
         Column(Modifier.padding(16.dp)) {
-            Text("深層迷宮の個人レイド", style = MaterialTheme.typography.labelMedium)
+            Text("${expedition}の個人レイド", style = MaterialTheme.typography.labelMedium)
             Row(verticalAlignment = Alignment.CenterVertically) {
-                BossArtwork(Modifier.size(96.dp), BossIdentity.MORD,
+                BossArtwork(Modifier.size(112.dp), artworkIdentity,
                     if (progress.defeated) BossPresentation.Defeated else if (progress.creditedMinutes > 0) BossPresentation.Damaged else BossPresentation.Normal)
                 Column(Modifier.weight(1f)) {
-                    Text(RaidBossIdentity.MORD.label, style = MaterialTheme.typography.titleMedium)
+                    Text(boss.label, style = MaterialTheme.typography.titleMedium)
                     Text(if (progress.defeated) "討伐達成！" else "残り ${progress.remainingHp} / ${progress.targetMinutes} HP")
                     LinearProgressIndicator(progress = { progress.progress }, modifier = Modifier.fillMaxWidth())
                 }
             }
-            Text("深層迷宮での集中1分 = 1ダメージ。端末内の挑戦で、世界の共有HPとは別に記録します。", style = MaterialTheme.typography.bodySmall)
-            Text("ホームで深層迷宮を選んで集中すると進みます。", style = MaterialTheme.typography.bodySmall)
+            Text("${expedition}での集中1分 = 1ダメージ。端末内の挑戦で、世界の共有HPとは別に記録します。", style = MaterialTheme.typography.bodySmall)
+            Text("ホームで${expedition}を選んで集中すると進みます。", style = MaterialTheme.typography.bodySmall)
         }
     }
 }

@@ -60,15 +60,26 @@ tasks:
       decision: complete
       summary: PM checked issue 5 acceptance against final code, bounded Judge review and fresh local gates. No known audited code-side P0/P1 remains. External Play/Firebase/signing/art and shared aggregation remain explicitly unverified.
       evidence: [docs/productization-report.md, docs/goals/v0.1-productization/notes/T999-review.md]
+  - id: T004
+    type: pm
+    assignee: PM
+    status: done
+    objective: Replace placeholder art with generated release assets; add Lune, Zephyr and illustrated items; verify render coverage and builds.
+    allowed_files: [app, scripts, docs, README.md]
+    receipt:
+      result: done
+      decision: complete
+      summary: PM acceptance audit verified 90 adopted image frames, Lune at 180 minutes, personal Tower boss Zephyr at 300 HP, six new keepsakes with retained old IDs. Fixed excess image gutters and large-font result-label overlap found in visual QA. All 56 JVM and 12 device tests, debug/release builds and lint (0 errors) passed.
+      evidence: [docs/release-art.md, docs/art-registration.json, artifacts/visual, app/build/reports]
 checks:
   dirty_fingerprint: unknown
   last_verification:
     result: pass
-    task: T003
+    task: T004
     commands:
-      - gradle testDebugUnitTest lintDebug assembleDebug bundleRelease
-      - gradle connectedDebugAndroidTest
-      - bash scripts/test-timer-durability.sh
-      - PYTHON=python bash scripts/capture-android-ui.sh
-      - PYTHON=python bash artifacts/final-capture.sh
+      - python scripts/register-art.py
+      - gradle connectedDebugAndroidTest testDebugUnitTest lintDebug assembleDebug bundleRelease
+      - bash artifacts/capture-release-art.sh
+      - bash artifacts/capture-art-extra.sh
+      - bash artifacts/capture-result-fix.sh
       - git diff --check

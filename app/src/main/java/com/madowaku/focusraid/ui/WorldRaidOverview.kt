@@ -60,7 +60,8 @@ internal fun WorldRaidOverview(state: FocusUiState) {
         Spacer(Modifier.height(16.dp))
         WorldStatusLabel(state.worldSyncStatus)
         WorldBossOverviewCard(state)
-        MordRaidCard(state)
+        PersonalRaidCard(state, com.madowaku.focusraid.core.domain.RaidBossIdentity.MORD)
+        PersonalRaidCard(state, com.madowaku.focusraid.core.domain.RaidBossIdentity.ZEPHYR)
 
         Spacer(Modifier.height(14.dp))
         Text("遠征マップ", fontSize = 16.sp, fontWeight = FontWeight.Bold)
