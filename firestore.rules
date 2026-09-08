@@ -6,20 +6,55 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function validExpedition(expedition) {
+      return expedition in ['TOWER', 'ABYSS', 'STAR_ROUTE'];
+    }
+
+    function validFootprintPreset(presetId) {
+      return presetId in [
+        'made_it',
+        'keep_going',
+        'almost',
+        'one_step',
+        'rest',
+        'waiting',
+        'fire',
+        'strong'
+      ];
+    }
+
+    function validFootprintShape() {
+      return request.resource.data.keys().hasOnly(['presetId', 'createdAt'])
+        && request.resource.data.presetId is string
+        && validFootprintPreset(request.resource.data.presetId)
+        && request.resource.data.createdAt is timestamp;
+    }
+
     match /world/{document=**} {
       allow read: if signedIn();
       allow write: if false;
     }
 
-    match /footprints/{document=**} {
-      allow read: if signedIn();
-      allow write: if false;
+    match /footprints/{expedition}/checkpoints/{checkpoint}/entries/{userId} {
+      allow read: if signedIn() && validExpedition(expedition);
+
+      allow create: if signedIn()
+        && request.auth.uid == userId
+        && validExpedition(expedition)
+        && validFootprintShape()
+        && request.resource.data.createdAt == request.time;
+
+      allow update: if signedIn()
+        && request.auth.uid == userId
+        && validExpedition(expedition)
+        && validFootprintShape()
+        && request.resource.data.createdAt == resource.data.createdAt;
+
+      allow delete: if false;
     }
 
-    match /users/{userId}/{document=**} {
-      allow read, write: if signedIn() && request.auth.uid == userId;
-    }
-
+    // Everything else is closed by default. Add new backend paths only when the
+    // shipped client actually needs them, with a dedicated least-privilege rule.
     match /{document=**} {
       allow read, write: if false;
     }

@@ -1,0 +1,287 @@
+[CmdletBinding()]
+param(
+    [string]$KeystorePath = (Join-Path $HOME ".focus-raid\focus-raid-upload.jks"),
+    [string]$Alias = "focusraid-upload",
+    [string]$AndroidSdkPath = "",
+    [switch]$SkipClean
+)
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
+
+function Get-JavaTool {
+    param([Parameter(Mandatory = $true)][string]$Name)
+
+    $command = Get-Command "$Name.exe" -ErrorAction SilentlyContinue
+    if ($null -ne $command) {
+        return $command.Source
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($env:JAVA_HOME)) {
+        $candidate = Join-Path $env:JAVA_HOME "bin\$Name.exe"
+        if (Test-Path $candidate) {
+            return $candidate
+        }
+    }
+
+    throw "$Name.exe was not found. Install/use JDK 17 and make sure JAVA_HOME or PATH points to it."
+}
+
+function Convert-SecureStringToPlainText {
+    param([Parameter(Mandatory = $true)][Security.SecureString]$Value)
+    return [System.Net.NetworkCredential]::new("", $Value).Password
+}
+
+function Resolve-GradleCommand {
+    param([Parameter(Mandatory = $true)][string]$RepoRoot)
+
+    $wrapper = Join-Path $RepoRoot "gradlew.bat"
+    if (Test-Path $wrapper) {
+        return [pscustomobject]@{
+            Path = $wrapper
+            Label = "Gradle Wrapper"
+        }
+    }
+
+    $fromPath = Get-Command "gradle" -ErrorAction SilentlyContinue
+    if ($null -ne $fromPath) {
+        return [pscustomobject]@{
+            Path = $fromPath.Source
+            Label = "system Gradle"
+        }
+    }
+
+    $knownInstall = Join-Path $HOME "tools\gradle-9.5.0\bin\gradle.bat"
+    if (Test-Path $knownInstall) {
+        return [pscustomobject]@{
+            Path = $knownInstall
+            Label = "local Gradle"
+        }
+    }
+
+    $toolsDir = Join-Path $HOME "tools"
+    if (Test-Path $toolsDir) {
+        $discovered = Get-ChildItem -Path $toolsDir -Directory -Filter "gradle-*" -ErrorAction SilentlyContinue |
+            Sort-Object Name -Descending |
+            ForEach-Object { Join-Path $_.FullName "bin\gradle.bat" } |
+            Where-Object { Test-Path $_ } |
+            Select-Object -First 1
+
+        if ($null -ne $discovered) {
+            return [pscustomobject]@{
+                Path = $discovered
+                Label = "local Gradle"
+            }
+        }
+    }
+
+    return $null
+}
+
+function Resolve-AndroidSdk {
+    param(
+        [Parameter(Mandatory = $true)][string]$RepoRoot,
+        [string]$ExplicitPath = ""
+    )
+
+    $candidates = New-Object System.Collections.Generic.List[string]
+
+    if (-not [string]::IsNullOrWhiteSpace($ExplicitPath)) {
+        $candidates.Add($ExplicitPath)
+    }
+    if (-not [string]::IsNullOrWhiteSpace($env:ANDROID_HOME)) {
+        $candidates.Add($env:ANDROID_HOME)
+    }
+    if (-not [string]::IsNullOrWhiteSpace($env:ANDROID_SDK_ROOT)) {
+        $candidates.Add($env:ANDROID_SDK_ROOT)
+    }
+
+    $localPropertiesPath = Join-Path $RepoRoot "local.properties"
+    if (Test-Path $localPropertiesPath) {
+        $sdkLine = Get-Content $localPropertiesPath | Where-Object { $_ -match '^sdk\.dir=' } | Select-Object -First 1
+        if ($null -ne $sdkLine) {
+            $value = $sdkLine.Substring("sdk.dir=".Length)
+            $value = $value -replace '\\\\', '\'
+            $value = $value -replace '/', '\'
+            if (-not [string]::IsNullOrWhiteSpace($value)) {
+                $candidates.Add($value)
+            }
+        }
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($env:LOCALAPPDATA)) {
+        $candidates.Add((Join-Path $env:LOCALAPPDATA "Android\Sdk"))
+    }
+
+    foreach ($candidate in ($candidates | Select-Object -Unique)) {
+        if (-not [string]::IsNullOrWhiteSpace($candidate) -and (Test-Path $candidate)) {
+            return [System.IO.Path]::GetFullPath($candidate)
+        }
+    }
+
+    return $null
+}
+
+function Test-ProductionConfigValue {
+    param([Parameter(Mandatory = $true)][string]$Name)
+
+    $environmentValue = [Environment]::GetEnvironmentVariable($Name)
+    if (-not [string]::IsNullOrWhiteSpace($environmentValue)) {
+        return $true
+    }
+
+    $gradlePropertiesPath = Join-Path $HOME ".gradle\gradle.properties"
+    if (-not (Test-Path $gradlePropertiesPath)) {
+        return $false
+    }
+
+    $prefix = "$Name="
+    $line = Get-Content $gradlePropertiesPath | Where-Object {
+        $_.StartsWith($prefix, [System.StringComparison]::Ordinal)
+    } | Select-Object -First 1
+
+    if ($null -eq $line) {
+        return $false
+    }
+
+    return -not [string]::IsNullOrWhiteSpace($line.Substring($prefix.Length))
+}
+
+$repoRoot = Split-Path -Parent $PSScriptRoot
+$keytool = Get-JavaTool -Name "keytool"
+$jarsigner = Get-JavaTool -Name "jarsigner"
+$keystoreFullPath = [System.IO.Path]::GetFullPath($KeystorePath)
+$keyDirectory = Split-Path -Parent $keystoreFullPath
+
+$resolvedGradle = Resolve-GradleCommand -RepoRoot $repoRoot
+if ($null -eq $resolvedGradle) {
+    throw "Gradle was not found. Expected gradlew.bat, PATH Gradle, or a local install under '$HOME\tools\gradle-*\bin\gradle.bat'."
+}
+$gradleCommand = $resolvedGradle.Path
+Write-Host "Using $($resolvedGradle.Label): $gradleCommand" -ForegroundColor DarkGray
+
+$androidSdk = Resolve-AndroidSdk -RepoRoot $repoRoot -ExplicitPath $AndroidSdkPath
+if ($null -eq $androidSdk) {
+    throw "Android SDK was not found. Install/open Android Studio once, or rerun with -AndroidSdkPath 'C:\Users\<you>\AppData\Local\Android\Sdk'."
+}
+
+$localPropertiesPath = Join-Path $repoRoot "local.properties"
+$sdkForProperties = $androidSdk -replace '\\', '/'
+Set-Content -Path $localPropertiesPath -Value "sdk.dir=$sdkForProperties" -Encoding ASCII
+Write-Host "Using Android SDK: $androidSdk" -ForegroundColor DarkGray
+Write-Host "Wrote local.properties with forward slashes (Git-ignored)." -ForegroundColor DarkGray
+
+if (-not (Test-Path $keystoreFullPath)) {
+    New-Item -ItemType Directory -Force -Path $keyDirectory | Out-Null
+
+    Write-Host "Creating Focus Raid upload key:" -ForegroundColor Cyan
+    Write-Host "  $keystoreFullPath"
+    Write-Host "You will be prompted for the keystore/key password. Keep it private and back it up." -ForegroundColor Yellow
+
+    & $keytool `
+        -genkeypair `
+        -v `
+        -keystore $keystoreFullPath `
+        -alias $Alias `
+        -keyalg RSA `
+        -keysize 4096 `
+        -validity 10000 `
+        -storetype JKS `
+        -dname "CN=Focus Raid Upload, OU=Android, O=madowaku, C=JP"
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "keytool failed while creating the upload key."
+    }
+
+    Write-Host "Upload key created. Back up this file somewhere separate from this PC:" -ForegroundColor Green
+    Write-Host "  $keystoreFullPath"
+} else {
+    Write-Host "Using existing upload key:" -ForegroundColor Cyan
+    Write-Host "  $keystoreFullPath"
+}
+
+$storePasswordSecure = Read-Host "Keystore password" -AsSecureString
+$keyPasswordSecure = Read-Host "Key password (press Enter if it is the same as the keystore password)" -AsSecureString
+$storePassword = Convert-SecureStringToPlainText $storePasswordSecure
+$keyPassword = Convert-SecureStringToPlainText $keyPasswordSecure
+
+if ([string]::IsNullOrEmpty($storePassword)) {
+    throw "Keystore password cannot be empty."
+}
+if ([string]::IsNullOrEmpty($keyPassword)) {
+    $keyPassword = $storePassword
+}
+
+$signingEnvironment = @(
+    "FOCUS_RAID_UPLOAD_KEYSTORE_PATH",
+    "FOCUS_RAID_UPLOAD_STORE_PASSWORD",
+    "FOCUS_RAID_UPLOAD_KEY_ALIAS",
+    "FOCUS_RAID_UPLOAD_KEY_PASSWORD"
+)
+
+try {
+    $env:FOCUS_RAID_UPLOAD_KEYSTORE_PATH = $keystoreFullPath
+    $env:FOCUS_RAID_UPLOAD_STORE_PASSWORD = $storePassword
+    $env:FOCUS_RAID_UPLOAD_KEY_ALIAS = $Alias
+    $env:FOCUS_RAID_UPLOAD_KEY_PASSWORD = $keyPassword
+
+    $productionConfig = @(
+        "FOCUS_RAID_REVENUECAT_GOOGLE_API_KEY",
+        "FOCUS_RAID_FIREBASE_PROJECT_ID",
+        "FOCUS_RAID_FIREBASE_API_KEY",
+        "FOCUS_RAID_FIREBASE_APP_ID",
+        "FOCUS_RAID_PRIVACY_POLICY_URL"
+    )
+    $missingProductionConfig = @(
+        $productionConfig | Where-Object { -not (Test-ProductionConfigValue -Name $_) }
+    )
+
+    if ($missingProductionConfig.Count -gt 0) {
+        Write-Warning "The bundle can be signed, but it is not yet a public-release candidate because these production values are missing:"
+        foreach ($name in $missingProductionConfig) {
+            Write-Host "  - $name" -ForegroundColor Yellow
+        }
+    }
+
+    Push-Location $repoRoot
+    try {
+        $gradleArgs = if ($SkipClean) {
+            @("bundleRelease", "--stacktrace")
+        } else {
+            @("clean", "bundleRelease", "--stacktrace")
+        }
+
+        & $gradleCommand @gradleArgs
+        if ($LASTEXITCODE -ne 0) {
+            throw "Gradle bundleRelease failed."
+        }
+    } finally {
+        Pop-Location
+    }
+
+    $aabPath = Join-Path $repoRoot "app\build\outputs\bundle\release\app-release.aab"
+    if (-not (Test-Path $aabPath)) {
+        throw "Signed AAB was not found at expected path: $aabPath"
+    }
+
+    Write-Host "Verifying AAB signature..." -ForegroundColor Cyan
+    & $jarsigner -verify -verbose -certs $aabPath
+    if ($LASTEXITCODE -ne 0) {
+        throw "jarsigner verification failed. Do not upload this AAB."
+    }
+
+    $sha256 = (Get-FileHash -Path $aabPath -Algorithm SHA256).Hash
+
+    Write-Host ""
+    Write-Host "SIGNED AAB READY" -ForegroundColor Green
+    Write-Host "  Path:   $aabPath"
+    Write-Host "  SHA256: $sha256"
+    Write-Host ""
+    Write-Host "Keep the upload keystore and its passwords backed up. Never commit them to Git." -ForegroundColor Yellow
+} finally {
+    foreach ($name in $signingEnvironment) {
+        Remove-Item "Env:$name" -ErrorAction SilentlyContinue
+    }
+    $storePassword = $null
+    $keyPassword = $null
+}

@@ -19,6 +19,12 @@ object FocusRules {
             Rarity.EPIC to listOf("共鳴結晶", "弱点解析器"),
             Rarity.LEGENDARY to listOf("深淵の羅針盤"),
         ),
+        Expedition.STAR_ROUTE to mapOf(
+            Rarity.COMMON to listOf("星砂の小瓶", "破れた星図", "導光石", "古い航海札"),
+            Rarity.RARE to listOf("彗星のコンパス", "夜光帆", "星詠みのレンズ"),
+            Rarity.EPIC to listOf("星環炉の欠片", "虚空航路図"),
+            Rarity.LEGENDARY to listOf("天球儀アストラル"),
+        ),
     )
 
     fun rarityFromRoll(roll: Double): Rarity = when {

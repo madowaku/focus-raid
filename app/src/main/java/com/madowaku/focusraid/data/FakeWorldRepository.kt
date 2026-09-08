@@ -23,13 +23,13 @@ interface WorldRepository {
 
     suspend fun refresh()
 
-    fun footprints(
+    suspend fun footprints(
         expedition: Expedition,
         checkpoint: Int,
         limit: Int = 3,
     ): List<Footprint>
 
-    fun leaveFootprint(
+    suspend fun leaveFootprint(
         expedition: Expedition,
         checkpoint: Int,
         presetId: String,
@@ -51,11 +51,13 @@ class FakeWorldRepository : WorldRepository {
         seed(Expedition.ABYSS, initialWorld.abyssDepth, "made_it", "2日前"),
         seed(Expedition.ABYSS, initialWorld.abyssDepth, "keep_going", "昨日"),
         seed(Expedition.ABYSS, initialWorld.abyssDepth, "strong", "4時間前"),
+        seed(Expedition.STAR_ROUTE, 1, "waiting", "昨日"),
+        seed(Expedition.STAR_ROUTE, 1, "fire", "2時間前"),
     )
 
     override suspend fun refresh() = Unit
 
-    override fun footprints(
+    override suspend fun footprints(
         expedition: Expedition,
         checkpoint: Int,
         limit: Int,
@@ -66,7 +68,7 @@ class FakeWorldRepository : WorldRepository {
         .take(limit.coerceAtLeast(0))
         .toList()
 
-    override fun leaveFootprint(
+    override suspend fun leaveFootprint(
         expedition: Expedition,
         checkpoint: Int,
         presetId: String,

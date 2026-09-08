@@ -1,0 +1,13 @@
+package com.madowaku.focusraid.data
+
+import com.google.firebase.FirebaseApp
+import com.google.firebase.appcheck.FirebaseAppCheck
+import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory
+
+internal object FirebaseAppCheckInstaller {
+    fun install(app: FirebaseApp) {
+        FirebaseAppCheck.getInstance(app).installAppCheckProviderFactory(
+            PlayIntegrityAppCheckProviderFactory.getInstance(),
+        )
+    }
+}

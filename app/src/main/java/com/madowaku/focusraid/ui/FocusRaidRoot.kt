@@ -8,11 +8,13 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
@@ -21,14 +23,21 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.madowaku.focusraid.billing.AccessLevel
+import com.madowaku.focusraid.billing.FeatureAccess
+import com.madowaku.focusraid.billing.ProAccessViewModel
+import com.madowaku.focusraid.billing.PurchaseState
+import com.madowaku.focusraid.core.domain.StarRoute
 import com.madowaku.focusraid.core.model.Expedition
 import com.madowaku.focusraid.core.model.FootprintPresets
 import com.madowaku.focusraid.core.model.SessionPhase
@@ -36,17 +45,31 @@ import com.madowaku.focusraid.core.model.SessionPhase
 @Composable
 fun FocusRaidRoot(
     viewModel: FocusViewModel,
+    proAccessViewModel: ProAccessViewModel,
     systemAccess: FocusSystemAccess = FocusSystemAccess(),
     onRequestNotificationPermission: () -> Unit = {},
     onRequestExactAlarmPermission: () -> Unit = {},
+    onPurchasePro: () -> Unit = {},
+    onRestorePurchases: () -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val proAccess by proAccessViewModel.access.collectAsStateWithLifecycle()
+    val purchaseState by proAccessViewModel.purchaseState.collectAsStateWithLifecycle()
     var tab by rememberSaveable { mutableStateOf(MainTab.HOME) }
     var showCustomDuration by rememberSaveable { mutableStateOf(false) }
     var customDurationMinutes by rememberSaveable { mutableStateOf(state.selectedMinutes) }
     var showEndConfirmation by rememberSaveable { mutableStateOf(false) }
     var showSystemAccessEducation by rememberSaveable { mutableStateOf(false) }
     var showFootprintDialog by rememberSaveable { mutableStateOf(false) }
+    var showProPaywall by rememberSaveable { mutableStateOf(false) }
+    var pendingProExpeditionName by rememberSaveable { mutableStateOf<String?>(null) }
+
+    val openProPaywallFor: (Expedition?) -> Unit = { requestedExpedition ->
+        pendingProExpeditionName = requestedExpedition?.name
+        proAccessViewModel.clearPurchaseState()
+        showProPaywall = true
+    }
+    val openProPaywall = { openProPaywallFor(null) }
 
     LaunchedEffect(state.phase) {
         if (state.phase != SessionPhase.RUNNING && state.phase != SessionPhase.PAUSED) {
@@ -55,62 +78,130 @@ fun FocusRaidRoot(
         if (state.phase != SessionPhase.READY) {
             showCustomDuration = false
             showSystemAccessEducation = false
+            showProPaywall = false
+            pendingProExpeditionName = null
         }
         if (state.phase == SessionPhase.COMPLETED) {
-            showFootprintDialog = true
+            val reachedNewStarRouteCheckpoint = if (state.expedition == Expedition.STAR_ROUTE) {
+                val creditedMinutes = state.reward?.creditedMinutes?.coerceAtLeast(0) ?: 0
+                val beforeTotal = (state.totalFocusMinutes - creditedMinutes).coerceAtLeast(0)
+                StarRoute.reachedCheckpoint(state.totalFocusMinutes) >
+                    StarRoute.reachedCheckpoint(beforeTotal)
+            } else {
+                true
+            }
+            showFootprintDialog = reachedNewStarRouteCheckpoint
         } else {
             showFootprintDialog = false
         }
     }
 
-    AnimatedContent(
-        targetState = state.phase,
-        transitionSpec = {
-            when {
-                initialState == SessionPhase.READY && targetState == SessionPhase.RUNNING -> {
-                    (fadeIn(animationSpec = tween(durationMillis = 620, delayMillis = 70)) +
-                        scaleIn(animationSpec = tween(durationMillis = 620), initialScale = 0.94f)) togetherWith
-                        (fadeOut(animationSpec = tween(durationMillis = 220)) +
-                            scaleOut(animationSpec = tween(durationMillis = 280), targetScale = 1.03f))
+    LaunchedEffect(proAccess.accessLevel, purchaseState) {
+        if (
+            proAccess.accessLevel == AccessLevel.PRO &&
+            purchaseState == PurchaseState.Success
+        ) {
+            pendingProExpeditionName
+                ?.let { name -> runCatching { Expedition.valueOf(name) }.getOrNull() }
+                ?.takeIf { expedition -> FeatureAccess.canUse(expedition, AccessLevel.PRO) }
+                ?.let { expedition ->
+                    tab = MainTab.HOME
+                    viewModel.selectExpedition(expedition)
                 }
+            pendingProExpeditionName = null
+            showProPaywall = false
+            proAccessViewModel.clearPurchaseState()
+        }
+    }
 
-                targetState == SessionPhase.READY -> {
-                    (fadeIn(animationSpec = tween(durationMillis = 420)) +
-                        scaleIn(animationSpec = tween(durationMillis = 420), initialScale = 0.98f)) togetherWith
-                        fadeOut(animationSpec = tween(durationMillis = 220))
-                }
+    CompositionLocalProvider(
+        LocalProAccessLevel provides proAccess.accessLevel,
+        LocalOpenProPaywall provides openProPaywall,
+    ) {
+        Box {
+            AnimatedContent(
+                targetState = state.phase,
+                transitionSpec = {
+                    when {
+                        initialState == SessionPhase.READY && targetState == SessionPhase.RUNNING -> {
+                            (fadeIn(animationSpec = tween(durationMillis = 620, delayMillis = 70)) +
+                                scaleIn(animationSpec = tween(durationMillis = 620), initialScale = 0.94f)) togetherWith
+                                (fadeOut(animationSpec = tween(durationMillis = 220)) +
+                                    scaleOut(animationSpec = tween(durationMillis = 280), targetScale = 1.03f))
+                        }
 
-                else -> {
-                    fadeIn(animationSpec = tween(durationMillis = 320)) togetherWith
-                        fadeOut(animationSpec = tween(durationMillis = 220))
+                        targetState == SessionPhase.READY -> {
+                            (fadeIn(animationSpec = tween(durationMillis = 420)) +
+                                scaleIn(animationSpec = tween(durationMillis = 420), initialScale = 0.98f)) togetherWith
+                                fadeOut(animationSpec = tween(durationMillis = 220))
+                        }
+
+                        else -> {
+                            fadeIn(animationSpec = tween(durationMillis = 320)) togetherWith
+                                fadeOut(animationSpec = tween(durationMillis = 220))
+                        }
+                    }
+                },
+                label = "focus-raid-root-phase",
+            ) { animatedPhase ->
+                FocusRaidAppContent(
+                    state = state.copy(phase = animatedPhase),
+                    tab = tab,
+                    onTabChange = { tab = it },
+                    onSelectMinutes = viewModel::selectMinutes,
+                    onSelectExpedition = { expedition ->
+                        if (FeatureAccess.canUse(expedition, proAccess.accessLevel)) {
+                            viewModel.selectExpedition(expedition)
+                        } else {
+                            openProPaywallFor(expedition)
+                        }
+                    },
+                    onTimerClick = {
+                        customDurationMinutes = state.selectedMinutes
+                        showCustomDuration = true
+                    },
+                    onStart = {
+                        if (!FeatureAccess.canUse(state.expedition, proAccess.accessLevel)) {
+                            openProPaywallFor(state.expedition)
+                        } else if (!systemAccess.isReady && !state.systemAccessEducationSeen) {
+                            showSystemAccessEducation = true
+                        } else {
+                            viewModel.start()
+                        }
+                    },
+                    onPause = viewModel::pause,
+                    onResume = viewModel::resume,
+                    onFinishEarly = { showEndConfirmation = true },
+                    onAgain = viewModel::startAgain,
+                    onDone = viewModel::resetAfterResult,
+                )
+            }
+
+            if (state.phase == SessionPhase.READY) {
+                TextButton(
+                    onClick = openProPaywall,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .statusBarsPadding(),
+                ) {
+                    Text(if (proAccess.accessLevel == AccessLevel.PRO) "PRO" else "FREE")
                 }
             }
-        },
-        label = "focus-raid-root-phase",
-    ) { animatedPhase ->
-        FocusRaidAppContent(
-            state = state.copy(phase = animatedPhase),
-            tab = tab,
-            onTabChange = { tab = it },
-            onSelectMinutes = viewModel::selectMinutes,
-            onSelectExpedition = viewModel::selectExpedition,
-            onTimerClick = {
-                customDurationMinutes = state.selectedMinutes
-                showCustomDuration = true
-            },
-            onStart = {
-                if (!systemAccess.isReady && !state.systemAccessEducationSeen) {
-                    showSystemAccessEducation = true
-                } else {
-                    viewModel.start()
-                }
-            },
-            onPause = viewModel::pause,
-            onResume = viewModel::resume,
-            onFinishEarly = { showEndConfirmation = true },
-            onAgain = viewModel::startAgain,
-            onDone = viewModel::resetAfterResult,
-        )
+        }
+
+        if (showProPaywall && state.phase == SessionPhase.READY) {
+            ProPaywallDialog(
+                access = proAccess,
+                purchaseState = purchaseState,
+                onPurchase = onPurchasePro,
+                onRestore = onRestorePurchases,
+                onDismiss = {
+                    pendingProExpeditionName = null
+                    proAccessViewModel.clearPurchaseState()
+                    showProPaywall = false
+                },
+            )
+        }
     }
 
     if (showCustomDuration && state.phase == SessionPhase.READY) {
@@ -163,7 +254,7 @@ fun FocusRaidRoot(
 }
 
 @Composable
-private fun FootprintDialog(
+internal fun FootprintDialog(
     state: FocusUiState,
     onSelectPreset: (String) -> Unit,
     onLeaveFootprint: () -> Unit,
@@ -172,6 +263,7 @@ private fun FootprintDialog(
     val location = when (state.expedition) {
         Expedition.TOWER -> "天空塔 ${state.world.towerFloor}F"
         Expedition.ABYSS -> "深層迷宮 ${state.world.abyssDepth}m"
+        Expedition.STAR_ROUTE -> "星渡り航路 第${StarRoute.reachedCheckpoint(state.totalFocusMinutes)}星標"
     }
 
     AlertDialog(
@@ -188,18 +280,29 @@ private fun FootprintDialog(
                 )
                 Spacer(Modifier.height(12.dp))
 
-                if (state.footprints.isEmpty()) {
-                    Text(
-                        "まだ足跡はありません。最初のひとことを残せます。",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                } else {
-                    state.footprints.take(3).forEach { footprint ->
+                when {
+                    state.footprintsLoading -> {
                         Text(
-                            "${footprint.glyph}  ${footprint.text}  ·  ${footprint.relativeLabel}",
-                            style = MaterialTheme.typography.bodyMedium,
+                            "この場所の足跡を探しています…",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        Spacer(Modifier.height(8.dp))
+                    }
+
+                    state.footprints.isEmpty() -> {
+                        Text(
+                            "まだ足跡はありません。最初のひとことを残せます。",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+
+                    else -> {
+                        state.footprints.take(3).forEach { footprint ->
+                            Text(
+                                "${footprint.glyph}  ${footprint.text}  ·  ${footprint.relativeLabel}",
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                            Spacer(Modifier.height(8.dp))
+                        }
                     }
                 }
 
@@ -211,10 +314,22 @@ private fun FootprintDialog(
                     )
                 } else {
                     Text(
-                        "あなたも定型メッセージを1つ残せます",
+                        if (state.footprintPosting) {
+                            "足跡を届けています…"
+                        } else {
+                            "あなたも定型メッセージを1つ残せます"
+                        },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    state.footprintPostError?.let { message ->
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            message,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
                     Spacer(Modifier.height(8.dp))
                     FootprintPresets.all.take(6).chunked(2).forEach { rowPresets ->
                         Row(
@@ -225,6 +340,7 @@ private fun FootprintDialog(
                                 FilterChip(
                                     selected = state.selectedFootprintPresetId == preset.id,
                                     onClick = { onSelectPreset(preset.id) },
+                                    enabled = !state.footprintPosting,
                                     label = {
                                         Text(
                                             "${preset.glyph} ${preset.text}",
@@ -250,9 +366,9 @@ private fun FootprintDialog(
             } else {
                 Button(
                     onClick = onLeaveFootprint,
-                    enabled = state.selectedFootprintPresetId != null,
+                    enabled = state.selectedFootprintPresetId != null && !state.footprintPosting,
                 ) {
-                    Text("足跡を残す")
+                    Text(if (state.footprintPosting) "送信中…" else "足跡を残す")
                 }
             }
         },
