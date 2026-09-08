@@ -63,7 +63,7 @@ Suggested initial fields:
 ```json
 {
   "focusNow": 4218,
-  "bossName": "灰燼竜ヴォルガ",
+  "bossName": "環焔竜ヴォルガ",
   "bossHp": 428192,
   "bossMaxHp": 650000,
   "raidParticipants": 12481,

@@ -83,3 +83,7 @@ Play signing, real store billing, Firebase deployment/two-installation testing a
 privacy/store publishing remain the external tasks already listed in
 [release-readiness](release-readiness.md). This expansion does not implement or
 claim authoritative worldwide focus aggregation.
+
+The artwork/content commit 7114c57 passed all three GitHub CI jobs (run 34174976770): verify, visual-qa (129 required captures), and timer-durability. The subsequent naming correction adopts the owner's canonical name 環焔竜ヴォルガ in model defaults, domain identity, accessibility descriptions and Firebase setup examples; stable VOLGA identifiers are unchanged.
+
+Naming follow-up verification: 56 JVM tests, lint (0 errors), assembleDebug and bundleRelease passed. A local SDK-path escaping error was repaired and lint was recomputed with --rerun-tasks before the combined gate passed. Device/visual/durability results above belong to artwork commit 7114c57; the naming-only follow-up has not repeated those device captures.

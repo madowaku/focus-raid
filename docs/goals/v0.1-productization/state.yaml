@@ -69,7 +69,7 @@ tasks:
     receipt:
       result: done
       decision: complete
-      summary: PM acceptance audit verified 90 adopted image frames, Lune at 180 minutes, personal Tower boss Zephyr at 300 HP, six new keepsakes with retained old IDs. Fixed excess image gutters and large-font result-label overlap found in visual QA. All 56 JVM and 12 device tests, debug/release builds and lint (0 errors) passed.
+      summary: PM acceptance audit verified 90 adopted image frames, Lune at 180 minutes, personal Tower boss Zephyr at 300 HP, six new keepsakes with retained old IDs. Fixed excess image gutters and large-font result-label overlap found in visual QA. Owner correction adopted canonical 環焔竜ヴォルガ across defaults and semantics; all three artwork CI jobs passed at 7114c57. Documented the 480-yen value target and honest global-contribution acceptance conditions. All 56 JVM and 12 device tests, debug/release builds and lint (0 errors) passed.
       evidence: [docs/release-art.md, docs/art-registration.json, artifacts/visual, app/build/reports]
 checks:
   dirty_fingerprint: unknown

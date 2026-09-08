@@ -405,7 +405,7 @@ internal fun FallbackBossArtwork(modifier: Modifier = Modifier) {
 
     Canvas(
         modifier = modifier.semantics {
-            contentDescription = "灰燼竜ヴォルガ"
+            contentDescription = "環焔竜ヴォルガ"
         },
     ) {
         val unit = min(size.width, size.height)

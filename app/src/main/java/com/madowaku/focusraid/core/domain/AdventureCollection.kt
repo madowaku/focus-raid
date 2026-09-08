@@ -9,7 +9,7 @@ enum class CompanionIdentity(val label: String, val requiredMinutes: Int, val de
 }
 
 enum class RaidBossIdentity(val label: String) {
-    VOLGA("灰燼竜ヴォルガ"), MORD("根晶獣モルド"), ZEPHYR("星嵐鳥ゼファー"),
+    VOLGA("環焔竜ヴォルガ"), MORD("根晶獣モルド"), ZEPHYR("星嵐鳥ゼファー"),
 }
 
 data class LocalBossProgress(val creditedMinutes: Int, val targetMinutes: Int = 180) {

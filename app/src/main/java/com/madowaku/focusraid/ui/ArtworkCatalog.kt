@@ -33,7 +33,7 @@ fun ArtworkKey.description(): String = when (this) {
         CompanionMood.Focused -> "一緒に集中中"
         CompanionMood.Celebrate -> "集中の戦果を喜んでいます"
     }
-    is ArtworkKey.Boss -> (when (identity) { BossIdentity.VOLGA -> "灰燼竜ヴォルガ・"; BossIdentity.MORD -> "根晶獣モルド・"; BossIdentity.ZEPHYR -> "星嵐鳥ゼファー・" }) + when (presentation) {
+    is ArtworkKey.Boss -> (when (identity) { BossIdentity.VOLGA -> "環焔竜ヴォルガ・"; BossIdentity.MORD -> "根晶獣モルド・"; BossIdentity.ZEPHYR -> "星嵐鳥ゼファー・" }) + when (presentation) {
         BossPresentation.Normal -> "健在"
         BossPresentation.Damaged -> "今回の集中による貢献"
         BossPresentation.Defeated -> "討伐済み"
