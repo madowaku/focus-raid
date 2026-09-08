@@ -1,3 +1,5 @@
+Historical v0.1 product direction. The v0.2 implementation supersedes the unimplemented-integration status below; see [worldwide-raid.md](worldwide-raid.md). Production rollout still requires its external gates.
+
 # Focus Raid: value and first public release
 
 Owner direction: a freemium Android app with a ¥480 one-time Pro purchase, where

@@ -30,6 +30,10 @@ service cloud.firestore {
         && request.resource.data.createdAt is timestamp;
     }
 
+    match /contributions/{sessionId} {
+      allow read: if signedIn() && resource.data.uid == request.auth.uid;
+      allow write: if false;
+    }
     match /world/{document=**} {
       allow read: if signedIn();
       allow write: if false;

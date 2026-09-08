@@ -34,6 +34,36 @@ class FocusViewModelTest {
             models += ViewModelStore().apply { put("focus", it) }
         }
 
+    @Test fun `generation and start time freeze across pause process restart and world rotation`() = scenario {
+        val snapshot = MutableStateFlow(WorldSnapshot(generation = "N"))
+        val world = object : WorldRepository by FakeWorldRepository() { override val world = snapshot }
+        val first = vm(world); runCurrent(); first.start(); runCurrent()
+        assertEquals("N", store.value.raidGeneration)
+        val started = now
+        now += 60_000; first.pause(); runCurrent()
+        models.first().clear()
+        snapshot.value = snapshot.value.copy(generation = "N-plus-1")
+        val restored = vm(world); runCurrent(); restored.resume(); runCurrent()
+        now += 1_440_000; advanceTimeBy(250); runCurrent()
+        val entry = history.rows.value.single()
+        assertEquals("N", entry.raidGeneration)
+        assertEquals(started, entry.startedAtEpochMillis)
+        assertEquals(25, entry.creditedMinutes)
+    }
+
+    @Test fun `first offline completion preserves unbound identity and start time for safe server resolution`() = scenario {
+        val first = vm(); runCurrent(); first.start(); runCurrent()
+        val started = now
+        models.first().clear()
+        val restored = vm(); runCurrent()
+        now += 1_500_000; advanceTimeBy(250); runCurrent()
+        val entry = history.rows.value.single()
+        assertNull(entry.raidGeneration)
+        assertEquals(started, entry.startedAtEpochMillis)
+        assertEquals(SessionPhase.COMPLETED, restored.uiState.value.phase)
+        assertEquals(25, store.value.totalFocusMinutes)
+    }
+
     @Test fun `upgrade recovers previously written abort row instead of rerolling full completion`() = scenario {
         val row = SessionHistoryEntry("old", now - 1000, 25, 2, Expedition.TOWER, SessionOutcome.ABORTED, 2, null, null)
         history.record(row)
@@ -210,9 +240,11 @@ private class MemorySessionStore : SessionStore {
     override suspend fun setCompanion(identity: com.madowaku.focusraid.core.domain.CompanionIdentity) { session.value = value.copy(companion = identity) }
     override suspend fun setSelectedMinutes(minutes: Int) { session.value = value.copy(selectedMinutes = minutes) }
     override suspend fun setExpedition(expedition: Expedition) { session.value = value.copy(expedition = expedition) }
-    override suspend fun saveRunning(minutes: Int, expedition: Expedition, endEpochMillis: Long, sessionId: String) {
+    override suspend fun saveRunning(minutes: Int, expedition: Expedition, endEpochMillis: Long, sessionId: String, raidGeneration: String?, startedAtEpochMillis: Long) {
         beforeRunning()
         session.value = value.copy(selectedMinutes = minutes, expedition = expedition, endEpochMillis = endEpochMillis,
+            raidGeneration = if (value.sessionId == sessionId) value.raidGeneration else raidGeneration,
+            startedAtEpochMillis = if (value.sessionId == sessionId) value.startedAtEpochMillis else startedAtEpochMillis,
             phase = SessionPhase.RUNNING, sessionId = sessionId, finishedEntry = null)
     }
     override suspend fun savePaused(remainingMillis: Long) {

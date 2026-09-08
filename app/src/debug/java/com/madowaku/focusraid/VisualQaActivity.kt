@@ -7,6 +7,12 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.unit.dp
 import com.madowaku.focusraid.billing.AccessLevel
 import com.madowaku.focusraid.billing.ProAccessState
 import com.madowaku.focusraid.billing.ProProduct
@@ -41,6 +47,21 @@ class VisualQaActivity : ComponentActivity() {
         )
 
         val phase = intent.getStringExtra(EXTRA_PHASE)?.uppercase().orEmpty()
+        if (phase.startsWith("WORLD_")) {
+            val status = com.madowaku.focusraid.data.ContributionStatus.valueOf(phase.removePrefix("WORLD_"))
+            val row = com.madowaku.focusraid.data.WorldContribution("visual-world", "qa-raid", 25, 25,
+                System.currentTimeMillis(), status.name, if (status.name in listOf("ACCEPTED", "ALREADY_COUNTED")) 25 else 0)
+            setContent { FocusRaidTheme {
+                androidx.compose.foundation.layout.Column(
+                    androidx.compose.ui.Modifier
+                        .fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState()).padding(16.dp),
+                ) {
+                    com.madowaku.focusraid.ui.WorldContributionCard(FocusUiState(
+                        contributions = listOf(row), world = com.madowaku.focusraid.core.model.WorldSnapshot(generation = "qa-raid")))
+                }
+            } }
+            return
+        }
         if (phase.startsWith("ART_")) {
             setContent { FocusRaidTheme { ArtworkGallery(phase) } }
             return

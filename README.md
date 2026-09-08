@@ -1,8 +1,13 @@
 # Focus Raid
 
+v0.2 worldwide raid integration: [architecture and offline policy](docs/worldwide-raid.md),
+[backend/emulator setup](functions/README.md). Completed sessions use a durable
+outbox and authoritative idempotent callable; production deployment and Play
+verification remain separate release gates.
+
 Focus Raid is an Android-native focus timer where real-world concentration powers a shared fantasy world.
 
-This Android productization work lives on `feat/v0.1-productization-sprint`, based on PR #4. The older `main` branch is not its implementation baseline.
+Worldwide integration lives on `feat/v0.2-worldwide-raid-integration`, based on the completed v0.1 productization branch. The older `main` branch is not its implementation baseline.
 
 ## Product principles
 

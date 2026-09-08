@@ -15,6 +15,12 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.Lifecycle
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import com.madowaku.focusraid.data.ContributionWorker
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -57,8 +63,10 @@ class MainActivity : ComponentActivity() {
         FocusViewModel.Factory(
             preferences = SessionPreferences(applicationContext),
             worldRepository = worldRepository,
-            sessionHistoryRepository = RoomSessionHistoryRepository(database.focusSessionDao()),
+            sessionHistoryRepository = RoomSessionHistoryRepository(database.focusSessionDao()) { ContributionWorker.schedule(applicationContext) },
             alarmScheduler = FocusAlarmScheduler(applicationContext),
+            contributions = database.contributionDao().observeAll(),
+            scheduleContributions = { ContributionWorker.schedule(applicationContext) },
         )
     }
 
@@ -73,6 +81,13 @@ class MainActivity : ComponentActivity() {
             navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
         )
         refreshSystemAccess()
+
+        ContributionWorker.schedule(applicationContext)
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                while (true) { viewModel.refreshSharedWorld(); delay(30_000) }
+            }
+        }
 
         setContent {
             FocusRaidTheme {

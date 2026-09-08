@@ -11,7 +11,7 @@ interface SessionStore {
     suspend fun setCompanion(identity: com.madowaku.focusraid.core.domain.CompanionIdentity)
     suspend fun setSelectedMinutes(minutes: Int)
     suspend fun setExpedition(expedition: Expedition)
-    suspend fun saveRunning(minutes: Int, expedition: Expedition, endEpochMillis: Long, sessionId: String)
+    suspend fun saveRunning(minutes: Int, expedition: Expedition, endEpochMillis: Long, sessionId: String, raidGeneration: String? = null, startedAtEpochMillis: Long = 0)
     suspend fun savePaused(remainingMillis: Long)
     suspend fun saveReady()
     suspend fun stageFinishedSession(entry: SessionHistoryEntry)

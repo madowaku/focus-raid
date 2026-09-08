@@ -71,9 +71,24 @@ class ProductAccessibilityTest {
             reward = com.madowaku.focusraid.core.domain.FocusRules.resolveSession(25, Expedition.TOWER, 0, .5))
         show { FocusRaidAppContent(state, onDone = { done = true }) }
         val boss = compose.onNodeWithText(state.world.bossName).fetchSemanticsNode().boundsInRoot
-        val caption = compose.onNodeWithText("今回の貢献の目安").fetchSemanticsNode().boundsInRoot
+        val caption = compose.onNodeWithText("世界の共有HP").fetchSemanticsNode().boundsInRoot
         assertTrue("Boss title must not overlap contribution caption at 1.5 font scale", boss.bottom <= caption.top)
         compose.onNodeWithText("完了").performScrollTo().assertIsDisplayed().performClick()
         assertTrue(done)
+    }
+
+    @Test fun pendingContributionHasReachableRetryAndNeverClaimsAcceptance() {
+        var retried = false
+        val row = com.madowaku.focusraid.data.WorldContribution("pending", null, 25, 25, 2_000_000,
+            "OFFLINE", startedAtEpochMillis = 500_000)
+        show {
+            CompositionLocalProvider(LocalRetryWorld provides { retried = true }) {
+                WorldContributionCard(FocusUiState(contributions = listOf(row)))
+            }
+        }
+        compose.onNodeWithText(contributionMessage(row)).assertIsDisplayed()
+        compose.onNodeWithText("接続を確認して再送").assertIsDisplayed().performClick()
+        assertTrue(retried)
+        compose.onAllNodesWithText("世界の集中に加わりました", substring = true).assertCountEquals(0)
     }
 }

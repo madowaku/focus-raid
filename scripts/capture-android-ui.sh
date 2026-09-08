@@ -100,6 +100,14 @@ for phase in ART_RAG ART_MIKO ART_LUNE ART_BOSSES ART_ITEMS_TOWER ART_ITEMS_ABYS
   capture "$phase" 720 1280 "${phase,,}-720x1280"
 done
 
+for scale in 1.0 1.5; do
+  adb shell settings put system font_scale "$scale"
+  for phase in WORLD_PENDING WORLD_RETRYING WORLD_OFFLINE WORLD_AUTH_REQUIRED WORLD_ACCEPTED WORLD_ALREADY_COUNTED WORLD_STALE WORLD_REJECTED WORLD_UNAVAILABLE; do
+    capture "$phase" 360 800 "${phase,,}-360x800-font-${scale}"
+  done
+done
+adb shell settings put system font_scale 1.0
+
 "${PYTHON:-python3}" - <<'PY'
 from pathlib import Path
 import struct
@@ -167,6 +175,9 @@ expected["concept-volga-360x800.png"] = (360, 800)
 for phase in "ART_RAG ART_MIKO ART_LUNE ART_BOSSES ART_ITEMS_TOWER ART_ITEMS_ABYSS ART_ITEMS_STAR COMPANION_LUNE".split():
     for width, height in ((360, 800), (720, 1280)):
         expected[f"{phase.lower()}-{width}x{height}.png"] = (width, height)
+for scale in ("1.0", "1.5"):
+    for phase in "PENDING RETRYING OFFLINE AUTH_REQUIRED ACCEPTED ALREADY_COUNTED STALE REJECTED UNAVAILABLE".split():
+        expected[f"world_{phase.lower()}-360x800-font-{scale}.png"] = (360, 800)
 root = Path("artifacts/visual")
 for name, expected_size in expected.items():
     path = root / name

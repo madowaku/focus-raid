@@ -1,6 +1,6 @@
 # Firebase shared world setup
 
-Focus Raid reads the shared raid snapshot from Firebase and can share preset-only footprints while keeping the focus timer and progression fully local.
+Focus Raid reads the shared raid snapshot, submits durable completed-session contributions through a trusted callable, and shares preset-only Footprints. Local completion and rewards never wait for network. See [worldwide architecture](worldwide-raid.md) for the v0.2 protocol and rollout gates.
 
 The Android build intentionally does not require `google-services.json` at runtime. Firebase is initialized explicitly from three build values so CI and local preview builds can continue to run without backend credentials.
 
@@ -44,7 +44,7 @@ In Firebase Console:
 Security → Authentication → Sign-in method → Anonymous → Enable
 ```
 
-Focus Raid does not create email/password or social accounts. The anonymous Firebase UID is used only to authenticate protected backend requests and to own one Footprint document per checkpoint.
+Focus Raid does not create email/password or social accounts. The anonymous Firebase UID authenticates protected requests, owns Footprints and contribution receipts, and scopes contribution limits and distinct raid participation.
 
 If Identity Platform automatic cleanup for old anonymous users is enabled later, evaluate the effect on old Footprint ownership before turning it on. Deleting an Auth account does not automatically delete its Firestore Footprint documents.
 
@@ -62,18 +62,22 @@ Suggested initial fields:
 
 ```json
 {
-  "focusNow": 4218,
+  "generation": "volga-001",
+  "status": "active",
+  "startsAtEpochMillis": 0,
+  "totalFocusMinutes": 0,
+  "focusNow": 0,
   "bossName": "環焔竜ヴォルガ",
-  "bossHp": 428192,
+  "bossHp": 650000,
   "bossMaxHp": 650000,
-  "raidParticipants": 12481,
-  "towerFloor": 4281,
-  "abyssDepth": 12481,
-  "armoryReady": 68
+  "raidParticipants": 0,
+  "towerFloor": 1,
+  "abyssDepth": 0,
+  "armoryReady": 0
 }
 ```
 
-Numeric Firestore values are mapped defensively. Missing or invalid fields fall back to local preview values rather than breaking the timer UI.
+Replace `startsAtEpochMillis: 0` with the actual trusted raid creation timestamp in epoch milliseconds. Never reuse a generation identifier or seed fictitious participants. Numeric fields are mapped defensively; a configured backend never substitutes preview people. Missing contribution schema is unavailable, while local focus remains usable.
 
 ## 4. Import the Android Firebase identifiers locally
 

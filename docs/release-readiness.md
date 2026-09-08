@@ -1,5 +1,12 @@
 # Focus Raid release readiness
 
+v0.2 adds authoritative contribution code and emulator acceptance gates. See
+[worldwide architecture](worldwide-raid.md) and [backend deployment](../functions/README.md).
+Require both `worldwide-backend` and `worldwide-android` CI jobs in addition to the
+existing three jobs for a v0.2 candidate. Production App Check, callable deployment,
+new world schema, two-installation Play verification and contribution privacy
+disclosures are external release gates, not implied by emulator success.
+
 This is the manual release gate for the first public Android build. Automated CI is necessary but not sufficient because production stores, Firebase rules, purchase accounts, signing, and Play policy cannot be fully validated by the credential-free CI environment.
 
 Last policy review: 2026-09-05.
@@ -161,7 +168,7 @@ Before publishing store copy, screenshots, or the Shipaton demo:
 - [ ] Confirm all screenshots correspond to the release candidate UI.
 - [x] Replace companion/egg/boss placeholders with the adopted production atlas catalog.
 - [ ] Prepare final store screenshot crops using the adopted artwork.
-- [ ] Do not claim authoritative global focus aggregation is live; current client reads world state and posts preset Footprints.
+- [ ] Claim worldwide contribution is live only after deploying and verifying the v0.2 callable, rules and generation schema on production with two Play installations.
 - [ ] Keep Mord and Zephyr's personal challenges distinct from the shared Volga world raid.
 
 ## 7. Shipaton submission gate

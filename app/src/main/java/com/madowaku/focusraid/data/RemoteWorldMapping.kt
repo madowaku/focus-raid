@@ -7,6 +7,8 @@ internal object RemoteWorldMapping {
         values: Map<String, Any?>,
         fallback: WorldSnapshot,
     ): WorldSnapshot = fallback.copy(
+        generation = (values["generation"] as? String)?.takeIf { it.matches(Regex("[A-Za-z0-9_-]{1,80}")) },
+        totalFocusMinutes = (values["totalFocusMinutes"] as? Number)?.toLong()?.coerceAtLeast(0) ?: 0,
         focusNow = values.intValue("focusNow") ?: fallback.focusNow,
         bossName = values["bossName"] as? String ?: fallback.bossName,
         bossHp = values.intValue("bossHp") ?: fallback.bossHp,

@@ -19,6 +19,8 @@ import kotlinx.coroutines.flow.map
 private val Context.focusRaidDataStore by preferencesDataStore(name = "focus_raid")
 
 data class PersistedSession(
+    val raidGeneration: String? = null,
+    val startedAtEpochMillis: Long = 0,
     val companion: com.madowaku.focusraid.core.domain.CompanionIdentity = com.madowaku.focusraid.core.domain.CompanionIdentity.RAG,
     val selectedMinutes: Int = 25,
     val expedition: Expedition = Expedition.TOWER,
@@ -33,6 +35,8 @@ data class PersistedSession(
 
 class SessionPreferences(private val context: Context) : SessionStore {
     private object Keys {
+        val raidGeneration = stringPreferencesKey("raid_generation")
+        val startedAt = longPreferencesKey("session_started_at")
         val companion = stringPreferencesKey("companion_identity")
         val selectedMinutes = intPreferencesKey("selected_minutes")
         val expedition = stringPreferencesKey("expedition")
@@ -48,6 +52,8 @@ class SessionPreferences(private val context: Context) : SessionStore {
 
     override val session: Flow<PersistedSession> = context.focusRaidDataStore.data.map { prefs ->
         PersistedSession(
+            raidGeneration = prefs[Keys.raidGeneration],
+            startedAtEpochMillis = prefs[Keys.startedAt] ?: 0,
             companion = prefs[Keys.companion]?.let { runCatching { com.madowaku.focusraid.core.domain.CompanionIdentity.valueOf(it) }.getOrNull() } ?: com.madowaku.focusraid.core.domain.CompanionIdentity.RAG,
             selectedMinutes = prefs[Keys.selectedMinutes] ?: 25,
             expedition = prefs[Keys.expedition]
@@ -86,8 +92,15 @@ class SessionPreferences(private val context: Context) : SessionStore {
         expedition: Expedition,
         endEpochMillis: Long,
         sessionId: String,
+        raidGeneration: String?,
+        startedAtEpochMillis: Long,
     ) {
         context.focusRaidDataStore.edit {
+            if (it[Keys.sessionId] != sessionId) {
+                it[Keys.startedAt] = startedAtEpochMillis
+                if (raidGeneration == null) it.remove(Keys.raidGeneration)
+                else it[Keys.raidGeneration] = raidGeneration
+            }
             it[Keys.selectedMinutes] = minutes
             it[Keys.expedition] = expedition.name
             it[Keys.phase] = SessionPhase.RUNNING.name
@@ -149,6 +162,8 @@ class SessionPreferences(private val context: Context) : SessionStore {
 
     private fun encodeEntry(e: SessionHistoryEntry): String = JSONObject().apply {
         put("id", e.sessionId)
+        put("generation", e.raidGeneration ?: JSONObject.NULL)
+        put("startedAt", e.startedAtEpochMillis)
         put("at", e.completedAtEpochMillis)
         put("planned", e.plannedMinutes)
         put("credited", e.creditedMinutes)
@@ -165,6 +180,8 @@ class SessionPreferences(private val context: Context) : SessionStore {
             Expedition.valueOf(it.getString("expedition")), SessionOutcome.valueOf(it.getString("outcome")),
             it.getInt("damage"), if (it.isNull("rarity")) null else Rarity.valueOf(it.getString("rarity")),
             if (it.isNull("discovery")) null else it.getString("discovery"),
+            if (it.isNull("generation")) null else it.getString("generation"),
+            it.optLong("startedAt", 0),
         )
     }
 }
