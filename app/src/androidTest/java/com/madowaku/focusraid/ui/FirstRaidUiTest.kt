@@ -17,9 +17,9 @@ class FirstRaidUiTest {
 
     private val scenario = ReturnRaidScenario.demo(
         bossName = "環焔竜ヴォルガ",
-        bossHp = 620,
-        bossMaxHp = 1_000,
-        playerDamage = 100,
+        bossHp = 150,
+        bossMaxHp = 250,
+        playerDamage = 25,
         creditedMinutes = 25,
     )
 
