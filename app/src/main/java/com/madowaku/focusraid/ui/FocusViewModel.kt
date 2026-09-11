@@ -36,6 +36,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 data class FocusUiState(
+    val contributions: List<com.madowaku.focusraid.data.WorldContribution> = emptyList(),
     val companion: com.madowaku.focusraid.core.domain.CompanionIdentity = com.madowaku.focusraid.core.domain.CompanionIdentity.RAG,
     val phase: SessionPhase = SessionPhase.READY,
     val initialized: Boolean = true,
@@ -74,6 +75,8 @@ class FocusViewModel(
     private val sessionHistoryRepository: SessionHistoryRepository,
     private val alarmScheduler: SessionAlarm,
     private val nowMillis: () -> Long = System::currentTimeMillis,
+    private val contributions: kotlinx.coroutines.flow.Flow<List<com.madowaku.focusraid.data.WorldContribution>> = kotlinx.coroutines.flow.flowOf(emptyList()),
+    private val scheduleContributions: () -> Unit = {},
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(
         FocusUiState(
@@ -86,12 +89,19 @@ class FocusViewModel(
 
     private var endEpochMillis: Long = 0L
     private var activeSessionId: String? = null
+    private var activeRaidGeneration: String? = null
+    private var activeStartedAtEpochMillis = 0L
     private var tickerJob: Job? = null
     private var pausedRemainingMillis = 0L
     private var retryCommand: (suspend () -> Unit)? = null
     private var footprintJob: Job? = null
 
     init {
+        viewModelScope.launch { contributions.collect { rows ->
+            val previous = _uiState.value.contributions
+            _uiState.value = _uiState.value.copy(contributions = rows)
+            if (rows.any { it.status in setOf("ACCEPTED", "ALREADY_COUNTED") && it !in previous }) refreshWorldIfQuiet()
+        } }
         viewModelScope.launch {
             sessionHistoryRepository.recentSessions.collect { entries ->
                 val activity = FocusActivitySummaries.from(
@@ -216,8 +226,12 @@ class FocusViewModel(
 
     private suspend fun startPersisted(before: FocusUiState, sessionId: String) {
         val seconds = before.selectedMinutes * 60
-        val end = nowMillis() + seconds * 1000L
-        preferences.saveRunning(before.selectedMinutes, before.expedition, end, sessionId)
+        val startedAt = nowMillis()
+        val end = startedAt + seconds * 1000L
+        val generation = before.world.generation
+        preferences.saveRunning(before.selectedMinutes, before.expedition, end, sessionId, generation, startedAt)
+        activeRaidGeneration = generation
+        activeStartedAtEpochMillis = startedAt
         activeSessionId = sessionId
         endEpochMillis = end
         footprintJob?.cancel()
@@ -297,6 +311,8 @@ class FocusViewModel(
     private suspend fun restore() {
         val saved = preferences.session.first()
         activeSessionId = saved.sessionId
+        activeRaidGeneration = saved.raidGeneration
+        activeStartedAtEpochMillis = saved.startedAtEpochMillis
         endEpochMillis = saved.endEpochMillis
         pausedRemainingMillis = saved.pausedRemainingMillis
         _uiState.value = _uiState.value.copy(
@@ -345,6 +361,15 @@ class FocusViewModel(
         catch (_: Exception) { /* Shared world availability cannot block local focus. */ }
     }
 
+    fun refreshSharedWorld() {
+        viewModelScope.launch { refreshWorldIfQuiet() }
+    }
+
+    fun retryWorldContributions() {
+        runCatching(scheduleContributions)
+        refreshSharedWorld()
+    }
+
     private fun startTicker() {
         tickerJob?.cancel()
         tickerJob = viewModelScope.launch {
@@ -376,6 +401,8 @@ class FocusViewModel(
             checkNotNull(activeSessionId), nowMillis(), before.selectedMinutes, reward.creditedMinutes,
             before.expedition, if (phase == SessionPhase.COMPLETED) SessionOutcome.COMPLETED else SessionOutcome.ABORTED,
             reward.personalDamage, reward.rarity, reward.discovery,
+            activeRaidGeneration,
+            activeStartedAtEpochMillis,
         )
     }
 
@@ -481,6 +508,8 @@ class FocusViewModel(
         private val worldRepository: WorldRepository,
         private val sessionHistoryRepository: SessionHistoryRepository,
         private val alarmScheduler: SessionAlarm,
+        private val contributions: kotlinx.coroutines.flow.Flow<List<com.madowaku.focusraid.data.WorldContribution>> = kotlinx.coroutines.flow.flowOf(emptyList()),
+        private val scheduleContributions: () -> Unit = {},
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -489,6 +518,8 @@ class FocusViewModel(
                 worldRepository = worldRepository,
                 sessionHistoryRepository = sessionHistoryRepository,
                 alarmScheduler = alarmScheduler,
+                contributions = contributions,
+                scheduleContributions = scheduleContributions,
             ) as T
         }
     }

@@ -10,6 +10,8 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.Source
+import com.google.firebase.functions.FirebaseFunctions
+import com.google.firebase.functions.FirebaseFunctionsException
 import com.madowaku.focusraid.BuildConfig
 import com.madowaku.focusraid.core.model.Expedition
 import com.madowaku.focusraid.core.model.Footprint
@@ -21,19 +23,23 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
-class FirebaseWorldRepository private constructor(
+class FirebaseWorldRepository internal constructor(
     private val auth: FirebaseAuth,
     private val firestore: FirebaseFirestore,
-    private val fallback: WorldRepository,
-) : WorldRepository {
-    private val _world = MutableStateFlow(unavailableWorld())
+    private val functions: FirebaseFunctions,
+    private val cache: android.content.SharedPreferences,
+) : WorldRepository, ContributionGateway {
+    private val _world = MutableStateFlow(unavailableWorld().copy(generation = cache.getString("generation", null)))
     override val world: StateFlow<WorldSnapshot> = _world.asStateFlow()
 
     private val _syncStatus = MutableStateFlow(WorldSyncStatus.CONNECTING)
     override val syncStatus: StateFlow<WorldSyncStatus> = _syncStatus.asStateFlow()
+    private val refreshMutex = Mutex()
 
-    override suspend fun refresh() {
+    override suspend fun refresh() = refreshMutex.withLock {
         _syncStatus.value = WorldSyncStatus.CONNECTING
         try {
             withTimeout(12_000) {
@@ -44,10 +50,14 @@ class FirebaseWorldRepository private constructor(
                 .get(Source.SERVER)
                 .await()
             check(document.exists()) { "world/current does not exist" }
-            _world.value = RemoteWorldMapping.fromMap(
+            val fetched = RemoteWorldMapping.fromMap(
                 values = document.data.orEmpty(),
                 fallback = unavailableWorld(),
             )
+            check(fetched.generation != null && fetched.bossMaxHp > 0 &&
+                document.get("totalFocusMinutes") is Number) { "World contribution schema unavailable" }
+            _world.value = fetched
+            cache.edit().putString("generation", _world.value.generation).apply()
             _syncStatus.value = WorldSyncStatus.LIVE
             }
         } catch (_: kotlinx.coroutines.TimeoutCancellationException) {
@@ -56,6 +66,29 @@ class FirebaseWorldRepository private constructor(
         } catch (_: Exception) {
             // Retain the last server snapshot, never substitute invented participants.
             _syncStatus.value = WorldSyncStatus.OFFLINE
+        }
+    }
+
+    override suspend fun submit(row: WorldContribution): ContributionReceipt {
+        try {
+            ensureSignedIn()
+            val result = functions.getHttpsCallable("submitContribution").call(mapOf(
+                "sessionId" to row.sessionId, "generation" to row.generation,
+                "creditedMinutes" to row.creditedMinutes, "plannedMinutes" to row.plannedMinutes,
+                "completedAtEpochMillis" to row.completedAtEpochMillis,
+                "startedAtEpochMillis" to row.startedAtEpochMillis,
+            )).await().data as? Map<*, *> ?: error("Missing server receipt")
+            check(result["generation"] == row.generation) { "Receipt generation mismatch" }
+            return ContributionReceipt(ContributionStatus.valueOf(result["status"] as String),
+                (result["appliedDamage"] as Number).toInt())
+        } catch (e: FirebaseFunctionsException) {
+            when (e.code) {
+                FirebaseFunctionsException.Code.UNAUTHENTICATED, FirebaseFunctionsException.Code.PERMISSION_DENIED -> throw ContributionAuthException()
+                FirebaseFunctionsException.Code.INVALID_ARGUMENT -> throw ContributionRejectedException()
+                else -> throw e
+            }
+        } catch (e: com.google.firebase.auth.FirebaseAuthException) {
+            throw ContributionAuthException()
         }
     }
 
@@ -169,7 +202,6 @@ class FirebaseWorldRepository private constructor(
 
         fun createOrNull(
             context: Context,
-            fallback: WorldRepository = FakeWorldRepository(),
         ): FirebaseWorldRepository? {
             if (
                 BuildConfig.FIREBASE_PROJECT_ID.isBlank() ||
@@ -198,7 +230,8 @@ class FirebaseWorldRepository private constructor(
             return FirebaseWorldRepository(
                 auth = FirebaseAuth.getInstance(app),
                 firestore = FirebaseFirestore.getInstance(app),
-                fallback = fallback,
+                functions = FirebaseFunctions.getInstance(app, "us-central1"),
+                cache = context.applicationContext.getSharedPreferences("world_generation_${BuildConfig.FIREBASE_PROJECT_ID}", Context.MODE_PRIVATE),
             )
         }
     }

@@ -93,7 +93,7 @@ private class NavigationStore : SessionStore {
     override suspend fun setCompanion(identity: CompanionIdentity) { session.value = value.copy(companion = identity) }
     override suspend fun setSelectedMinutes(minutes: Int) { session.value = value.copy(selectedMinutes = minutes) }
     override suspend fun setExpedition(expedition: Expedition) { session.value = value.copy(expedition = expedition) }
-    override suspend fun saveRunning(minutes: Int, expedition: Expedition, endEpochMillis: Long, sessionId: String) {
+    override suspend fun saveRunning(minutes: Int, expedition: Expedition, endEpochMillis: Long, sessionId: String, raidGeneration: String?, startedAtEpochMillis: Long) {
         session.value = value.copy(selectedMinutes = minutes, expedition = expedition, endEpochMillis = endEpochMillis,
             sessionId = sessionId, phase = SessionPhase.RUNNING, finishedEntry = null)
     }

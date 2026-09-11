@@ -672,7 +672,7 @@ private fun RaidMiniCard(state: FocusUiState) {
             RaidHpBar(state.world.bossHp, state.world.bossMaxHp)
             Spacer(Modifier.height(5.dp))
             Text(
-                "今回の貢献  +${max(0, (state.durationSeconds - state.remainingSeconds) / 60)} DAMAGE",
+                "今回の集中  ${max(0, (state.durationSeconds - state.remainingSeconds) / 60)}分 · 完走後に世界へ送信",
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -686,7 +686,7 @@ private fun AbortedScreen(
     onDone: () -> Unit,
 ) {
     val reward = state.reward ?: SessionReward(0, 0, 0, 0, null, null, 0)
-    val remainingBossHp = (state.world.bossHp - reward.personalDamage).coerceAtLeast(0)
+    val remainingBossHp = state.world.bossHp
     val companionStage = CompanionGrowth.from(state.totalFocusMinutes).stage
 
     Column(
@@ -744,14 +744,14 @@ private fun AbortedScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
-                    "+${reward.personalDamage} DAMAGE",
+                    "個人戦果 +${reward.personalDamage}",
                     fontSize = 36.sp,
                     fontWeight = FontWeight.Black,
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
                     if (reward.creditedMinutes > 0) {
-                        "途中終了でも、集中した分は戦果として残ります"
+                        "途中終了の集中は個人の戦果に。世界への送信は完走時のみです"
                     } else {
                         "1分未満だったため、今回は戦果の加算なし"
                     },
@@ -766,7 +766,7 @@ private fun AbortedScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(state.world.bossName, fontWeight = FontWeight.Bold)
-                    BossArtwork(Modifier.size(34.dp), presentation = BossPresentation.Damaged)
+                    BossArtwork(Modifier.size(34.dp))
                 }
                 Spacer(Modifier.height(8.dp))
                 RaidHpBar(remainingBossHp, state.world.bossMaxHp)
@@ -852,12 +852,12 @@ private fun VictoryScreen(
                 }
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "+${reward.personalDamage} DAMAGE",
+                    "個人戦果 +${reward.personalDamage}",
                     fontSize = 40.sp,
                     fontWeight = FontWeight.Black,
                 )
                 Text(
-                    "集中した時間がそのまま戦果になりました",
+                    "集中した時間を個人の成長に記録しました",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -884,16 +884,17 @@ private fun VictoryScreen(
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(state.world.bossName, fontWeight = FontWeight.Bold)
-                    Text("今回の貢献の目安", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("世界の共有HP", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    WorldStatusLabel(state.worldSyncStatus)
                 }
                 Spacer(Modifier.height(9.dp))
                 RaidHpBar(
-                    current = (state.world.bossHp - reward.personalDamage).coerceAtLeast(0),
+                    current = state.world.bossHp,
                     max = state.world.bossMaxHp,
                 )
                 Spacer(Modifier.height(5.dp))
                 Text(
-                    "${(state.world.bossHp - reward.personalDamage).coerceAtLeast(0).toStringWithCommas()} HP",
+                    "${state.world.bossHp.toStringWithCommas()} HP",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -901,7 +902,8 @@ private fun VictoryScreen(
         }
 
         Spacer(Modifier.height(10.dp))
-        Text("あなたの${reward.creditedMinutes}分を記録しました。世界への貢献送信は準備中です。",
+        WorldContributionCard(state, result = true)
+        Text("あなたの${reward.creditedMinutes}分を個人の記録に保存しました。",
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Row(
             modifier = Modifier.fillMaxWidth(),

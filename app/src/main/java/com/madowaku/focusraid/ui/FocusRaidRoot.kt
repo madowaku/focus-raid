@@ -133,6 +133,7 @@ fun FocusRaidRoot(
     CompositionLocalProvider(
         LocalProAccessLevel provides proAccess.accessLevel,
         LocalOpenProPaywall provides openProPaywall,
+        LocalRetryWorld provides viewModel::retryWorldContributions,
     ) {
         Box {
             AnimatedContent(

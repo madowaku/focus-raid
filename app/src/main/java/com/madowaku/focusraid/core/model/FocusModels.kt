@@ -62,6 +62,8 @@ data class Footprint(
 )
 
 data class WorldSnapshot(
+    val generation: String? = null,
+    val totalFocusMinutes: Long = 0,
     val focusNow: Int = 4_218,
     val bossName: String = "環焔竜ヴォルガ",
     val bossHp: Int = 428_192,

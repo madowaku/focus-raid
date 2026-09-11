@@ -15,4 +15,6 @@ data class SessionHistoryEntry(
     val damage: Int,
     val rarity: Rarity?,
     val discovery: String?,
+    val raidGeneration: String? = null,
+    val startedAtEpochMillis: Long = 0,
 )

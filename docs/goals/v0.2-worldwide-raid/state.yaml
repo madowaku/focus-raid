@@ -1,0 +1,31 @@
+version: 2
+goal:
+  title: Focus Raid v0.2 Worldwide Raid Integration
+  slug: v0.2-worldwide-raid
+  kind: specific
+  tranche: Implement and verify all repository-side acceptance gates A-G; document production deployment boundaries.
+  status: done
+active_task: null
+tasks:
+  - id: T001
+    type: pm
+    assignee: PM
+    status: done
+    objective: Audit, implement authoritative backend and durable client integration, verify acceptance A-G and document evidence.
+    allowed_files: [app, functions, scripts, docs, .github, firebase.json, firestore.rules, README.md, .gitignore]
+    receipt:
+      result: done
+      decision: complete
+      summary: 'PM verified repository-side A-G: 63 JVM, 15 regular Android plus 1 actual Firebase Android integration, 2 backend unit and 5 real callable/rules tests, 147 captures, 4 durability scenarios, lint and debug/release builds pass. Production deployment, App Check and Play verification remain external; no live claim.'
+      evidence: [docs/worldwide-raid-report.md, docs/worldwide-raid.md, functions/README.md, artifacts/timer-durability/report.txt]
+  - id: T999
+    type: pm
+    assignee: PM
+    status: done
+    objective: Audit final implementation and exact verification against issue 6 acceptance gates.
+    allowed_files: [docs, README.md]
+    receipt:
+      result: done
+      decision: complete
+      summary: 'PM verified repository-side A-G: 63 JVM, 15 regular Android plus 1 actual Firebase Android integration, 2 backend unit and 5 real callable/rules tests, 147 captures, 4 durability scenarios, lint and debug/release builds pass. Production deployment, App Check and Play verification remain external; no live claim.'
+      evidence: [docs/worldwide-raid-report.md, docs/worldwide-raid.md, functions/README.md, artifacts/timer-durability/report.txt]

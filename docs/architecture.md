@@ -163,33 +163,28 @@ Runtime order:
 1. restore the local focus session
 2. if the session is not RUNNING or PAUSED, sign in anonymously if needed
 3. perform a one-shot server read of `world/current`
-4. map valid fields onto the local fallback snapshot
+4. validate the contribution schema and map display fields onto a neutral zero-people snapshot
 5. publish the new snapshot through `StateFlow`
-6. refresh again after a result is dismissed and the app returns to READY
+6. refresh on quiet foreground screens every 30 seconds, after accepted receipts, and on explicit refresh
 
 There is no realtime Firestore listener during focus. A rapid `もう一回集中する` path also skips the post-result refresh so a new focus session does not intentionally launch network work first.
 
-If Auth or Firestore fails, the repository reports `OFFLINE`, restores the preview snapshot, and leaves timer / local progression behavior untouched.
+If Auth or Firestore fails, the repository reports `OFFLINE`, retains the last server snapshot (or a neutral unavailable state), and leaves local progression untouched. It never fabricates preview people for a configured backend.
 
 The expected Firestore shape and setup steps live in `docs/firebase-setup.md`.
 
-## Authoritative world writes
+## Authoritative world writes (v0.2)
 
-The Android client must not directly mutate authoritative shared raid state.
+Completed credited sessions enter a transactional Room outbox using their durable
+session UUID and frozen generation/start time. WorkManager retries a Firebase v2
+callable. Its Firestore transaction validates the session, checks a permanent
+receipt and per-UID budget, and atomically updates world HP/total and participant
+identity. Clients cannot write world totals or receipts directly.
 
-`firestore.rules` allows authenticated reads of `world/**` and denies client writes. Future contribution flow should be:
-
-```text
-Android focus completion
-  -> Cloud Run finishFocus / submitRaid
-  -> validate identity + session payload
-  -> write per-user raid entry
-  -> aggregate world state
-  -> clients read world/current
-```
-
-Do not update one shared world document directly from every device session.
-
+See [worldwide-raid.md](worldwide-raid.md) for generation isolation, nullable
+first-offline binding, response-loss recovery and explicit authority limits.
+The minimal implementation uses one authoritative world document; contention
+causes retry rather than a false success. Load-test before large promotion.
 ## Footprints
 
 Footprints are lightweight asynchronous traces, not chat.
@@ -200,26 +195,23 @@ Footprints are lightweight asynchronous traces, not chat.
 - Tower footprints are keyed by floor
 - Abyss footprints are keyed by depth
 
-The current Android slice keeps footprint reads/writes in the repository abstraction but uses the local fake implementation. Remote footprint posting remains a separate server-validated phase so clients cannot forge arbitrary text or bypass eligibility rules.
+Configured builds use Firebase footprint reads/writes with preset validation and owner rules. Unconfigured previews are explicitly labeled.
 
 Suggested remote shape:
 
 ```text
-footprints/{expedition}/{checkpoint}/entries/{entryId}
-  authorUid
+footprints/{expedition}/checkpoints/{checkpoint}/entries/{uid}
   presetId
   createdAt
 ```
 
 Clients should render glyph/text from the local preset catalog rather than trusting display text from Firestore.
 
-## Planned backend services
+## Backend scope
 
-- Firebase Auth: anonymous first, optional account linking later
-- Firestore: `world/current`, user summaries, raids, raid entries, footprints
-- Cloud Run: `startFocus`, `finishFocus`, `submitRaid`, `leaveFootprint`, `worldRollup`
-- FCM: opt-in world raid notifications
-- App Check: protect server endpoints
+Firebase anonymous Auth, Firestore and the submitContribution callable are used.
+App Check protects production calls. Profiles, account linking, chat, analytics
+and new notification services are outside this sprint.
 
 ## Scaling rules
 

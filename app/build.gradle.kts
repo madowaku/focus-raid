@@ -119,6 +119,7 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.2.1")
     implementation("androidx.room:room-runtime:2.8.4")
     implementation("androidx.room:room-ktx:2.8.4")
+    implementation("androidx.work:work-runtime-ktx:2.10.5")
     ksp("androidx.room:room-compiler:2.8.4")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
@@ -131,6 +132,7 @@ dependencies {
     implementation(firebaseBom)
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-functions")
     implementation("com.google.firebase:firebase-appcheck-playintegrity")
 
     debugImplementation("com.google.firebase:firebase-appcheck-debug")

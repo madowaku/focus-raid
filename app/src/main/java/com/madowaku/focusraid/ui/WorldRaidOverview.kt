@@ -60,6 +60,7 @@ internal fun WorldRaidOverview(state: FocusUiState) {
         Spacer(Modifier.height(16.dp))
         WorldStatusLabel(state.worldSyncStatus)
         WorldBossOverviewCard(state)
+        WorldContributionCard(state)
         PersonalRaidCard(state, com.madowaku.focusraid.core.domain.RaidBossIdentity.MORD)
         PersonalRaidCard(state, com.madowaku.focusraid.core.domain.RaidBossIdentity.ZEPHYR)
 
@@ -117,6 +118,9 @@ private fun WorldBossOverviewCard(state: FocusUiState) {
         ),
     ) {
         Column(Modifier.padding(18.dp)) {
+            if (world.generation != null) {
+                Text("このレイドに集まった集中：${world.totalFocusMinutes}分", style = MaterialTheme.typography.bodyMedium)
+            }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
