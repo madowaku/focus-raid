@@ -20,8 +20,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -75,10 +75,8 @@ fun FocusRaidV06Root(
     val currentContribution = state.resultSessionId?.let { resultId ->
         state.contributions.firstOrNull { it.sessionId == resultId }
     }
-    val contributionAccepted = currentContribution?.state in setOf(
-        ContributionStatus.ACCEPTED,
-        ContributionStatus.ALREADY_COUNTED,
-    )
+    val contributionAccepted = currentContribution?.state == ContributionStatus.ACCEPTED ||
+        currentContribution?.state == ContributionStatus.ALREADY_COUNTED
     val contributionPending = currentContribution == null || currentContribution.state in setOf(
         ContributionStatus.PENDING,
         ContributionStatus.RETRYING,
