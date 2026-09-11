@@ -33,6 +33,7 @@ import com.madowaku.focusraid.data.FocusRaidDatabase
 import com.madowaku.focusraid.data.RoomSessionHistoryRepository
 import com.madowaku.focusraid.data.SessionPreferences
 import com.madowaku.focusraid.data.WorldRepositoryFactory
+import com.madowaku.focusraid.data.loadRecentRaidEchoes
 import com.madowaku.focusraid.timer.FocusAlarmScheduler
 import com.madowaku.focusraid.ui.FocusRaidV06Root
 import com.madowaku.focusraid.ui.FocusSystemAccess
@@ -95,6 +96,7 @@ class MainActivity : ComponentActivity() {
                     viewModel = viewModel,
                     proAccessViewModel = proAccessViewModel,
                     systemAccess = systemAccess,
+                    loadRaidEchoes = { worldRepository.loadRecentRaidEchoes() },
                     onRequestNotificationPermission = ::requestNotificationAccess,
                     onRequestExactAlarmPermission = ::requestExactAlarmAccess,
                     onPurchasePro = { proAccessViewModel.purchasePro(this) },

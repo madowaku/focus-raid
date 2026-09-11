@@ -92,6 +92,32 @@ class FirebaseWorldRepository internal constructor(
         }
     }
 
+    suspend fun recentRaidEchoes(limit: Int = 3): List<RaidEcho> {
+        val safeLimit = limit.coerceIn(1, 3)
+        return withTimeout(12_000) {
+            ensureSignedIn()
+            val result = functions.getHttpsCallable("getRecentRaidEchoes")
+                .call(mapOf("limit" to safeLimit))
+                .await()
+                .data as? Map<*, *> ?: error("Missing raid echo response")
+            val rawEchoes = result["echoes"] as? List<*> ?: return@withTimeout emptyList()
+            rawEchoes.mapNotNull { raw ->
+                val values = raw as? Map<*, *> ?: return@mapNotNull null
+                val focusMinutes = (values["focusMinutes"] as? Number)?.toInt() ?: return@mapNotNull null
+                val damage = (values["damage"] as? Number)?.toInt() ?: return@mapNotNull null
+                val ageMinutes = (values["ageMinutes"] as? Number)?.toLong() ?: return@mapNotNull null
+                if (focusMinutes !in 5..180 || damage !in 0..focusMinutes || ageMinutes < 0) {
+                    return@mapNotNull null
+                }
+                RaidEcho(
+                    relativeLabel = relativeLabel(ageMinutes),
+                    focusMinutes = focusMinutes,
+                    damage = damage,
+                )
+            }.take(safeLimit)
+        }
+    }
+
     override suspend fun footprints(
         expedition: Expedition,
         checkpoint: Int,
@@ -177,12 +203,14 @@ class FirebaseWorldRepository internal constructor(
     private fun relativeLabel(timestamp: Timestamp?): String {
         val createdAtMillis = timestamp?.toDate()?.time ?: return "たった今"
         val elapsedMinutes = ((System.currentTimeMillis() - createdAtMillis).coerceAtLeast(0L) / 60_000L)
-        return when {
-            elapsedMinutes < 1L -> "たった今"
-            elapsedMinutes < 60L -> "${elapsedMinutes}分前"
-            elapsedMinutes < 24L * 60L -> "${elapsedMinutes / 60L}時間前"
-            else -> "${elapsedMinutes / (24L * 60L)}日前"
-        }
+        return relativeLabel(elapsedMinutes)
+    }
+
+    private fun relativeLabel(elapsedMinutes: Long): String = when {
+        elapsedMinutes < 1L -> "たった今"
+        elapsedMinutes < 60L -> "${elapsedMinutes}分前"
+        elapsedMinutes < 24L * 60L -> "${elapsedMinutes / 60L}時間前"
+        else -> "${elapsedMinutes / (24L * 60L)}日前"
     }
 
     companion object {

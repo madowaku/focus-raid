@@ -18,7 +18,9 @@ async function client(signed=true){
   const fs=getFirestore(app);connectFirestoreEmulator(fs,'127.0.0.1',8080);
   const fn=getFunctions(app);connectFunctionsEmulator(fn,'127.0.0.1',5001);
   if(signed) await signInAnonymously(auth);
-  return {auth,fs,submit:async data=>(await httpsCallable(fn,'submitContribution')(data)).data};
+  return {auth,fs,
+    submit:async data=>(await httpsCallable(fn,'submitContribution')(data)).data,
+    echoes:async data=>(await httpsCallable(fn,'getRecentRaidEchoes')(data)).data};
 }
 function request(generation='N', minutes=5){const now=Date.now();return {sessionId:randomUUID(),generation,
   creditedMinutes:minutes,plannedMinutes:minutes,startedAtEpochMillis:now-minutes*60000,completedAtEpochMillis:now}}
@@ -40,6 +42,20 @@ test('A/B/C real callable: two identities converge, response loss and concurrent
   assert.equal((await a.submit({...payload,generation:'other'})).status,'REJECTED');
   assert.equal((await world(a)).totalFocusMinutes,10);
 });
+test('recent raid echoes are anonymous, exclude caller and remain server-only',async()=>{
+  await seed('echo');const a=await client(),b=await client();
+  const aPayload=request('echo',25),bPayload=request('echo',50);
+  assert.equal((await a.submit(aPayload)).status,'ACCEPTED');
+  assert.equal((await b.submit(bPayload)).status,'ACCEPTED');
+  const feed=await a.echoes({limit:3});
+  assert.equal(feed.generation,'echo');
+  assert.equal(feed.echoes.length,1);
+  assert.deepEqual(Object.keys(feed.echoes[0]).sort(),['ageMinutes','damage','focusMinutes']);
+  assert.equal(feed.echoes[0].focusMinutes,50);
+  assert.equal(feed.echoes[0].damage,50);
+  assert.ok(feed.echoes[0].ageMinutes>=0);
+  await assert.rejects(getDoc(doc(a.fs,`raidEchoes/echo/events/${bPayload.sessionId}`)),e=>e.code==='permission-denied');
+});
 test('D old bound/unbound sessions never damage replacement; receipt survives rotation',async()=>{
   await seed('old');const c=await client();const accepted=request('old');await c.submit(accepted);
   const bound=request('old'),unbound=request(null);
@@ -59,6 +75,8 @@ test('E rules deny direct world/receipt/budget writes, other receipts and unsign
 test('E/F validation, unauthenticated, budget and configuration failures never report success',async()=>{
   await seed();const c=await client(),unsigned=await client(false);
   await assert.rejects(unsigned.submit(request()),e=>e.code==='functions/unauthenticated');
+  await assert.rejects(unsigned.echoes({limit:3}),e=>e.code==='functions/unauthenticated');
+  await assert.rejects(c.echoes({limit:4}),e=>e.code==='functions/invalid-argument');
   for(const change of [{damage:1000000},{creditedMinutes:181,plannedMinutes:181},{creditedMinutes:4},{generation:'bad/path'}]) {
     await assert.rejects(c.submit({...request(),...change}),e=>e.code==='functions/invalid-argument');
   }
@@ -68,6 +86,7 @@ test('E/F validation, unauthenticated, budget and configuration failures never r
   assert.equal((await world(c)).totalFocusMinutes,1440);
   await db.doc('world/current').delete();
   await assert.rejects(c.submit(request()),e=>e.code==='functions/unavailable');
+  await assert.rejects(c.echoes({limit:3}),e=>e.code==='functions/unavailable');
 });
 test('last hit clamps HP, retains full focus and ends raid',async()=>{
   await seed('last',3);const c=await client();const receipt=await c.submit(request('last'));

@@ -5,8 +5,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
@@ -14,24 +16,45 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.madowaku.focusraid.BuildConfig
 import com.madowaku.focusraid.billing.ProAccessViewModel
 import com.madowaku.focusraid.core.model.Expedition
 import com.madowaku.focusraid.core.model.FootprintPresets
+import com.madowaku.focusraid.core.model.SessionOutcome
 import com.madowaku.focusraid.core.model.SessionPhase
+import com.madowaku.focusraid.data.ContributionStatus
+import com.madowaku.focusraid.data.RaidEcho
+import com.madowaku.focusraid.data.WorldSyncStatus
+import kotlinx.coroutines.CancellationException
+
+private sealed interface FirstRaidEchoFeed {
+    data object Idle : FirstRaidEchoFeed
+    data object Loading : FirstRaidEchoFeed
+    data object Failed : FirstRaidEchoFeed
+    data class Ready(
+        val echoes: List<RaidEcho>,
+        val preview: Boolean,
+    ) : FirstRaidEchoFeed
+}
 
 @Composable
 fun FocusRaidV06Root(
     viewModel: FocusViewModel,
     proAccessViewModel: ProAccessViewModel,
     systemAccess: FocusSystemAccess = FocusSystemAccess(),
+    loadRaidEchoes: suspend () -> List<RaidEcho> = { emptyList() },
     onRequestNotificationPermission: () -> Unit = {},
     onRequestExactAlarmPermission: () -> Unit = {},
     onPurchasePro: () -> Unit = {},
@@ -45,14 +68,81 @@ fun FocusRaidV06Root(
             creditedMinutes = it.creditedMinutes,
         )
     } ?: false
-    // Until recent shared contributions are available, demo echoes must never impersonate
-    // real people in a release build. Debug builds are the FIRST RAID experience lab.
-    val showFirstRaid = BuildConfig.DEBUG &&
-        state.phase == SessionPhase.COMPLETED &&
+    val firstRaidCandidate = state.phase == SessionPhase.COMPLETED &&
         reward != null &&
         reward.creditedMinutes > 0 &&
         !first25Reserved
+    val currentContribution = state.resultSessionId?.let { resultId ->
+        state.contributions.firstOrNull { it.sessionId == resultId }
+    }
+    val contributionAccepted = currentContribution?.state in setOf(
+        ContributionStatus.ACCEPTED,
+        ContributionStatus.ALREADY_COUNTED,
+    )
+    val contributionPending = currentContribution == null || currentContribution.state in setOf(
+        ContributionStatus.PENDING,
+        ContributionStatus.RETRYING,
+        ContributionStatus.OFFLINE,
+        ContributionStatus.AUTH_REQUIRED,
+    )
 
+    var echoFeed by remember(state.resultSessionId) {
+        mutableStateOf<FirstRaidEchoFeed>(FirstRaidEchoFeed.Idle)
+    }
+    LaunchedEffect(
+        state.resultSessionId,
+        firstRaidCandidate,
+        state.worldSyncStatus,
+        currentContribution?.status,
+    ) {
+        if (!firstRaidCandidate) {
+            echoFeed = FirstRaidEchoFeed.Idle
+            return@LaunchedEffect
+        }
+        when {
+            BuildConfig.DEBUG && state.worldSyncStatus in setOf(
+                WorldSyncStatus.LOCAL_PREVIEW,
+                WorldSyncStatus.OFFLINE,
+            ) -> {
+                echoFeed = FirstRaidEchoFeed.Ready(previewRaidEchoes(), preview = true)
+            }
+
+            state.worldSyncStatus == WorldSyncStatus.CONNECTING -> {
+                echoFeed = FirstRaidEchoFeed.Loading
+            }
+
+            state.worldSyncStatus != WorldSyncStatus.LIVE -> {
+                echoFeed = FirstRaidEchoFeed.Failed
+            }
+
+            contributionAccepted -> {
+                echoFeed = FirstRaidEchoFeed.Loading
+                echoFeed = try {
+                    FirstRaidEchoFeed.Ready(loadRaidEchoes(), preview = false)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (_: Exception) {
+                    FirstRaidEchoFeed.Failed
+                }
+            }
+
+            contributionPending -> {
+                echoFeed = FirstRaidEchoFeed.Loading
+            }
+
+            else -> {
+                echoFeed = FirstRaidEchoFeed.Failed
+            }
+        }
+    }
+
+    if (firstRaidCandidate && echoFeed == FirstRaidEchoFeed.Loading) {
+        FirstRaidEchoLoading(state)
+        return
+    }
+
+    val readyFeed = echoFeed as? FirstRaidEchoFeed.Ready
+    val showFirstRaid = firstRaidCandidate && readyFeed != null
     if (!showFirstRaid) {
         FocusRaidRoot(
             viewModel = viewModel,
@@ -66,14 +156,29 @@ fun FocusRaidV06Root(
         return
     }
 
+    val resolvedFeed = checkNotNull(readyFeed)
     val completedReward = checkNotNull(reward)
+    val completedSessions = state.sessionHistory.count { it.outcome == SessionOutcome.COMPLETED }
+    val currentRecorded = state.resultSessionId?.let { id ->
+        state.sessionHistory.any { it.sessionId == id && it.outcome == SessionOutcome.COMPLETED }
+    } == true
+    val chainCountBefore = (completedSessions - if (currentRecorded) 1 else 0).coerceAtLeast(0)
+    val chainMinutesBefore = (state.totalFocusMinutes - completedReward.creditedMinutes).coerceAtLeast(0)
+    val playerDamage = if (resolvedFeed.preview) {
+        completedReward.personalDamage.coerceAtLeast(0)
+    } else {
+        currentContribution?.appliedDamage?.coerceAtLeast(0) ?: 0
+    }
     var showFootprints by rememberSaveable(state.resultSessionId) { mutableStateOf(false) }
-    val scenario = ReturnRaidScenario.demo(
+    val scenario = ReturnRaidScenario.fromEchoes(
         bossName = state.world.bossName,
-        bossHp = 150,
+        bossHp = 181,
         bossMaxHp = 250,
-        playerDamage = completedReward.personalDamage.coerceAtLeast(1),
+        playerDamage = playerDamage,
         creditedMinutes = completedReward.creditedMinutes,
+        echoes = resolvedFeed.echoes,
+        chainCountBefore = chainCountBefore,
+        chainMinutesBefore = chainMinutesBefore,
     )
 
     BackHandler(enabled = !state.saving) {
@@ -97,6 +202,39 @@ fun FocusRaidV06Root(
         )
     }
 }
+
+@Composable
+private fun FirstRaidEchoLoading(state: FocusUiState) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 24.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            "帰還しました",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(10.dp))
+        Text(
+            "${state.reward?.creditedMinutes ?: 0}分",
+            fontSize = 44.sp,
+            fontWeight = FontWeight.Black,
+        )
+        Spacer(Modifier.height(20.dp))
+        Text(
+            "遠征記録を同期しています…",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+private fun previewRaidEchoes(): List<RaidEcho> = listOf(
+    RaidEcho("3時間前", 25, 25),
+    RaidEcho("51分前", 50, 50),
+    RaidEcho("12分前", 25, 25),
+)
 
 @Composable
 private fun FirstRaidFootprintDialog(

@@ -1,5 +1,6 @@
 package com.madowaku.focusraid.ui
 
+import com.madowaku.focusraid.data.RaidEcho
 import kotlin.math.max
 import kotlin.math.min
 
@@ -67,12 +68,15 @@ internal data class ReturnRaidScenario(
     }
 
     companion object {
-        fun demo(
+        fun fromEchoes(
             bossName: String,
             bossHp: Int,
             bossMaxHp: Int,
             playerDamage: Int,
             creditedMinutes: Int,
+            echoes: List<RaidEcho>,
+            chainCountBefore: Int,
+            chainMinutesBefore: Int,
         ): ReturnRaidScenario {
             val safeMax = bossMaxHp.coerceAtLeast(1)
             val safePresent = bossHp.coerceIn(0, safeMax)
@@ -82,15 +86,39 @@ internal data class ReturnRaidScenario(
                 presentBossHp = safePresent,
                 playerDamage = playerDamage.coerceAtLeast(0),
                 creditedMinutes = creditedMinutes.coerceAtLeast(0),
-                echoes = listOf(
-                    RaidEchoUi("3時間前", 25, 25, 25),
-                    RaidEchoUi("51分前", 50, 50, 50),
-                    RaidEchoUi("12分前", 25, 25, 25),
-                ),
-                chainCountBefore = 6,
-                chainMinutesBefore = 175,
+                echoes = echoes.take(3).map { echo ->
+                    RaidEchoUi(
+                        relativeTime = echo.relativeLabel,
+                        focusMinutes = echo.focusMinutes.coerceAtLeast(0),
+                        damage = echo.damage.coerceAtLeast(0),
+                        displayDamage = echo.damage.coerceAtLeast(0),
+                    )
+                },
+                chainCountBefore = chainCountBefore.coerceAtLeast(0),
+                chainMinutesBefore = chainMinutesBefore.coerceAtLeast(0),
             )
         }
+
+        fun demo(
+            bossName: String,
+            bossHp: Int,
+            bossMaxHp: Int,
+            playerDamage: Int,
+            creditedMinutes: Int,
+        ): ReturnRaidScenario = fromEchoes(
+            bossName = bossName,
+            bossHp = bossHp,
+            bossMaxHp = bossMaxHp,
+            playerDamage = playerDamage,
+            creditedMinutes = creditedMinutes,
+            echoes = listOf(
+                RaidEcho("3時間前", 25, 25),
+                RaidEcho("51分前", 50, 50),
+                RaidEcho("12分前", 25, 25),
+            ),
+            chainCountBefore = 6,
+            chainMinutesBefore = 175,
+        )
     }
 }
 
