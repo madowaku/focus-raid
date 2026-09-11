@@ -1,5 +1,6 @@
 package com.madowaku.focusraid.ui
 
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -53,9 +54,51 @@ class FirstRaidUiTest {
                 .isNotEmpty()
         }
         compose.onNodeWithText("第001遠征隊").assertIsDisplayed()
+        compose.onNodeWithText("最近の残響 3件 · 100分").assertIsDisplayed()
         compose.onNodeWithText("火をつなぎました").assertIsDisplayed()
         compose.onNodeWithText("👣  足跡を見る・残す").assertIsDisplayed()
         compose.onNodeWithText("もう25分").assertIsDisplayed()
         compose.onNodeWithText("今日はここまで").assertIsDisplayed()
+    }
+
+    @Test
+    fun emptyEchoFeedNeverPretendsSomeoneElseWasThere() {
+        val emptyScenario = ReturnRaidScenario.fromEchoes(
+            bossName = "環焔竜ヴォルガ",
+            bossHp = 181,
+            bossMaxHp = 250,
+            playerDamage = 25,
+            creditedMinutes = 25,
+            echoes = emptyList(),
+            chainCountBefore = 0,
+            chainMinutesBefore = 0,
+        )
+
+        compose.setContent {
+            FocusRaidTheme {
+                ReturnRaidSequence(
+                    scenario = emptyScenario,
+                    onFootprints = {},
+                    onAgain = {},
+                    onDone = {},
+                )
+            }
+        }
+
+        compose.waitUntil(timeoutMillis = 4_000) {
+            compose.onAllNodesWithTag("first_raid_strike")
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        compose.onNodeWithText("まだ他の残響はありません").assertIsDisplayed()
+        compose.onNodeWithTag("first_raid_strike").performClick()
+
+        compose.waitUntil(timeoutMillis = 4_000) {
+            compose.onAllNodesWithTag("first_raid_camp")
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        compose.onNodeWithText("あなたが最初の火を残しました").assertIsDisplayed()
+        compose.onAllNodesWithText("誰かの集中").assertCountEquals(0)
     }
 }

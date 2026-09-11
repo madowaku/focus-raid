@@ -14,7 +14,7 @@ import com.madowaku.focusraid.MainActivity
 import com.madowaku.focusraid.R
 
 object FocusCompletionNotifier {
-    fun show(context: Context) {
+    fun show(context: Context, focusedMinutes: Int? = null) {
         val manager = context.getSystemService(NotificationManager::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             manager.createNotificationChannel(
@@ -43,12 +43,17 @@ object FocusCompletionNotifier {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
+        val safeMinutes = focusedMinutes?.coerceAtLeast(1)
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-            .setContentTitle("集中完了！")
-            .setContentText("レイドの戦果を確認しよう。")
+            .setContentTitle(
+                if (safeMinutes == null) "集中完了" else "${safeMinutes}分の集中、完了"
+            )
+            .setContentText("戻って記録とレイドの続きを確認できます。")
             .setContentIntent(launch)
             .setAutoCancel(true)
+            .setOnlyAlertOnce(true)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()
 

@@ -34,7 +34,10 @@ import com.madowaku.focusraid.core.domain.CompanionGrowth
 import com.madowaku.focusraid.core.domain.CompanionStage
 
 @Composable
-internal fun CompanionProgressOverview(state: FocusUiState, onSelect: (com.madowaku.focusraid.core.domain.CompanionIdentity) -> Unit = {}) {
+internal fun CompanionProgressOverview(
+    state: FocusUiState,
+    onSelect: (com.madowaku.focusraid.core.domain.CompanionIdentity) -> Unit = {},
+) {
     val growth = CompanionGrowth.from(state.totalFocusMinutes)
     val totalHours = growth.totalMinutes / 60
     val totalRemainderMinutes = growth.totalMinutes % 60
@@ -115,6 +118,9 @@ internal fun CompanionProgressOverview(state: FocusUiState, onSelect: (com.madow
                 }
             }
         }
+
+        Spacer(Modifier.height(12.dp))
+        BeginningLightCard(state.totalFocusMinutes)
 
         Spacer(Modifier.height(12.dp))
         Card(

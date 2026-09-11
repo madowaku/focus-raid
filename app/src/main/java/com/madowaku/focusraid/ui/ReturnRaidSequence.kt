@@ -1,11 +1,11 @@
 package com.madowaku.focusraid.ui
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -37,7 +37,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
@@ -62,29 +61,31 @@ internal fun ReturnRaidSequence(
     LaunchedEffect(state.displayedHp) {
         displayedHp.animateTo(
             targetValue = state.displayedHp.toFloat(),
-            animationSpec = tween(durationMillis = if (state.phase == ReturnRaidPhase.STRIKING) 650 else 420),
+            animationSpec = tween(
+                durationMillis = if (state.phase == ReturnRaidPhase.STRIKING) 650 else 420,
+            ),
         )
     }
 
     LaunchedEffect(state.phase, state.echoIndex) {
         when (state.phase) {
             ReturnRaidPhase.RETURNING -> {
-                delay(1_350)
+                delay(1_250)
                 state = machine.advance()
             }
 
             ReturnRaidPhase.ECHO -> {
-                delay(880)
+                delay(820)
                 state = machine.advance()
             }
 
             ReturnRaidPhase.STRIKING -> {
-                delay(720)
+                delay(700)
                 state = machine.advance()
             }
 
             ReturnRaidPhase.RESULT -> {
-                delay(1_150)
+                delay(1_050)
                 state = machine.advance()
             }
 
@@ -144,7 +145,6 @@ internal fun ReturnRaidSequence(
 
                 ReturnRaidPhase.CAMP -> CampMoment(
                     scenario = scenario,
-                    state = state,
                     onFootprints = onFootprints,
                     onAgain = onAgain,
                     onDone = onDone,
@@ -176,7 +176,7 @@ private fun ReturnMoment(scenario: ReturnRaidScenario) {
         )
         Spacer(Modifier.height(24.dp))
         Text(
-            "遠征記録を確認しています…",
+            if (scenario.echoes.isEmpty()) "現在の遠征地点へ戻っています…" else "残響をたどっています…",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -189,7 +189,7 @@ private fun EchoMoment(
     state: ReturnRaidUiState,
     displayedHp: Int,
 ) {
-    val echo = scenario.echoes.getOrNull(state.echoIndex)
+    val echo = scenario.echoes.getOrNull(state.echoIndex) ?: return
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
@@ -212,13 +212,13 @@ private fun EchoMoment(
                     .padding(18.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(echo?.relativeTime ?: "少し前", style = MaterialTheme.typography.labelMedium)
+                Text(echo.relativeTime, style = MaterialTheme.typography.labelMedium)
                 Spacer(Modifier.height(4.dp))
                 Text("誰かの集中", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("${echo?.focusMinutes ?: 25}分", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                Text("${echo.focusMinutes}分", fontSize = 24.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(5.dp))
                 Text(
-                    "⚔ ${echo?.damage ?: 100} DAMAGE",
+                    "⚔ ${echo.damage} DAMAGE",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Black,
                     color = MaterialTheme.colorScheme.secondary,
@@ -244,12 +244,20 @@ private fun YourTurnMoment(
         RaidIntegrityCard(scenario, displayedHp)
         Spacer(Modifier.height(24.dp))
         Text(
-            "残響を追いつきました",
+            if (scenario.echoes.isEmpty()) "まだ他の残響はありません" else "残響を追いつきました",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(6.dp))
-        Text("そして、あなたの${scenario.creditedMinutes}分。", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+        Text(
+            if (scenario.echoes.isEmpty()) {
+                "ここから、あなたの${scenario.creditedMinutes}分。"
+            } else {
+                "そして、あなたの${scenario.creditedMinutes}分。"
+            },
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+        )
         Spacer(Modifier.height(20.dp))
         Button(
             onClick = onStrike,
@@ -314,6 +322,8 @@ private fun ResultMoment(
         Text(
             if (state.armorBroken) {
                 "あなたの${scenario.creditedMinutes}分が最後の一撃になりました"
+            } else if (scenario.echoes.isEmpty()) {
+                "あなたの${scenario.creditedMinutes}分が、最初の足跡になりました"
             } else {
                 "あなたの${scenario.creditedMinutes}分が、遠征隊の続きになりました"
             },
@@ -327,13 +337,17 @@ private fun ResultMoment(
 @Composable
 private fun CampMoment(
     scenario: ReturnRaidScenario,
-    state: ReturnRaidUiState,
     onFootprints: () -> Unit,
     onAgain: () -> Unit,
     onDone: () -> Unit,
 ) {
+    val recentMinutes = scenario.echoes.sumOf { it.focusMinutes.coerceAtLeast(0) }
+    val visibleLights = (scenario.echoes.size + 1).coerceIn(1, 4)
+
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .testTag("first_raid_camp"),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(Modifier.height(18.dp))
@@ -348,26 +362,49 @@ private fun CampMoment(
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 22.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text("🔥    🔥       🔥", fontSize = 25.sp)
-                Text("   🔥      🔥", fontSize = 25.sp)
+                Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                    repeat(visibleLights) {
+                        Text("🔥", fontSize = 28.sp)
+                    }
+                }
                 Spacer(Modifier.height(14.dp))
                 Text("集中の火", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(5.dp))
-                Text(
-                    "${scenario.chainCountBefore} → ${state.chainCount}連鎖",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Black,
-                )
-                Text(
-                    "${scenario.chainMinutesBefore} → ${state.chainMinutes}分",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    "火をつなぎました",
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold,
-                )
+                Spacer(Modifier.height(7.dp))
+                if (scenario.echoes.isEmpty()) {
+                    Text(
+                        "まだ他の残響はありません",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(3.dp))
+                    Text(
+                        "あなた +${scenario.creditedMinutes}分",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Black,
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        "あなたが最初の火を残しました",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                    )
+                } else {
+                    Text(
+                        "最近の残響 ${scenario.echoes.size}件 · ${recentMinutes}分",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(3.dp))
+                    Text(
+                        "+ あなた ${scenario.creditedMinutes}分",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Black,
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        "火をつなぎました",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
             }
         }
 
@@ -387,7 +424,11 @@ private fun CampMoment(
                 .heightIn(min = 64.dp),
             shape = RoundedCornerShape(32.dp),
         ) {
-            Text("もう${scenario.creditedMinutes.coerceAtLeast(1)}分", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Text(
+                "もう${scenario.creditedMinutes.coerceAtLeast(1)}分",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+            )
         }
         TextButton(onClick = onDone) {
             Text("今日はここまで")

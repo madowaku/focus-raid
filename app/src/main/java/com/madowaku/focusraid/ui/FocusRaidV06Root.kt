@@ -3,18 +3,12 @@ package com.madowaku.focusraid.ui
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -30,14 +24,13 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.madowaku.focusraid.BuildConfig
 import com.madowaku.focusraid.billing.ProAccessViewModel
-import com.madowaku.focusraid.core.model.Expedition
-import com.madowaku.focusraid.core.model.FootprintPresets
-import com.madowaku.focusraid.core.model.SessionOutcome
 import com.madowaku.focusraid.core.model.SessionPhase
 import com.madowaku.focusraid.data.ContributionStatus
 import com.madowaku.focusraid.data.RaidEcho
 import com.madowaku.focusraid.data.WorldSyncStatus
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeoutOrNull
 
 private sealed interface FirstRaidEchoFeed {
     data object Idle : FirstRaidEchoFeed
@@ -68,25 +61,46 @@ fun FocusRaidV06Root(
             creditedMinutes = it.creditedMinutes,
         )
     } ?: false
+
+    val showBeginningLight = state.phase == SessionPhase.COMPLETED &&
+        reward != null &&
+        reward.creditedMinutes > 0 &&
+        first25Reserved &&
+        state.persistenceError == null
+
+    if (showBeginningLight) {
+        BackHandler(enabled = !state.saving) {
+            viewModel.resetAfterResult()
+        }
+        BeginningLightMoment(
+            totalFocusMinutes = state.totalFocusMinutes,
+            creditedMinutes = reward?.creditedMinutes ?: 25,
+            companion = state.companion,
+            onAgain = viewModel::startAgain,
+            onDone = viewModel::resetAfterResult,
+        )
+        return
+    }
+
     val firstRaidCandidate = state.phase == SessionPhase.COMPLETED &&
         reward != null &&
         reward.creditedMinutes > 0 &&
         !first25Reserved
+
     val currentContribution = state.resultSessionId?.let { resultId ->
         state.contributions.firstOrNull { it.sessionId == resultId }
     }
     val contributionAccepted = currentContribution?.state == ContributionStatus.ACCEPTED ||
         currentContribution?.state == ContributionStatus.ALREADY_COUNTED
-    val contributionPending = currentContribution == null || currentContribution.state in setOf(
+    val contributionWaiting = currentContribution == null || currentContribution.state in setOf(
         ContributionStatus.PENDING,
         ContributionStatus.RETRYING,
-        ContributionStatus.OFFLINE,
-        ContributionStatus.AUTH_REQUIRED,
     )
 
     var echoFeed by remember(state.resultSessionId) {
         mutableStateOf<FirstRaidEchoFeed>(FirstRaidEchoFeed.Idle)
     }
+
     LaunchedEffect(
         state.resultSessionId,
         firstRaidCandidate,
@@ -97,6 +111,7 @@ fun FocusRaidV06Root(
             echoFeed = FirstRaidEchoFeed.Idle
             return@LaunchedEffect
         }
+
         when {
             BuildConfig.DEBUG && state.worldSyncStatus in setOf(
                 WorldSyncStatus.LOCAL_PREVIEW,
@@ -107,6 +122,8 @@ fun FocusRaidV06Root(
 
             state.worldSyncStatus == WorldSyncStatus.CONNECTING -> {
                 echoFeed = FirstRaidEchoFeed.Loading
+                delay(3_500)
+                echoFeed = FirstRaidEchoFeed.Failed
             }
 
             state.worldSyncStatus != WorldSyncStatus.LIVE -> {
@@ -116,7 +133,12 @@ fun FocusRaidV06Root(
             contributionAccepted -> {
                 echoFeed = FirstRaidEchoFeed.Loading
                 echoFeed = try {
-                    FirstRaidEchoFeed.Ready(loadRaidEchoes(), preview = false)
+                    val echoes = withTimeoutOrNull(5_000) { loadRaidEchoes() }
+                    if (echoes == null) {
+                        FirstRaidEchoFeed.Failed
+                    } else {
+                        FirstRaidEchoFeed.Ready(echoes = echoes, preview = false)
+                    }
                 } catch (e: CancellationException) {
                     throw e
                 } catch (_: Exception) {
@@ -124,8 +146,10 @@ fun FocusRaidV06Root(
                 }
             }
 
-            contributionPending -> {
+            contributionWaiting -> {
                 echoFeed = FirstRaidEchoFeed.Loading
+                delay(4_000)
+                echoFeed = FirstRaidEchoFeed.Failed
             }
 
             else -> {
@@ -156,18 +180,14 @@ fun FocusRaidV06Root(
 
     val resolvedFeed = checkNotNull(readyFeed)
     val completedReward = checkNotNull(reward)
-    val completedSessions = state.sessionHistory.count { it.outcome == SessionOutcome.COMPLETED }
-    val currentRecorded = state.resultSessionId?.let { id ->
-        state.sessionHistory.any { it.sessionId == id && it.outcome == SessionOutcome.COMPLETED }
-    } == true
-    val chainCountBefore = (completedSessions - if (currentRecorded) 1 else 0).coerceAtLeast(0)
-    val chainMinutesBefore = (state.totalFocusMinutes - completedReward.creditedMinutes).coerceAtLeast(0)
     val playerDamage = if (resolvedFeed.preview) {
         completedReward.personalDamage.coerceAtLeast(0)
     } else {
         currentContribution?.appliedDamage?.coerceAtLeast(0) ?: 0
     }
+    val recentEchoMinutes = resolvedFeed.echoes.sumOf { it.focusMinutes.coerceAtLeast(0) }
     var showFootprints by rememberSaveable(state.resultSessionId) { mutableStateOf(false) }
+
     val scenario = ReturnRaidScenario.fromEchoes(
         bossName = state.world.bossName,
         bossHp = 181,
@@ -175,8 +195,8 @@ fun FocusRaidV06Root(
         playerDamage = playerDamage,
         creditedMinutes = completedReward.creditedMinutes,
         echoes = resolvedFeed.echoes,
-        chainCountBefore = chainCountBefore,
-        chainMinutesBefore = chainMinutesBefore,
+        chainCountBefore = resolvedFeed.echoes.size,
+        chainMinutesBefore = recentEchoMinutes,
     )
 
     BackHandler(enabled = !state.saving) {
@@ -191,7 +211,7 @@ fun FocusRaidV06Root(
     )
 
     if (showFootprints) {
-        FirstRaidFootprintDialog(
+        FootprintDialog(
             state = state,
             onSelectPreset = viewModel::selectFootprintPreset,
             onLeaveFootprint = viewModel::leaveFootprint,
@@ -233,123 +253,3 @@ private fun previewRaidEchoes(): List<RaidEcho> = listOf(
     RaidEcho("51分前", 50, 50),
     RaidEcho("12分前", 25, 25),
 )
-
-@Composable
-private fun FirstRaidFootprintDialog(
-    state: FocusUiState,
-    onSelectPreset: (String) -> Unit,
-    onLeaveFootprint: () -> Unit,
-    onRetry: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    val location = when (state.expedition) {
-        Expedition.TOWER -> "天空塔 ${state.world.towerFloor}F"
-        Expedition.ABYSS -> "深層迷宮 ${state.world.abyssDepth}m"
-        Expedition.STAR_ROUTE -> "星路のキャンプ"
-    }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("この場所の足跡") },
-        text = {
-            Column {
-                Text(
-                    location,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                Spacer(Modifier.height(12.dp))
-
-                when {
-                    state.footprintsLoading -> {
-                        Text(
-                            "足跡を探しています…",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-
-                    state.footprintLoadError != null -> {
-                        Text(
-                            state.footprintLoadError,
-                            color = MaterialTheme.colorScheme.error,
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        TextButton(onClick = onRetry) { Text("もう一度読む") }
-                    }
-
-                    state.footprints.isEmpty() -> {
-                        Text(
-                            "まだ灯はありません。あなたが最初の火を残せます。",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-
-                    else -> {
-                        state.footprints.take(3).forEach { footprint ->
-                            Text(
-                                "${footprint.glyph}  ${footprint.text}  ·  ${footprint.relativeLabel}",
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                            Spacer(Modifier.height(8.dp))
-                        }
-                    }
-                }
-
-                Spacer(Modifier.height(10.dp))
-                if (state.footprintPosted) {
-                    Text(
-                        "✓ あなたの足跡を残しました",
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                } else {
-                    Text(
-                        "次の誰かへ、ひとことだけ残せます",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    FootprintPresets.all.take(6).chunked(2).forEach { rowPresets ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            rowPresets.forEach { preset ->
-                                FilterChip(
-                                    selected = state.selectedFootprintPresetId == preset.id,
-                                    onClick = { onSelectPreset(preset.id) },
-                                    enabled = !state.footprintPosting,
-                                    label = { Text("${preset.glyph} ${preset.text}", maxLines = 1) },
-                                    modifier = Modifier.weight(1f),
-                                )
-                            }
-                            if (rowPresets.size == 1) Spacer(Modifier.weight(1f))
-                        }
-                    }
-                    state.footprintPostError?.let { error ->
-                        Spacer(Modifier.height(8.dp))
-                        Text(error, color = MaterialTheme.colorScheme.error)
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            if (state.footprintPosted) {
-                Button(onClick = onDismiss) { Text("閉じる") }
-            } else {
-                Button(
-                    onClick = onLeaveFootprint,
-                    enabled = state.selectedFootprintPresetId != null && !state.footprintPosting,
-                ) {
-                    Text(if (state.footprintPosting) "送信中…" else "足跡を残す")
-                }
-            }
-        },
-        dismissButton = {
-            if (!state.footprintPosted) {
-                TextButton(onClick = onDismiss, enabled = !state.footprintPosting) {
-                    Text("今は残さない")
-                }
-            }
-        },
-    )
-}

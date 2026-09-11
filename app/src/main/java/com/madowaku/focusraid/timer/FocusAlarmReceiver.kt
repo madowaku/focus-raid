@@ -3,8 +3,8 @@ package com.madowaku.focusraid.timer
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import com.madowaku.focusraid.data.SessionPreferences
 import com.madowaku.focusraid.core.model.SessionPhase
+import com.madowaku.focusraid.data.SessionPreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -20,11 +20,16 @@ class FocusAlarmReceiver : BroadcastReceiver() {
                 // An already-delivered alarm may race with pause, completion or a newer session.
                 if (saved.phase == SessionPhase.RUNNING && saved.finishedEntry == null &&
                     saved.endEpochMillis > 0 && saved.endEpochMillis <= System.currentTimeMillis()) {
-                    FocusCompletionNotifier.show(context)
+                    FocusCompletionNotifier.show(
+                        context = context,
+                        focusedMinutes = saved.selectedMinutes,
+                    )
                 }
             } catch (_: java.io.IOException) {
                 // Leave persisted recovery intact if storage is temporarily unavailable.
-            } finally { pending.finish() }
+            } finally {
+                pending.finish()
+            }
         }
     }
 }
