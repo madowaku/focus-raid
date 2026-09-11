@@ -1,9 +1,9 @@
 package com.madowaku.focusraid.core.domain
 
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Test
 
 class BeginningLightTest {
     @Test
@@ -17,17 +17,17 @@ class BeginningLightTest {
     fun hatchProgressUsesTheWholeZeroToSeventyFiveMinuteJourney() {
         val first = BeginningLight.from(25)
         assertEquals(50, first.hatchRemainingMinutes)
-        assertEquals(25f / 75f, first.hatchProgress)
+        assertEquals(25f / 75f, first.hatchProgress, 0.0001f)
         assertFalse(first.hatched)
 
         val halfway = BeginningLight.from(50)
         assertEquals(25, halfway.hatchRemainingMinutes)
-        assertEquals(50f / 75f, halfway.hatchProgress)
+        assertEquals(50f / 75f, halfway.hatchProgress, 0.0001f)
         assertFalse(halfway.hatched)
 
         val hatched = BeginningLight.from(75)
         assertEquals(0, hatched.hatchRemainingMinutes)
-        assertEquals(1f, hatched.hatchProgress)
+        assertEquals(1f, hatched.hatchProgress, 0.0001f)
         assertTrue(hatched.hatched)
         assertTrue(BeginningLight.from(90).hatched)
     }

@@ -10,7 +10,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.madowaku.focusraid.core.model.SessionReward
 import com.madowaku.focusraid.ui.theme.FocusRaidTheme
-import kotlin.test.assertTrue
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
