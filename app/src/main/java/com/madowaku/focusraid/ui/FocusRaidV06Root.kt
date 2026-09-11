@@ -21,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.madowaku.focusraid.BuildConfig
 import com.madowaku.focusraid.billing.ProAccessViewModel
 import com.madowaku.focusraid.core.model.Expedition
 import com.madowaku.focusraid.core.model.FootprintPresets
@@ -44,7 +45,10 @@ fun FocusRaidV06Root(
             creditedMinutes = it.creditedMinutes,
         )
     } ?: false
-    val showFirstRaid = state.phase == SessionPhase.COMPLETED &&
+    // Until recent shared contributions are available, demo echoes must never impersonate
+    // real people in a release build. Debug builds are the FIRST RAID experience lab.
+    val showFirstRaid = BuildConfig.DEBUG &&
+        state.phase == SessionPhase.COMPLETED &&
         reward != null &&
         reward.creditedMinutes > 0 &&
         !first25Reserved
