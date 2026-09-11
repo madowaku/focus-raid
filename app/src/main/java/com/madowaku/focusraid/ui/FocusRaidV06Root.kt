@@ -66,9 +66,9 @@ fun FocusRaidV06Root(
     var showFootprints by rememberSaveable(state.resultSessionId) { mutableStateOf(false) }
     val scenario = ReturnRaidScenario.demo(
         bossName = state.world.bossName,
-        bossHp = state.world.bossHp,
-        bossMaxHp = state.world.bossMaxHp,
-        playerDamage = completedReward.personalDamage,
+        bossHp = 620,
+        bossMaxHp = 1_000,
+        playerDamage = (completedReward.creditedMinutes * 4).coerceAtLeast(1),
         creditedMinutes = completedReward.creditedMinutes,
     )
 
