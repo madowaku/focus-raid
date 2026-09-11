@@ -62,13 +62,14 @@ fun FocusRaidV06Root(
         return
     }
 
+    val completedReward = checkNotNull(reward)
     var showFootprints by rememberSaveable(state.resultSessionId) { mutableStateOf(false) }
     val scenario = ReturnRaidScenario.demo(
         bossName = state.world.bossName,
         bossHp = state.world.bossHp,
         bossMaxHp = state.world.bossMaxHp,
-        playerDamage = reward.personalDamage,
-        creditedMinutes = reward.creditedMinutes,
+        playerDamage = completedReward.personalDamage,
+        creditedMinutes = completedReward.creditedMinutes,
     )
 
     BackHandler(enabled = !state.saving) {
