@@ -76,7 +76,6 @@ internal data class ReturnRaidScenario(
         ): ReturnRaidScenario {
             val safeMax = bossMaxHp.coerceAtLeast(1)
             val safePresent = bossHp.coerceIn(0, safeMax)
-            val visualStep = (safeMax / 30).coerceAtLeast(1)
             return ReturnRaidScenario(
                 bossName = bossName,
                 bossMaxHp = safeMax,
@@ -84,9 +83,9 @@ internal data class ReturnRaidScenario(
                 playerDamage = playerDamage.coerceAtLeast(0),
                 creditedMinutes = creditedMinutes.coerceAtLeast(0),
                 echoes = listOf(
-                    RaidEchoUi("3時間前", 25, 100, visualStep),
-                    RaidEchoUi("51分前", 50, 200, visualStep),
-                    RaidEchoUi("12分前", 25, 100, visualStep),
+                    RaidEchoUi("3時間前", 25, 25, 25),
+                    RaidEchoUi("51分前", 50, 50, 50),
+                    RaidEchoUi("12分前", 25, 25, 25),
                 ),
                 chainCountBefore = 6,
                 chainMinutesBefore = 175,
