@@ -2,7 +2,7 @@ name: Android CI
 
 on:
   push:
-    branches: [main, feat/revenuecat-pro-access, feat/v0.1-productization-sprint]
+    branches: [main, feat/revenuecat-pro-access, feat/v0.1-productization-sprint, feat/v0.6-first-raid]
   pull_request:
     branches: [main]
 
