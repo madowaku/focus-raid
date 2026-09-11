@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Focus Raid</string>
+    <string name="focus_complete_channel">集中完了</string>
+    <string name="focus_complete_channel_description">集中セッション完了のお知らせ</string>
+</resources>

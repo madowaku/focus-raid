@@ -1,103 +1,89 @@
-# Focus Raid Visual Design System
+# Focus Raid Material 3 Expressive design system
 
 ## Direction
 
-Focus Raid uses **modern productivity UI × nighttime pixel RPG**.
+**Material 3 Expressive productivity UI × nighttime fantasy raid world**
 
-The timer remains calm and contemporary. Pixel art appears as a window into the shared fantasy world, especially before and after focus sessions and on the WORLD surface.
+The timer is always the hero. The game creates emotional context around it.
 
 ## Core principles
 
-1. **START wins the hierarchy.** No card may compete with the main focus CTA on HOME.
-2. **The game recedes during focus.** FOCUS uses one small expedition scene, one timer ring, and one compact task card.
-3. **Pixel art carries fantasy, DOM UI carries information.** Do not turn the entire app into a retro game menu.
-4. **WORLD is spatial, not dashboard-first.** Present Tower → Town → Abyss vertically before secondary stats.
-5. **Strong motion is reserved for departure, return, rare loot, and raids.** Respect reduced-motion.
-6. **Companion sprites are replaceable assets.** UI layout must not depend on one exact character silhouette.
+1. START wins the hierarchy.
+2. The game recedes during focus.
+3. READY invites; RAID quiets; VICTORY rewards.
+4. State changes carry the expressive motion, not every control.
+5. Navigation disappears while focusing.
+6. Character art is replaceable and must never determine layout geometry.
+7. Respect reduced-motion and Android accessibility defaults.
 
-## Color tokens
+## Baseline viewport
 
-Defined in `src/styles.css`.
+Primary visual QA:
 
-- Canvas: `#050912`
-- Surface: `#0c1525`
-- Raised surface: `#111d31`
-- Border: translucent cool white
-- Primary focus accent: `#48e2cf`
-- Raid accent: `#a880ff`
-- Legendary / armory accent: `#efc56a`
-- Boss HP / danger: `#ff657f`
-- Success / focus-link: `#73e7a3`
+- 360 × 800 dp
+- 720 × 1280 px equivalent reference
 
-Teal means **focus / forward progress**. Violet means **unknown / raid / abyss**. Gold means **history / relic / armory value**. Red is reserved for **boss danger**, not ordinary navigation.
+Layout:
 
-## Card language
+- horizontal margin: 16dp
+- 4dp grid
+- preferred spacing: 8 / 12 / 16 / 24 / 32dp
+- minimum interactive target: 48 × 48dp
+- edge-to-edge with system insets, never hardcoded status-bar height
 
-- Default radius: 16–22px
-- Hero cards: 28px
-- Thin cool border, never heavy chrome
-- Dark layered surfaces with restrained glow
-- Cards group actions or state; avoid equal-weight dashboard grids on HOME
+## READY
 
-## Timer
+- Top area: 56dp
+- Timer hero: 184dp diameter
+- Timer text: 60sp
+- Duration chips: 48dp height
+- Expedition chips: 48dp height
+- Primary CTA: 64dp
+- Boss card: rounded 28dp container
+- Bottom navigation visible
 
-- Large tabular numerals
-- Circular progress ring using the focus teal
-- No constant game animation around the clock
-- One small expedition scene above the timer is the maximum persistent fantasy surface
-- During focus, navigation is hidden
+## RAID
 
-## Pixel art
+- Timer hero grows to 208dp
+- Timer text: 68sp
+- Pause/resume: 64dp
+- Exit is a low-emphasis text action
+- Boss information collapses
+- Bottom navigation hidden
+- No persistent busy animation around the timer
 
-Temporary MVP pixel primitives live in `src/ui/pixel.tsx`.
+## VICTORY
 
-They are intentionally small and replaceable:
+- Completion headline
+- Credited minutes
+- Damage as the primary result number
+- One compact boss HP card
+- One compact reward card
+- Primary CTA repeats the selected focus duration
+- Secondary action returns to READY
 
-- `PixelRag`
-- `PixelTower`
-- `PixelAbyss`
-- `PixelBoss`
+## Color roles
 
-Production assets should preserve:
+- Primary violet: focus identity / hero emphasis
+- Raid coral: boss danger and battle accents
+- Reward gold: rare reward emphasis
+- Deep navy-purple surfaces: nighttime world
+- Teal is reserved for future forward-progress/world-link accents
 
-- crisp nearest-neighbor rendering
-- readable silhouette at 24–48px
-- limited palette per sprite
-- shared bottom-center anchor for companion animation
-- consistent scale between IDLE / DEPART / RETURN / RAID frames
+Use Material color roles in Compose. Do not scatter raw colors throughout feature code.
 
-The approved production path is: **one approved seed sprite → whole animation strip → normalization → in-app preview**.
+## Motion
 
-## WORLD composition
+`MaterialExpressiveTheme` + `MotionScheme.expressive()` is the app theme baseline.
 
-The primary WORLD map reads vertically:
+Hero transitions may use expressive spatial motion:
 
-1. Sky / WORLD TOWER
-2. WORLD TOWN
-3. WORLD ABYSS
-4. WORLD ARMORY
-5. NEXT WORLD RAID
+- READY timer -> RAID timer
+- start CTA -> active controls
+- RAID -> VICTORY result reveal
 
-WORLD should feel like a place whose frontier moves, not an analytics dashboard.
+Routine repeated interactions should remain restrained.
 
-## Screen roles
+## Production art
 
-### HOME
-
-Companion → duration → personal expedition → START → destination choice → next raid → lightweight world summary.
-
-### FOCUS
-
-Expedition vignette → timer ring → current task / personal boss HP. Nothing else.
-
-### RESULT
-
-Return camp → discovery → focus/personal/world contribution → armory readiness → continue or leave cleanly.
-
-### WORLD
-
-Large spatial world map first, armory and raid second.
-
-## Future asset rule
-
-Do not make a sprite-generation system part of the core product architecture. Generated art is an asset pipeline concern. Runtime UI consumes normalized static sprite sheets so the app remains lightweight and deterministic.
+The current Kotlin vertical slice uses lightweight placeholder glyphs so layout and timer behavior are deterministic. Production sprite work follows `docs/rag-baby-sprite.md` and should replace glyphs with normalized PNG/WebP sprite sheets without changing layout contracts.
