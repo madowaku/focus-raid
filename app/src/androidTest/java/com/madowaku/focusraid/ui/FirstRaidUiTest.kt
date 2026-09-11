@@ -8,7 +8,9 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import com.madowaku.focusraid.core.model.SessionReward
 import com.madowaku.focusraid.ui.theme.FocusRaidTheme
+import kotlin.test.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -100,5 +102,33 @@ class FirstRaidUiTest {
         }
         compose.onNodeWithText("あなたが最初の火を残しました").assertIsDisplayed()
         compose.onAllNodesWithText("誰かの集中").assertCountEquals(0)
+    }
+
+    @Test
+    fun syncingRaidNeverTrapsCompletedFocusResult() {
+        var skipped = false
+        compose.setContent {
+            FocusRaidTheme {
+                FirstRaidEchoLoading(
+                    state = FocusUiState(
+                        reward = SessionReward(
+                            creditedMinutes = 25,
+                            personalDamage = 25,
+                            worldEp = 25,
+                            defeated = 1,
+                            rarity = null,
+                            discovery = null,
+                            armoryPoints = 0,
+                        ),
+                    ),
+                    onSkip = { skipped = true },
+                )
+            }
+        }
+
+        compose.onNodeWithText("帰還しました").assertIsDisplayed()
+        compose.onNodeWithText("25分").assertIsDisplayed()
+        compose.onNodeWithText("待たずに記録を見る").performClick()
+        assertTrue(skipped)
     }
 }

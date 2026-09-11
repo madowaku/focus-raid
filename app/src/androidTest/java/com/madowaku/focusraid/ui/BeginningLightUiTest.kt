@@ -1,5 +1,6 @@
 package com.madowaku.focusraid.ui
 
+import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -32,6 +33,29 @@ class BeginningLightUiTest {
         compose.onNodeWithText("25 / 75分").assertIsDisplayed()
         compose.onNodeWithTag("beginning_light_egg").performClick()
         compose.onNodeWithText("…こつん。").assertIsDisplayed()
+        compose.onNodeWithText("もう25分").assertIsDisplayed()
+        compose.onNodeWithText("今日はここまで").assertIsDisplayed()
+    }
+
+    @Test
+    fun firstLongSessionShowsHatchedCompanionInsteadOfContradictingEgg() {
+        compose.setContent {
+            FocusRaidTheme {
+                BeginningLightMoment(
+                    totalFocusMinutes = 90,
+                    creditedMinutes = 90,
+                    companion = CompanionIdentity.RAG,
+                    onAgain = {},
+                    onDone = {},
+                )
+            }
+        }
+
+        compose.onNodeWithTag("beginning_light_hatched").assertIsDisplayed()
+        compose.onNodeWithText("灯の向こうで、相棒が目を開いた。").assertIsDisplayed()
+        compose.onNodeWithText("75 / 75分").assertIsDisplayed()
+        compose.onNodeWithText("孵化しました。最初の灯は相棒画面に残ります。").assertIsDisplayed()
+        compose.onNodeWithText("卵に触れてみる").assertDoesNotExist()
         compose.onNodeWithText("もう25分").assertIsDisplayed()
         compose.onNodeWithText("今日はここまで").assertIsDisplayed()
     }

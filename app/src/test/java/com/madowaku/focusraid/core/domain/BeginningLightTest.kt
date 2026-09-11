@@ -18,13 +18,17 @@ class BeginningLightTest {
         val first = BeginningLight.from(25)
         assertEquals(50, first.hatchRemainingMinutes)
         assertEquals(25f / 75f, first.hatchProgress)
+        assertFalse(first.hatched)
 
         val halfway = BeginningLight.from(50)
         assertEquals(25, halfway.hatchRemainingMinutes)
         assertEquals(50f / 75f, halfway.hatchProgress)
+        assertFalse(halfway.hatched)
 
         val hatched = BeginningLight.from(75)
         assertEquals(0, hatched.hatchRemainingMinutes)
         assertEquals(1f, hatched.hatchProgress)
+        assertTrue(hatched.hatched)
+        assertTrue(BeginningLight.from(90).hatched)
     }
 }

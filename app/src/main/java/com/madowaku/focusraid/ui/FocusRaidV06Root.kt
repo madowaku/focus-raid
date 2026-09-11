@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -100,15 +101,21 @@ fun FocusRaidV06Root(
     var echoFeed by remember(state.resultSessionId) {
         mutableStateOf<FirstRaidEchoFeed>(FirstRaidEchoFeed.Idle)
     }
+    var skipRaidSync by rememberSaveable(state.resultSessionId) { mutableStateOf(false) }
 
     LaunchedEffect(
         state.resultSessionId,
         firstRaidCandidate,
         state.worldSyncStatus,
         currentContribution?.status,
+        skipRaidSync,
     ) {
         if (!firstRaidCandidate) {
             echoFeed = FirstRaidEchoFeed.Idle
+            return@LaunchedEffect
+        }
+        if (skipRaidSync) {
+            echoFeed = FirstRaidEchoFeed.Failed
             return@LaunchedEffect
         }
 
@@ -158,13 +165,16 @@ fun FocusRaidV06Root(
         }
     }
 
-    if (firstRaidCandidate && echoFeed == FirstRaidEchoFeed.Loading) {
-        FirstRaidEchoLoading(state)
+    if (firstRaidCandidate && !skipRaidSync && echoFeed == FirstRaidEchoFeed.Loading) {
+        FirstRaidEchoLoading(
+            state = state,
+            onSkip = { skipRaidSync = true },
+        )
         return
     }
 
     val readyFeed = echoFeed as? FirstRaidEchoFeed.Ready
-    val showFirstRaid = firstRaidCandidate && readyFeed != null
+    val showFirstRaid = firstRaidCandidate && !skipRaidSync && readyFeed != null
     if (!showFirstRaid) {
         FocusRaidRoot(
             viewModel = viewModel,
@@ -222,7 +232,10 @@ fun FocusRaidV06Root(
 }
 
 @Composable
-private fun FirstRaidEchoLoading(state: FocusUiState) {
+internal fun FirstRaidEchoLoading(
+    state: FocusUiState,
+    onSkip: () -> Unit,
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -245,6 +258,10 @@ private fun FirstRaidEchoLoading(state: FocusUiState) {
             "遠征記録を同期しています…",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        Spacer(Modifier.height(10.dp))
+        TextButton(onClick = onSkip) {
+            Text("待たずに記録を見る")
+        }
     }
 }
 

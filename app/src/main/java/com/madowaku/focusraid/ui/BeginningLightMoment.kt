@@ -43,6 +43,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.madowaku.focusraid.core.domain.BeginningLight
+import com.madowaku.focusraid.core.domain.CompanionGrowth
 import com.madowaku.focusraid.core.domain.CompanionIdentity
 import com.madowaku.focusraid.core.domain.CompanionStage
 
@@ -58,10 +59,15 @@ internal fun BeginningLightMoment(
     var touched by rememberSaveable { mutableStateOf(false) }
     val haptics = LocalHapticFeedback.current
     val glow by animateFloatAsState(
-        targetValue = if (touched) 1f else .58f,
+        targetValue = if (status.hatched || touched) 1f else .58f,
         animationSpec = tween(durationMillis = 420),
         label = "beginning-light-glow",
     )
+    val displayStage = if (status.hatched) {
+        CompanionGrowth.from(totalFocusMinutes).stage
+    } else {
+        CompanionStage.EGG
+    }
 
     CompositionLocalProvider(LocalCompanionIdentity provides companion) {
         Box(
@@ -98,7 +104,11 @@ internal fun BeginningLightMoment(
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "集中の積み重ねが25分に届き、相棒のそばに小さな灯を残しました。",
+                    if (status.hatched) {
+                        "集中の積み重ねが25分を越え、最初の灯がそのまま孵化の光になりました。"
+                    } else {
+                        "集中の積み重ねが25分に届き、相棒のそばに小さな灯を残しました。"
+                    },
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                     lineHeight = 20.sp,
@@ -126,26 +136,33 @@ internal fun BeginningLightMoment(
                         ),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Surface(
-                        modifier = Modifier
-                            .size(160.dp)
-                            .testTag("beginning_light_egg")
-                            .clickable {
-                                touched = true
-                                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    val companionModifier = Modifier
+                        .size(160.dp)
+                        .testTag(if (status.hatched) "beginning_light_hatched" else "beginning_light_egg")
+                        .then(
+                            if (status.hatched) {
+                                Modifier
+                            } else {
+                                Modifier.clickable {
+                                    touched = true
+                                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                }
                             },
+                        )
+                    Surface(
+                        modifier = companionModifier,
                         shape = CircleShape,
-                        color = if (touched) {
+                        color = if (status.hatched || touched) {
                             MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = .84f)
                         } else {
                             MaterialTheme.colorScheme.surface.copy(alpha = .88f)
                         },
-                        tonalElevation = if (touched) 10.dp else 3.dp,
+                        tonalElevation = if (status.hatched || touched) 10.dp else 3.dp,
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             CompanionArtwork(
                                 modifier = Modifier.size(124.dp),
-                                stage = CompanionStage.EGG,
+                                stage = displayStage,
                                 mood = CompanionMood.Idle,
                             )
                         }
@@ -154,12 +171,17 @@ internal fun BeginningLightMoment(
 
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    if (touched) "…こつん。" else "卵に触れてみる",
-                    fontSize = if (touched) 20.sp else 13.sp,
-                    fontWeight = if (touched) FontWeight.Bold else FontWeight.Normal,
-                    color = if (touched) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    when {
+                        status.hatched -> "灯の向こうで、相棒が目を開いた。"
+                        touched -> "…こつん。"
+                        else -> "卵に触れてみる"
+                    },
+                    fontSize = if (status.hatched || touched) 20.sp else 13.sp,
+                    fontWeight = if (status.hatched || touched) FontWeight.Bold else FontWeight.Normal,
+                    color = if (status.hatched || touched) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
                 )
-                if (touched) {
+                if (touched && !status.hatched) {
                     Spacer(Modifier.height(4.dp))
                     Text(
                         "灯の色が、ほんの少し変わった。",
@@ -189,10 +211,10 @@ internal fun BeginningLightMoment(
                             fontWeight = FontWeight.SemiBold,
                         )
                         Text(
-                            if (status.hatchRemainingMinutes > 0) {
-                                "あと${status.hatchRemainingMinutes}分。灯は相棒画面に残ります。"
-                            } else {
-                                "孵化の時間に到達しました。"
+                            when {
+                                status.hatched -> "孵化しました。最初の灯は相棒画面に残ります。"
+                                status.hatchRemainingMinutes > 0 -> "あと${status.hatchRemainingMinutes}分。灯は相棒画面に残ります。"
+                                else -> "孵化の時間に到達しました。"
                             },
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,

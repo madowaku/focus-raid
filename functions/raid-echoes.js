@@ -20,21 +20,25 @@ async function recentEchoes(db, uid, raw = {}, now = Date.now()) {
   const generation = worldDoc.data().generation;
   if (!validGeneration(generation)) throw new HttpsError('unavailable', 'Raid generation unavailable');
 
+  // Scan beyond the visible limit so one very active person cannot occupy every
+  // camp light. The client still receives at most `limit` anonymous echoes.
   const snapshot = await db.collection(`raidEchoes/${generation}/events`)
     .orderBy('receivedAtEpochMillis', 'desc')
-    .limit(12)
+    .limit(24)
     .get();
   const oldest = now - 24 * 60 * 60 * 1000;
   const echoes = [];
+  const seenUids = new Set();
   for (const document of snapshot.docs) {
     const data = document.data();
-    if (data.uid === uid) continue;
+    if (typeof data.uid !== 'string' || data.uid.length === 0 || data.uid === uid || seenUids.has(data.uid)) continue;
     if (!Number.isInteger(data.creditedMinutes) || data.creditedMinutes < 5 || data.creditedMinutes > 180 ||
         !Number.isInteger(data.appliedDamage) || data.appliedDamage < 0 || data.appliedDamage > data.creditedMinutes ||
         !Number.isSafeInteger(data.completedAtEpochMillis) ||
         !Number.isSafeInteger(data.receivedAtEpochMillis) || data.receivedAtEpochMillis < oldest) {
       continue;
     }
+    seenUids.add(data.uid);
     echoes.push({
       focusMinutes: data.creditedMinutes,
       damage: data.appliedDamage,
