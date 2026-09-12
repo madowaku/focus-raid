@@ -18,7 +18,9 @@ async function client(signed=true){
   const fs=getFirestore(app);connectFirestoreEmulator(fs,'127.0.0.1',8080);
   const fn=getFunctions(app);connectFunctionsEmulator(fn,'127.0.0.1',5001);
   if(signed) await signInAnonymously(auth);
-  return {auth,fs,submit:async data=>(await httpsCallable(fn,'submitContribution')(data)).data};
+  return {auth,fs,
+    submit:async data=>(await httpsCallable(fn,'submitContribution')(data)).data,
+    echoes:async data=>(await httpsCallable(fn,'getRecentRaidEchoes')(data)).data};
 }
 function request(generation='N', minutes=5){const now=Date.now();return {sessionId:randomUUID(),generation,
   creditedMinutes:minutes,plannedMinutes:minutes,startedAtEpochMillis:now-minutes*60000,completedAtEpochMillis:now}}
@@ -27,6 +29,7 @@ async function seed(generation='N', hp=10000, starts=Date.now()-86400000){
     bossMaxHp:hp,totalFocusMinutes:0,raidParticipants:0,bossName:'環焔竜ヴォルガ'});
 }
 async function world(c){return (await getDoc(doc(c.fs,'world/current'))).data()}
+const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 test('A/B/C real callable: two identities converge, response loss and concurrent retries count once',async()=>{
   await seed();const a=await client(),b=await client();const payload=request(null);
   const results=await Promise.all(Array.from({length:8},()=>a.submit(payload)));
@@ -39,6 +42,26 @@ test('A/B/C real callable: two identities converge, response loss and concurrent
   assert.equal((await b.submit(payload)).status,'REJECTED');
   assert.equal((await a.submit({...payload,generation:'other'})).status,'REJECTED');
   assert.equal((await world(a)).totalFocusMinutes,10);
+});
+test('recent raid echoes are anonymous, distinct by contributor, exclude caller and remain server-only',async()=>{
+  await seed('echo');const a=await client(),b=await client(),c=await client();
+  const aPayload=request('echo',25),bOld=request('echo',25);
+  assert.equal((await a.submit(aPayload)).status,'ACCEPTED');
+  assert.equal((await b.submit(bOld)).status,'ACCEPTED');
+  await sleep(5);
+  const bLatest=request('echo',50);assert.equal((await b.submit(bLatest)).status,'ACCEPTED');
+  await sleep(5);
+  const cPayload=request('echo',45);assert.equal((await c.submit(cPayload)).status,'ACCEPTED');
+  const feed=await a.echoes({limit:3});
+  assert.equal(feed.generation,'echo');
+  assert.equal(feed.echoes.length,2);
+  for(const echo of feed.echoes) {
+    assert.deepEqual(Object.keys(echo).sort(),['ageMinutes','damage','focusMinutes']);
+    assert.ok(echo.ageMinutes>=0);
+  }
+  assert.deepEqual(feed.echoes.map(x=>x.focusMinutes).sort((x,y)=>x-y),[45,50]);
+  assert.deepEqual(feed.echoes.map(x=>x.damage).sort((x,y)=>x-y),[45,50]);
+  await assert.rejects(getDoc(doc(a.fs,`raidEchoes/echo/events/${cPayload.sessionId}`)),e=>e.code==='permission-denied');
 });
 test('D old bound/unbound sessions never damage replacement; receipt survives rotation',async()=>{
   await seed('old');const c=await client();const accepted=request('old');await c.submit(accepted);
@@ -59,6 +82,8 @@ test('E rules deny direct world/receipt/budget writes, other receipts and unsign
 test('E/F validation, unauthenticated, budget and configuration failures never report success',async()=>{
   await seed();const c=await client(),unsigned=await client(false);
   await assert.rejects(unsigned.submit(request()),e=>e.code==='functions/unauthenticated');
+  await assert.rejects(unsigned.echoes({limit:3}),e=>e.code==='functions/unauthenticated');
+  await assert.rejects(c.echoes({limit:4}),e=>e.code==='functions/invalid-argument');
   for(const change of [{damage:1000000},{creditedMinutes:181,plannedMinutes:181},{creditedMinutes:4},{generation:'bad/path'}]) {
     await assert.rejects(c.submit({...request(),...change}),e=>e.code==='functions/invalid-argument');
   }
@@ -68,6 +93,7 @@ test('E/F validation, unauthenticated, budget and configuration failures never r
   assert.equal((await world(c)).totalFocusMinutes,1440);
   await db.doc('world/current').delete();
   await assert.rejects(c.submit(request()),e=>e.code==='functions/unavailable');
+  await assert.rejects(c.echoes({limit:3}),e=>e.code==='functions/unavailable');
 });
 test('last hit clamps HP, retains full focus and ends raid',async()=>{
   await seed('last',3);const c=await client();const receipt=await c.submit(request('last'));

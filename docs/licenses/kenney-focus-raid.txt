@@ -1,0 +1,11 @@
+Focus Raid uses a small selection from these Kenney CC0 packs:
+
+- Light Masks (1.0)
+- Particle Pack (1.1)
+- Emotes
+- Impact Sounds
+- Interface Sounds
+
+Author: Kenney Vleugels (Kenney.nl). The packs are released under Creative Commons Zero (CC0). Attribution is not required; crediting Kenney / www.kenney.nl is appreciated.
+
+Only the selected files listed in docs/kenney-assets.md are shipped. The original ZIP files and unused pack contents remain outside the repository.

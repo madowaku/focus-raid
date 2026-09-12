@@ -61,6 +61,13 @@ async function contribute(db, uid, raw, now = Date.now()) {
           raidParticipants:count, status: w.bossHp === damage ? 'defeated' : 'active'});
         tx.set(budgetRef, {minutes:used+data.creditedMinutes});
         if (!participant.exists) tx.create(participantRef, {firstSessionId:data.sessionId});
+        tx.create(db.doc(`raidEchoes/${w.generation}/events/${data.sessionId}`), {
+          uid,
+          creditedMinutes:data.creditedMinutes,
+          appliedDamage:damage,
+          completedAtEpochMillis:data.completedAtEpochMillis,
+          receivedAtEpochMillis:now,
+        });
       }
     }
     tx.create(receiptRef, {uid, request:data, result, receivedAtEpochMillis:now});

@@ -1,6 +1,9 @@
 package com.madowaku.focusraid.ui
 
 import androidx.lifecycle.ViewModel
+import com.madowaku.focusraid.audio.Sfx
+import com.madowaku.focusraid.audio.SfxPlayer
+import com.madowaku.focusraid.audio.SilentSfxPlayer
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.madowaku.focusraid.core.domain.CompanionEvolution
@@ -77,6 +80,7 @@ class FocusViewModel(
     private val nowMillis: () -> Long = System::currentTimeMillis,
     private val contributions: kotlinx.coroutines.flow.Flow<List<com.madowaku.focusraid.data.WorldContribution>> = kotlinx.coroutines.flow.flowOf(emptyList()),
     private val scheduleContributions: () -> Unit = {},
+    private val sfx: SfxPlayer = SilentSfxPlayer,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(
         FocusUiState(
@@ -131,6 +135,58 @@ class FocusViewModel(
             restore()
             viewModelScope.launch { refreshWorldIfQuiet() }
         }
+    }
+
+    private var raidAudioSession: String? = null
+    private var raidVictorySession: String? = null
+    private var raidAudioJob: Job? = null
+    private var resultConfirmationEvent: String? = null
+
+    fun companionKnock() { sfx.play(Sfx.COMPANION_KNOCK) }
+
+    fun confirmResultAndReset() {
+        val current = _uiState.value
+        if (!canChange(SessionPhase.COMPLETED, SessionPhase.ABORTED)) return
+        val eventId = current.resultSessionId ?: "phase:${current.phase.name}"
+        if (resultConfirmationEvent == eventId) return
+        resultConfirmationEvent = eventId
+        sfx.play(Sfx.UI_CONFIRM, "$eventId:done")
+        resetAfterResult()
+    }
+
+    fun raidStrike(echoCount: Int) {
+        val state = _uiState.value
+        val id = state.resultSessionId ?: return
+        if (state.phase != SessionPhase.COMPLETED || raidAudioSession == id) return
+        raidAudioSession = id
+        sfx.play(Sfx.RAID_HIT_SELF, id)
+        raidAudioJob?.cancel()
+        raidAudioJob = viewModelScope.launch {
+            delay(520)
+            repeat(echoCount.coerceIn(0, 3)) { index ->
+                if (_uiState.value.resultSessionId != id) return@launch
+                sfx.play(Sfx.RAID_HIT_OTHER, "$id:$index", variant = index,
+                    volume = listOf(.8f, .65f, .9f)[index],
+                    pitch = listOf(.97f, 1.03f, .99f)[index])
+                delay(if (index == 0) 460 else 620)
+            }
+        }
+    }
+
+    fun raidVictory() {
+        val state = _uiState.value
+        val id = state.resultSessionId ?: return
+        if (state.phase != SessionPhase.COMPLETED || raidVictorySession == id) return
+        raidVictorySession = id
+        sfx.play(Sfx.RAID_VICTORY, "$id:victory")
+    }
+
+    fun setSoundEnabled(enabled: Boolean) { sfx.setEnabled(enabled) }
+
+    override fun onCleared() {
+        raidAudioJob?.cancel()
+        sfx.close()
+        super.onCleared()
     }
 
     fun selectCompanion(identity: com.madowaku.focusraid.core.domain.CompanionIdentity) {
@@ -241,6 +297,7 @@ class FocusViewModel(
             footprintsLoading = false, footprintLoadError = null, selectedFootprintPresetId = null,
             footprintPosting = false, footprintPosted = false, footprintPostError = null,
         )
+        sfx.play(Sfx.FOCUS_START, sessionId)
         scheduleSafely(end)
         startTicker()
     }
@@ -344,6 +401,7 @@ class FocusViewModel(
                     val entry = createEntry(saved.selectedMinutes, SessionPhase.COMPLETED)
                     preferences.stageFinishedSession(entry)
                     reconcileFinished(entry)
+                    sfx.play(Sfx.FOCUS_COMPLETE, entry.sessionId)
                 } else if (saved.phase == SessionPhase.RUNNING) {
                     scheduleSafely(saved.endEpochMillis)
                     startTicker()
@@ -411,6 +469,7 @@ class FocusViewModel(
         transition {
             preferences.stageFinishedSession(entry)
             reconcileFinished(checkNotNull(preferences.session.first().finishedEntry))
+            if (phase == SessionPhase.COMPLETED) sfx.play(Sfx.FOCUS_COMPLETE, entry.sessionId)
         }
     }
 
@@ -510,6 +569,7 @@ class FocusViewModel(
         private val alarmScheduler: SessionAlarm,
         private val contributions: kotlinx.coroutines.flow.Flow<List<com.madowaku.focusraid.data.WorldContribution>> = kotlinx.coroutines.flow.flowOf(emptyList()),
         private val scheduleContributions: () -> Unit = {},
+        private val sfx: SfxPlayer = SilentSfxPlayer,
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -520,6 +580,7 @@ class FocusViewModel(
                 alarmScheduler = alarmScheduler,
                 contributions = contributions,
                 scheduleContributions = scheduleContributions,
+                sfx = sfx,
             ) as T
         }
     }

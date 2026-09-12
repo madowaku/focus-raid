@@ -33,8 +33,9 @@ import com.madowaku.focusraid.data.FocusRaidDatabase
 import com.madowaku.focusraid.data.RoomSessionHistoryRepository
 import com.madowaku.focusraid.data.SessionPreferences
 import com.madowaku.focusraid.data.WorldRepositoryFactory
+import com.madowaku.focusraid.data.loadRecentRaidEchoes
 import com.madowaku.focusraid.timer.FocusAlarmScheduler
-import com.madowaku.focusraid.ui.FocusRaidRoot
+import com.madowaku.focusraid.ui.FocusRaidV06Root
 import com.madowaku.focusraid.ui.FocusSystemAccess
 import com.madowaku.focusraid.ui.FocusViewModel
 import com.madowaku.focusraid.ui.theme.FocusRaidTheme
@@ -65,6 +66,7 @@ class MainActivity : ComponentActivity() {
             worldRepository = worldRepository,
             sessionHistoryRepository = RoomSessionHistoryRepository(database.focusSessionDao()) { ContributionWorker.schedule(applicationContext) },
             alarmScheduler = FocusAlarmScheduler(applicationContext),
+            sfx = com.madowaku.focusraid.audio.SoundPoolSfxPlayer(applicationContext),
             contributions = database.contributionDao().observeAll(),
             scheduleContributions = { ContributionWorker.schedule(applicationContext) },
         )
@@ -91,10 +93,11 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             FocusRaidTheme {
-                FocusRaidRoot(
+                FocusRaidV06Root(
                     viewModel = viewModel,
                     proAccessViewModel = proAccessViewModel,
                     systemAccess = systemAccess,
+                    loadRaidEchoes = { worldRepository.loadRecentRaidEchoes() },
                     onRequestNotificationPermission = ::requestNotificationAccess,
                     onRequestExactAlarmPermission = ::requestExactAlarmAccess,
                     onPurchasePro = { proAccessViewModel.purchasePro(this) },
