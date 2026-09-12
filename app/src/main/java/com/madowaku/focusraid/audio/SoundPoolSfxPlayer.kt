@@ -67,11 +67,11 @@ class SoundPoolSfxPlayer(context: Context) : SfxPlayer {
         val ids = samples.getValue(sound)
         val id = ids[Math.floorMod(variant, ids.size)]
         val base = when (sound) {
-            Sfx.FOCUS_COMPLETE -> .8f
-            Sfx.RAID_HIT_SELF -> .65f
-            Sfx.RAID_VICTORY -> .65f
-            Sfx.FOCUS_START, Sfx.UI_CONFIRM, Sfx.COMPANION_KNOCK -> .5f
-            Sfx.RAID_HIT_OTHER -> .32f
+            Sfx.FOCUS_COMPLETE -> .24f
+            Sfx.RAID_HIT_SELF -> .22f
+            Sfx.RAID_VICTORY -> .26f
+            Sfx.FOCUS_START, Sfx.UI_CONFIRM, Sfx.COMPANION_KNOCK -> .20f
+            Sfx.RAID_HIT_OTHER -> .20f
         }
         val gain = base * volume.coerceIn(0f, 1f)
         val rate = pitch.coerceIn(.9f, 1.1f)

@@ -1,0 +1,14 @@
+UI SFX audio used by Focus Raid
+
+Source: https://uisfx.com/
+Canonical repository: https://github.com/romainsimon/uisfx
+Pinned source commit: 9950fe66f993a6660dab9c2651dcbcd899ffd83b
+Package: packages/uisfx, version 0.4.0
+Selected pack: sounds/zen
+
+License: CC0-1.0 (public-domain dedication)
+License text: https://creativecommons.org/publicdomain/zero/1.0/legalcode
+
+The selected nine OGG files are mapped to the existing Focus Raid
+fr_sfx_*.ogg resources. The source package's LICENSE-AUDIO was reviewed before
+import. Attribution is not required; this notice records provenance.
