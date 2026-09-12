@@ -25,6 +25,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -40,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -50,8 +52,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.madowaku.focusraid.billing.FeatureAccess
 import com.madowaku.focusraid.core.domain.CompanionGrowth
+import com.madowaku.focusraid.core.domain.CompanionStage
 import com.madowaku.focusraid.core.model.Expedition
 import com.madowaku.focusraid.core.model.SessionPhase
+import com.madowaku.focusraid.data.RaidEcho
 
 @Composable
 internal fun FocusRaidSignatureContent(
@@ -68,10 +72,12 @@ internal fun FocusRaidSignatureContent(
     onFinishEarly: () -> Unit,
     onAgain: () -> Unit,
     onDone: () -> Unit,
+    recentEchoes: List<RaidEcho> = emptyList(),
 ) {
     when {
         state.phase == SessionPhase.READY && tab == MainTab.HOME -> SignatureReadyScreen(
             state = state,
+            recentEchoes = recentEchoes,
             onTabChange = onTabChange,
             onSelectMinutes = onSelectMinutes,
             onSelectExpedition = onSelectExpedition,
@@ -107,6 +113,7 @@ internal fun FocusRaidSignatureContent(
 @Composable
 private fun SignatureReadyScreen(
     state: FocusUiState,
+    recentEchoes: List<RaidEcho>,
     onTabChange: (MainTab) -> Unit,
     onSelectMinutes: (Int) -> Unit,
     onSelectExpedition: (Expedition) -> Unit,
@@ -122,13 +129,12 @@ private fun SignatureReadyScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .statusBarsPadding()
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 SignatureTopBar(state)
-                SignatureRaidHero(state)
+                SignatureRaidHero(state, recentEchoes)
                 SignatureCompanionRow(state)
 
                 Button(
@@ -212,8 +218,22 @@ private fun SignatureTopBar(state: FocusUiState) {
 }
 
 @Composable
-private fun SignatureRaidHero(state: FocusUiState) {
+private fun SignatureRaidHero(
+    state: FocusUiState,
+    recentEchoes: List<RaidEcho>,
+) {
     val world = state.world
+    val bossPresentation = signatureBossPresentation(world.bossHp, world.bossMaxHp)
+    val quietWorld = world.focusNow.coerceAtLeast(0) == 0 &&
+        world.raidParticipants.coerceAtLeast(0) == 0
+    val lowHp = world.bossHp > 0 && world.bossMaxHp > 0 &&
+        world.bossHp.toFloat() / world.bossMaxHp.toFloat() <= .25f
+    val compactEchoes = recentEchoes.isNotEmpty()
+    val artworkBoxSize = if (compactEchoes) 122.dp else 132.dp
+    val artworkSize = if (compactEchoes) 116.dp else 126.dp
+    val heroPadding = if (compactEchoes) 10.dp else 14.dp
+    val copyVerticalPadding = if (compactEchoes) 6.dp else 8.dp
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(30.dp),
@@ -221,7 +241,7 @@ private fun SignatureRaidHero(state: FocusUiState) {
             containerColor = MaterialTheme.colorScheme.surface.copy(alpha = .90f),
         ),
     ) {
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
@@ -233,66 +253,143 @@ private fun SignatureRaidHero(state: FocusUiState) {
                         ),
                     ),
                 )
-                .padding(16.dp),
+                .padding(horizontal = 16.dp, vertical = heroPadding),
         ) {
-            Column(Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        "WORLD RAID",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Spacer(Modifier.height(3.dp))
+                    Text(
+                        world.bossName,
+                        fontSize = 21.sp,
+                        fontWeight = FontWeight.Black,
+                    )
+                    Spacer(Modifier.height(9.dp))
+                    SignatureHpBar(world.bossHp, world.bossMaxHp)
+                    Spacer(Modifier.height(5.dp))
+                    Text(
+                        "${signatureComma(world.bossHp)} / ${signatureComma(world.bossMaxHp)} HP",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .size(artworkBoxSize)
+                        .offset(x = 4.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(artworkBoxSize)
+                            .background(
+                                Brush.radialGradient(
+                                    listOf(
+                                        MaterialTheme.colorScheme.secondary.copy(alpha = .28f),
+                                        MaterialTheme.colorScheme.primary.copy(alpha = .10f),
+                                        Color.Transparent,
+                                    ),
+                                ),
+                                CircleShape,
+                            ),
+                    )
+                    BossArtwork(
+                        modifier = Modifier.size(artworkSize),
+                        presentation = bossPresentation,
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(if (compactEchoes) 4.dp else 6.dp))
+            Surface(
+                shape = RoundedCornerShape(18.dp),
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = .62f),
+            ) {
+                Text(
+                    when {
+                        lowHp -> "あと少し。世界中の集中が押し込んでいる"
+                        bossPresentation == BossPresentation.Defeated -> "このRaidは討伐済み。次の旅を待っています"
+                        else -> "${state.selectedMinutes}分集中すると、この世界へ一撃が届く。"
+                    },
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = copyVerticalPadding),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+            Spacer(Modifier.height(if (compactEchoes) 6.dp else 8.dp))
+            if (quietWorld) {
+                Text(
+                    if (world.totalFocusMinutes > 0L) {
+                        "これまで${signatureCommaLong(world.totalFocusMinutes)}分の集中が届いた"
+                    } else {
+                        "あなたの${state.selectedMinutes}分から、このRaidが動き出す"
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Column(Modifier.weight(1f)) {
+                    Text(
+                        "いま ${signatureComma(world.focusNow.coerceAtLeast(0))}人が集中中",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        "${signatureComma(world.raidParticipants.coerceAtLeast(0))}人が参加",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            if (recentEchoes.isNotEmpty()) {
+                Spacer(Modifier.height(6.dp))
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(18.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .34f),
+                ) {
+                    Column(Modifier.padding(horizontal = 11.dp, vertical = 6.dp)) {
                         Text(
-                            "WORLD RAID",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold,
-                        )
-                        Spacer(Modifier.height(3.dp))
-                        Text(
-                            world.bossName,
-                            fontSize = 21.sp,
-                            fontWeight = FontWeight.Black,
-                        )
-                        Spacer(Modifier.height(9.dp))
-                        SignatureHpBar(world.bossHp, world.bossMaxHp)
-                        Spacer(Modifier.height(5.dp))
-                        Text(
-                            "${signatureComma(world.bossHp)} / ${signatureComma(world.bossMaxHp)} HP",
+                            "最近届いた集中",
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Bold,
                         )
+                        Spacer(Modifier.height(4.dp))
+                        recentEchoes.take(3).forEach { echo ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 20.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                SignatureRaidLight()
+                                Spacer(Modifier.size(7.dp))
+                                Text(echo.relativeLabel, fontSize = 11.sp)
+                                Spacer(Modifier.weight(1f))
+                                Text(
+                                    "+${echo.focusMinutes.coerceAtLeast(0)}分",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.tertiary,
+                                )
+                            }
+                        }
                     }
-                    BossArtwork(Modifier.size(92.dp))
-                }
-
-                Spacer(Modifier.height(10.dp))
-                Surface(
-                    shape = RoundedCornerShape(18.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = .62f),
-                ) {
-                    Text(
-                        "${state.selectedMinutes}分集中すると、この世界へ一撃が届く。",
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                }
-                Spacer(Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Text(
-                        "いま ${signatureComma(world.focusNow)}人が集中中",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        "${signatureComma(world.raidParticipants)}人が参加",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
                 }
             }
         }
@@ -301,44 +398,42 @@ private fun SignatureRaidHero(state: FocusUiState) {
 
 @Composable
 private fun SignatureCompanionRow(state: FocusUiState) {
-    val stage = CompanionGrowth.from(state.totalFocusMinutes).stage
+    val growth = CompanionGrowth.from(state.totalFocusMinutes)
+    val identity = LocalCompanionIdentity.current
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .52f),
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             CompanionArtwork(
-                modifier = Modifier.size(52.dp),
-                stage = stage,
+                modifier = Modifier.size(82.dp),
+                stage = growth.stage,
                 mood = CompanionMood.Idle,
             )
-            Spacer(Modifier.size(10.dp))
+            Spacer(Modifier.size(9.dp))
             Column(Modifier.weight(1f)) {
                 Text(
-                    "${LocalCompanionIdentity.current.label}と出発の支度",
+                    "${identity.label}  ·  ${growth.stage.label}",
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,
                 )
                 Text(
-                    "${stage.label} · 累計 ${state.totalFocusMinutes}分",
+                    companionStatusCopy(identity.label, growth),
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                growth.nextStageLabel?.let { nextStage ->
+                    Text(
+                        "あと${growth.remainingMinutes}分で$nextStage",
+                        fontSize = 10.sp,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
             }
-            Text(
-                when (state.expedition) {
-                    Expedition.TOWER -> "天空塔へ"
-                    Expedition.ABYSS -> "深層へ"
-                    Expedition.STAR_ROUTE -> "星渡りへ"
-                },
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.SemiBold,
-            )
         }
     }
 }
@@ -604,7 +699,14 @@ private fun SignatureJourneyRail(
                     .offset(y = 43.dp)
                     .height(3.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary),
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(
+                                MaterialTheme.colorScheme.primary.copy(alpha = if (paused) .28f else .54f),
+                                MaterialTheme.colorScheme.tertiary.copy(alpha = if (paused) .34f else .72f),
+                            ),
+                        ),
+                    ),
             )
 
             Row(
@@ -636,7 +738,7 @@ private fun SignatureJourneyRail(
             val travelerX = 4.dp + (maxWidth - 76.dp) * safeProgress
             CompanionArtwork(
                 modifier = Modifier
-                    .offset(x = travelerX, y = 2.dp)
+                    .offset(x = travelerX, y = 16.dp)
                     .size(44.dp),
                 stage = stage,
                 mood = if (paused) CompanionMood.Idle else CompanionMood.Focused,
@@ -716,7 +818,13 @@ private fun SignatureFocusWorldCard(state: FocusUiState) {
                 )
             }
             Spacer(Modifier.size(10.dp))
-            BossArtwork(Modifier.size(50.dp))
+            BossArtwork(
+                Modifier.size(50.dp),
+                presentation = signatureBossPresentation(
+                    state.world.bossHp,
+                    state.world.bossMaxHp,
+                ),
+            )
         }
     }
 }
@@ -754,7 +862,13 @@ private fun SignatureBottomNavigation(
             NavigationBarItem(
                 selected = selected == item,
                 onClick = { onTabChange(item) },
-                icon = { Text(item.glyph, fontSize = 20.sp) },
+                icon = {
+                    Icon(
+                        painter = painterResource(item.iconRes),
+                        contentDescription = item.label,
+                        modifier = Modifier.size(24.dp),
+                    )
+                },
                 label = { Text(item.label, fontSize = 11.sp) },
                 colors = NavigationBarItemDefaults.colors(
                     indicatorColor = MaterialTheme.colorScheme.primaryContainer,
@@ -765,7 +879,7 @@ private fun SignatureBottomNavigation(
 }
 
 @Composable
-private fun SignatureBackdrop(content: @Composable () -> Unit) {
+internal fun SignatureBackdrop(content: @Composable () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -783,6 +897,41 @@ private fun SignatureBackdrop(content: @Composable () -> Unit) {
     }
 }
 
+@Composable
+internal fun SignatureRaidLight(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .size(8.dp)
+            .background(
+                Brush.radialGradient(
+                    listOf(
+                        Color.White.copy(alpha = .96f),
+                        MaterialTheme.colorScheme.tertiary.copy(alpha = .92f),
+                        Color.Transparent,
+                    ),
+                ),
+                CircleShape,
+            ),
+    )
+}
+
+internal fun signatureBossPresentation(current: Int, max: Int): BossPresentation {
+    if (current <= 0) return BossPresentation.Defeated
+    if (max <= 0) return BossPresentation.Damaged
+    return if (current.toFloat() / max.toFloat() > .5f) {
+        BossPresentation.Normal
+    } else {
+        BossPresentation.Damaged
+    }
+}
+
+private fun companionStatusCopy(name: String, growth: com.madowaku.focusraid.core.domain.CompanionGrowthStatus): String =
+    when (growth.stage) {
+        CompanionStage.EGG -> "${name}は出発を待っている"
+        CompanionStage.MATURE -> "${name}は次の旅を待っている"
+        else -> "${name}は一緒に進む準備ができている"
+    }
+
 internal fun signatureJourneyIndex(progress: Float): Int =
     (progress.coerceIn(0f, 1f) * 5f).toInt().coerceIn(0, 4)
 
@@ -797,3 +946,5 @@ private fun signatureClock(totalSeconds: Int): String {
 }
 
 private fun signatureComma(value: Int): String = "%,d".format(value)
+
+private fun signatureCommaLong(value: Long): String = "%,d".format(value.coerceAtLeast(0L))

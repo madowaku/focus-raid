@@ -17,6 +17,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -27,6 +28,10 @@ import com.madowaku.focusraid.billing.PurchaseState
 import com.madowaku.focusraid.core.domain.StarRoute
 import com.madowaku.focusraid.core.model.Expedition
 import com.madowaku.focusraid.core.model.SessionPhase
+import com.madowaku.focusraid.data.RaidEcho
+import com.madowaku.focusraid.data.WorldSyncStatus
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * v0.7 product shell. It intentionally reuses persistence, billing, completion,
@@ -42,6 +47,7 @@ fun FocusRaidSignatureRoot(
     onRequestExactAlarmPermission: () -> Unit = {},
     onPurchasePro: () -> Unit = {},
     onRestorePurchases: () -> Unit = {},
+    loadRecentRaidEchoes: suspend () -> List<RaidEcho> = { emptyList() },
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val proAccess by proAccessViewModel.access.collectAsStateWithLifecycle()
@@ -54,6 +60,28 @@ fun FocusRaidSignatureRoot(
     var showFootprintDialog by rememberSaveable { mutableStateOf(false) }
     var showProPaywall by rememberSaveable { mutableStateOf(false) }
     var pendingProExpeditionName by rememberSaveable { mutableStateOf<String?>(null) }
+    var recentRaidEchoes by remember { mutableStateOf<List<RaidEcho>>(emptyList()) }
+
+    LaunchedEffect(state.phase, state.worldSyncStatus) {
+        if (state.phase != SessionPhase.READY) {
+            recentRaidEchoes = emptyList()
+            return@LaunchedEffect
+        }
+        if (state.worldSyncStatus != WorldSyncStatus.LIVE) {
+            recentRaidEchoes = emptyList()
+            return@LaunchedEffect
+        }
+
+        recentRaidEchoes = try {
+            withTimeoutOrNull(5_000) { loadRecentRaidEchoes() }
+                ?.take(3)
+                .orEmpty()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
 
     val openProPaywallFor: (Expedition?) -> Unit = { requestedExpedition ->
         pendingProExpeditionName = requestedExpedition?.name
@@ -151,6 +179,7 @@ fun FocusRaidSignatureRoot(
                 FocusRaidSignatureContent(
                     state = state.copy(phase = animatedPhase),
                     tab = tab,
+                    recentEchoes = recentRaidEchoes,
                     onTabChange = { tab = it },
                     onSelectCompanion = viewModel::selectCompanion,
                     onSelectMinutes = viewModel::selectMinutes,

@@ -42,6 +42,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -68,6 +69,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -75,6 +77,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.madowaku.focusraid.R
 import com.madowaku.focusraid.billing.FeatureAccess
 import com.madowaku.focusraid.core.domain.CompanionEvolution
 import com.madowaku.focusraid.core.domain.CompanionGrowth
@@ -86,11 +89,11 @@ import com.madowaku.focusraid.core.model.SessionReward
 import kotlin.math.max
 import kotlinx.coroutines.delay
 
-internal enum class MainTab(val label: String, val glyph: String) {
-    HOME("ホーム", "⌂"),
-    RAID("レイド", "⚔"),
-    COMPANION("相棒", "◆"),
-    LOG("ログ", "▤"),
+internal enum class MainTab(val label: String, val iconRes: Int) {
+    HOME("ホーム", R.drawable.ic_nav_home),
+    RAID("レイド", R.drawable.ic_nav_raid),
+    COMPANION("相棒", R.drawable.ic_nav_companion),
+    LOG("ログ", R.drawable.ic_nav_log),
 }
 
 private enum class OverviewArtwork {
@@ -169,7 +172,13 @@ internal fun FocusRaidAppContent(
                         NavigationBarItem(
                             selected = tab == item,
                             onClick = { onTabChange(item) },
-                            icon = { Text(item.glyph, fontSize = 20.sp) },
+                            icon = {
+                                Icon(
+                                    painter = painterResource(item.iconRes),
+                                    contentDescription = item.label,
+                                    modifier = Modifier.size(24.dp),
+                                )
+                            },
                             label = { Text(item.label, fontSize = 11.sp) },
                             colors = NavigationBarItemDefaults.colors(
                                 indicatorColor = MaterialTheme.colorScheme.primaryContainer,

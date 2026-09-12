@@ -106,7 +106,11 @@ private fun KenneyVfxLayer(
         .clearAndSetSemantics { }
 
     BoxWithConstraints(overlayModifier) {
-        val artworkSize = minOf(maxWidth * .58f, 220.dp)
+        val artworkSize = if (mode == KenneyVfxMode.RAID_IMPACT) {
+            minOf(maxWidth * .42f, 160.dp)
+        } else {
+            minOf(maxWidth * .58f, 220.dp)
+        }
         val anchorModifier = if (anchorTop == null) {
             Modifier.align(Alignment.Center)
         } else {
@@ -127,7 +131,7 @@ private fun KenneyVfxLayer(
                 modifier = Modifier
                     .fillMaxSize()
                     .graphicsLayer {
-                        alpha = flash * if (mode == KenneyVfxMode.COMPLETION) .34f else .24f
+                        alpha = flash * if (mode == KenneyVfxMode.COMPLETION) .34f else .18f
                         val scale = if (mode == KenneyVfxMode.COMPLETION) {
                             .68f + flash * .28f
                         } else {
@@ -145,7 +149,7 @@ private fun KenneyVfxLayer(
                 modifier = Modifier
                     .fillMaxSize()
                     .graphicsLayer {
-                        alpha = flash * if (mode == KenneyVfxMode.COMPLETION) .52f else .68f
+                        alpha = flash * if (mode == KenneyVfxMode.COMPLETION) .52f else .50f
                         val scale = if (mode == KenneyVfxMode.COMPLETION) {
                             .56f + flash * .62f
                         } else {
@@ -165,7 +169,7 @@ private fun KenneyVfxLayer(
                     modifier = Modifier
                         .fillMaxSize()
                         .graphicsLayer {
-                            alpha = flash * .44f
+                            alpha = flash * .30f
                             val scale = .44f + flash * .50f
                             scaleX = scale
                             scaleY = scale

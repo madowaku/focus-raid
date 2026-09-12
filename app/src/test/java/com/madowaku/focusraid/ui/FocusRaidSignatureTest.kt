@@ -21,4 +21,12 @@ class FocusRaidSignatureTest {
         assertEquals("45分、出発する", signatureDepartureLabel(45, Expedition.ABYSS))
         assertEquals("✦  25分、星渡りへ", signatureDepartureLabel(25, Expedition.STAR_ROUTE))
     }
+
+    @Test
+    fun bossPresentationFollowsHpRatio() {
+        assertEquals(BossPresentation.Normal, signatureBossPresentation(51, 100))
+        assertEquals(BossPresentation.Damaged, signatureBossPresentation(50, 100))
+        assertEquals(BossPresentation.Damaged, signatureBossPresentation(1, 100))
+        assertEquals(BossPresentation.Defeated, signatureBossPresentation(0, 100))
+    }
 }

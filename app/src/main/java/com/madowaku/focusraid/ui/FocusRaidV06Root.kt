@@ -216,7 +216,8 @@ fun FocusRaidV06Root(
 
     ReturnRaidSequence(
         scenario = scenario,
-        onStrikeAudio = { viewModel.raidStrike(scenario.echoes.size) },
+        onEchoAudio = viewModel::raidEcho,
+        onStrikeAudio = viewModel::raidSelfStrike,
         onVictoryAudio = viewModel::raidVictory,
         onFootprints = { showFootprints = true },
         onAgain = viewModel::startAgain,
