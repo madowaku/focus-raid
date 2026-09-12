@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModelStore
 import com.madowaku.focusraid.core.model.*
 import com.madowaku.focusraid.data.*
 import com.madowaku.focusraid.timer.SessionAlarm
+import com.madowaku.focusraid.audio.Sfx
+import com.madowaku.focusraid.audio.SfxPlayer
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.test.*
@@ -19,6 +21,12 @@ class FocusViewModelTest {
     private var now = 1_000_000L
     private val store = MemorySessionStore()
     private val history = MemoryHistory()
+    private val sounds = mutableListOf<Sfx>()
+    private val audio = object : SfxPlayer {
+        override fun play(sound: Sfx, eventId: String?, variant: Int, volume: Float, pitch: Float) {
+            sounds += sound
+        }
+    }
     private val alarm = object : SessionAlarm {
         var end = 0L
         override fun schedule(endEpochMillis: Long) { end = endEpochMillis }
@@ -30,9 +38,67 @@ class FocusViewModelTest {
     @Before fun setup() { Dispatchers.setMain(dispatcher) }
     @After fun teardown() { models.forEach { it.clear() }; Dispatchers.resetMain() }
     private fun vm(world: WorldRepository = FakeWorldRepository()): FocusViewModel =
-        FocusViewModel(store, world, history, alarm, { now }).also {
+        FocusViewModel(store, world, history, alarm, { now }, sfx = audio).also {
             models += ViewModelStore().apply { put("focus", it) }
         }
+
+    @Test fun `audio start and completion happen once even with repeated commands and collectors`() = scenario {
+        val model = vm(); runCurrent()
+        model.start(); model.start(); runCurrent()
+        assertEquals(listOf(Sfx.FOCUS_START), sounds)
+        model.uiState.first(); model.uiState.first()
+        now += 1_500_000; advanceTimeBy(250); runCurrent()
+        model.finishEarly(); model.uiState.first(); advanceTimeBy(1_000); runCurrent()
+        assertEquals(listOf(Sfx.FOCUS_START, Sfx.FOCUS_COMPLETE), sounds)
+        models.first().clear()
+        vm(); runCurrent()
+        assertEquals(1, sounds.count { it == Sfx.FOCUS_COMPLETE })
+    }
+
+    @Test fun `aborted session never plays completion and restoration never plays start`() = scenario {
+        val model = vm(); runCurrent(); model.start(); runCurrent()
+        now += 60_000; model.finishEarly(); runCurrent()
+        assertEquals(listOf(Sfx.FOCUS_START), sounds)
+        models.first().clear(); vm(); runCurrent()
+        assertEquals(listOf(Sfx.FOCUS_START), sounds)
+    }
+
+    @Test fun `raid audio is staggered and duplicate strike cannot replay it`() = scenario {
+        val model = vm(); runCurrent(); model.start(); runCurrent()
+        now += 1_500_000; advanceTimeBy(250); runCurrent(); sounds.clear()
+        model.raidStrike(3); model.raidStrike(3); runCurrent()
+        assertEquals(listOf(Sfx.RAID_HIT_SELF), sounds)
+        advanceTimeBy(519); runCurrent(); assertEquals(1, sounds.size)
+        advanceTimeBy(1_300); runCurrent()
+        assertEquals(3, sounds.count { it == Sfx.RAID_HIT_OTHER })
+        assertEquals(1, sounds.count { it == Sfx.RAID_HIT_SELF })
+    }
+
+    @Test fun `raid with no other contributions has no imaginary other hits`() = scenario {
+        val model = vm(); runCurrent(); model.start(); runCurrent()
+        now += 1_500_000; advanceTimeBy(250); runCurrent(); sounds.clear()
+        model.raidStrike(0); advanceTimeBy(2_000); runCurrent()
+        assertEquals(listOf(Sfx.RAID_HIT_SELF), sounds)
+    }
+
+    @Test fun `raid victory audio is claimed once per completed result`() = scenario {
+        val model = vm(); runCurrent(); model.start(); runCurrent()
+        now += 1_500_000; advanceTimeBy(250); runCurrent(); sounds.clear()
+        model.raidVictory(); model.raidVictory(); runCurrent()
+        assertEquals(listOf(Sfx.RAID_VICTORY), sounds)
+    }
+
+    @Test fun `result confirmation sound is one shot under rapid repeated CTA taps`() = scenario {
+        val model = vm(); runCurrent(); model.start(); runCurrent()
+        now += 60_000; model.finishEarly(); runCurrent(); sounds.clear()
+
+        model.confirmResultAndReset()
+        model.confirmResultAndReset()
+        runCurrent()
+
+        assertEquals(listOf(Sfx.UI_CONFIRM), sounds)
+        assertEquals(SessionPhase.READY, model.uiState.value.phase)
+    }
 
     @Test fun `generation and start time freeze across pause process restart and world rotation`() = scenario {
         val snapshot = MutableStateFlow(WorldSnapshot(generation = "N"))

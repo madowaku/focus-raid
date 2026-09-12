@@ -77,8 +77,9 @@ fun FocusRaidV06Root(
             totalFocusMinutes = state.totalFocusMinutes,
             creditedMinutes = reward?.creditedMinutes ?: 25,
             companion = state.companion,
+            onKnock = viewModel::companionKnock,
             onAgain = viewModel::startAgain,
-            onDone = viewModel::resetAfterResult,
+            onDone = viewModel::confirmResultAndReset,
         )
         return
     }
@@ -215,9 +216,11 @@ fun FocusRaidV06Root(
 
     ReturnRaidSequence(
         scenario = scenario,
+        onStrikeAudio = { viewModel.raidStrike(scenario.echoes.size) },
+        onVictoryAudio = viewModel::raidVictory,
         onFootprints = { showFootprints = true },
         onAgain = viewModel::startAgain,
-        onDone = viewModel::resetAfterResult,
+        onDone = viewModel::confirmResultAndReset,
     )
 
     if (showFootprints) {

@@ -52,9 +52,12 @@ internal fun ReturnRaidSequence(
     onFootprints: () -> Unit,
     onAgain: () -> Unit,
     onDone: () -> Unit,
+    onStrikeAudio: () -> Unit = {},
+    onVictoryAudio: () -> Unit = {},
 ) {
     val machine = remember(scenario) { ReturnRaidSequenceStateMachine(scenario) }
     var state by remember(scenario) { mutableStateOf(machine.state) }
+    var impactTrigger by remember(scenario) { mutableStateOf(0) }
     val displayedHp = remember(scenario) { Animatable(scenario.initialDisplayedHp.toFloat()) }
     val haptics = LocalHapticFeedback.current
 
@@ -85,6 +88,7 @@ internal fun ReturnRaidSequence(
             }
 
             ReturnRaidPhase.RESULT -> {
+                if (state.armorBroken) onVictoryAudio()
                 delay(1_050)
                 state = machine.advance()
             }
@@ -109,47 +113,55 @@ internal fun ReturnRaidSequence(
         )
         Spacer(Modifier.height(8.dp))
 
-        AnimatedContent(
-            targetState = state.phase,
-            transitionSpec = { fadeIn(tween(220)) togetherWith fadeOut(tween(160)) },
-            label = "first-raid-phase",
-            modifier = Modifier.weight(1f),
-        ) { phase ->
-            when (phase) {
-                ReturnRaidPhase.RETURNING -> ReturnMoment(scenario)
-                ReturnRaidPhase.ECHO -> EchoMoment(
-                    scenario = scenario,
-                    state = state,
-                    displayedHp = displayedHp.value.toInt(),
-                )
+        Box(modifier = Modifier.weight(1f)) {
+            AnimatedContent(
+                targetState = state.phase,
+                transitionSpec = { fadeIn(tween(220)) togetherWith fadeOut(tween(160)) },
+                label = "first-raid-phase",
+                modifier = Modifier.fillMaxSize(),
+            ) { phase ->
+                when (phase) {
+                    ReturnRaidPhase.RETURNING -> ReturnMoment(scenario)
+                    ReturnRaidPhase.ECHO -> EchoMoment(
+                        scenario = scenario,
+                        state = state,
+                        displayedHp = displayedHp.value.toInt(),
+                    )
 
-                ReturnRaidPhase.YOUR_TURN -> YourTurnMoment(
-                    scenario = scenario,
-                    displayedHp = displayedHp.value.toInt(),
-                    onStrike = {
-                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                        state = machine.strike()
-                    },
-                )
+                    ReturnRaidPhase.YOUR_TURN -> YourTurnMoment(
+                        scenario = scenario,
+                        displayedHp = displayedHp.value.toInt(),
+                        onStrike = {
+                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                            if (state.phase == ReturnRaidPhase.YOUR_TURN) {
+                                onStrikeAudio()
+                                impactTrigger += 1
+                                state = machine.strike()
+                            }
+                        },
+                    )
 
-                ReturnRaidPhase.STRIKING -> StrikeMoment(
-                    scenario = scenario,
-                    displayedHp = displayedHp.value.toInt(),
-                )
+                    ReturnRaidPhase.STRIKING -> StrikeMoment(
+                        scenario = scenario,
+                        displayedHp = displayedHp.value.toInt(),
+                    )
 
-                ReturnRaidPhase.RESULT -> ResultMoment(
-                    scenario = scenario,
-                    state = state,
-                    displayedHp = displayedHp.value.toInt(),
-                )
+                    ReturnRaidPhase.RESULT -> ResultMoment(
+                        scenario = scenario,
+                        state = state,
+                        displayedHp = displayedHp.value.toInt(),
+                    )
 
-                ReturnRaidPhase.CAMP -> CampMoment(
-                    scenario = scenario,
-                    onFootprints = onFootprints,
-                    onAgain = onAgain,
-                    onDone = onDone,
-                )
+                    ReturnRaidPhase.CAMP -> CampMoment(
+                        scenario = scenario,
+                        onFootprints = onFootprints,
+                        onAgain = onAgain,
+                        onDone = onDone,
+                    )
+                }
             }
+            KenneyCompletionOverlay(triggerKey = "raid-completion-${scenario.hashCode()}")
+            KenneyRaidImpactOverlay(trigger = impactTrigger)
         }
     }
 }

@@ -23,6 +23,7 @@ class FocusAlarmReceiver : BroadcastReceiver() {
                     FocusCompletionNotifier.show(
                         context = context,
                         focusedMinutes = saved.selectedMinutes,
+                        sessionId = saved.sessionId,
                     )
                 }
             } catch (_: java.io.IOException) {

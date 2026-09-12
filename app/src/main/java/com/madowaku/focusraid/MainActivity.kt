@@ -66,6 +66,7 @@ class MainActivity : ComponentActivity() {
             worldRepository = worldRepository,
             sessionHistoryRepository = RoomSessionHistoryRepository(database.focusSessionDao()) { ContributionWorker.schedule(applicationContext) },
             alarmScheduler = FocusAlarmScheduler(applicationContext),
+            sfx = com.madowaku.focusraid.audio.SoundPoolSfxPlayer(applicationContext),
             contributions = database.contributionDao().observeAll(),
             scheduleContributions = { ContributionWorker.schedule(applicationContext) },
         )

@@ -54,6 +54,7 @@ internal fun BeginningLightMoment(
     companion: CompanionIdentity,
     onAgain: () -> Unit,
     onDone: () -> Unit,
+    onKnock: () -> Unit = {},
 ) {
     val status = BeginningLight.from(totalFocusMinutes)
     var touched by rememberSaveable { mutableStateOf(false) }
@@ -144,6 +145,7 @@ internal fun BeginningLightMoment(
                                 Modifier
                             } else {
                                 Modifier.clickable {
+                                    onKnock()
                                     touched = true
                                     haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                                 }
@@ -237,6 +239,10 @@ internal fun BeginningLightMoment(
                 }
                 Spacer(Modifier.height(12.dp))
             }
+            KenneyCompletionOverlay(
+                triggerKey = "beginning-light-$totalFocusMinutes-$creditedMinutes",
+                anchorTop = 128.dp,
+            )
         }
     }
 }

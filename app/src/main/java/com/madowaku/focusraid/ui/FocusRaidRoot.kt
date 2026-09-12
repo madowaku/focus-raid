@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.Image
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -21,6 +22,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -38,6 +40,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.madowaku.focusraid.billing.AccessLevel
@@ -194,8 +198,12 @@ fun FocusRaidRoot(
                         if (FeatureAccess.canUse(state.expedition, proAccess.accessLevel)) viewModel.startAgain()
                         else { viewModel.resetAfterResult(); openProPaywallFor(state.expedition) }
                     },
-                    onDone = viewModel::resetAfterResult,
+                    onDone = viewModel::confirmResultAndReset,
                 )
+            }
+
+            if (state.phase == SessionPhase.COMPLETED) {
+                KenneyCompletionOverlay(triggerKey = state.resultSessionId)
             }
 
 
@@ -328,10 +336,21 @@ internal fun FootprintDialog(
 
                     else -> {
                         state.footprints.take(3).forEach { footprint ->
-                            Text(
-                                "${footprint.glyph}  ${footprint.text}  ·  ${footprint.relativeLabel}",
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
+                            val emoteResource = KenneyFootprintEmotes.resourceFor(footprint.presetId)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                emoteResource?.let { resource ->
+                                    Image(
+                                        painter = painterResource(resource),
+                                        contentDescription = footprint.text,
+                                        contentScale = ContentScale.Fit,
+                                        modifier = Modifier.size(28.dp),
+                                    )
+                                }
+                                Text(
+                                    "${if (emoteResource == null) "${footprint.glyph}  " else ""}${footprint.text}  ·  ${footprint.relativeLabel}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                            }
                             Spacer(Modifier.height(8.dp))
                         }
                     }
@@ -362,21 +381,32 @@ internal fun FootprintDialog(
                         )
                     }
                     Spacer(Modifier.height(8.dp))
-                    FootprintPresets.all.take(6).chunked(1).forEach { rowPresets ->
+                    FootprintPresets.all.take(8).chunked(1).forEach { rowPresets ->
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             rowPresets.forEach { preset ->
+                                val emoteResource = KenneyFootprintEmotes.resourceFor(preset.id)
                                 FilterChip(
                                     selected = state.selectedFootprintPresetId == preset.id,
                                     onClick = { onSelectPreset(preset.id) },
                                     enabled = !state.footprintPosting,
                                     label = {
-                                        Text(
-                                            "${preset.glyph} ${preset.text}",
-                                            maxLines = 2,
-                                        )
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            emoteResource?.let { resource ->
+                                                Image(
+                                                    painter = painterResource(resource),
+                                                    contentDescription = null,
+                                                    contentScale = ContentScale.Fit,
+                                                    modifier = Modifier.size(24.dp),
+                                                )
+                                            }
+                                            Text(
+                                                "${if (emoteResource == null) "${preset.glyph} " else ""}${preset.text}",
+                                                maxLines = 2,
+                                            )
+                                        }
                                     },
                                     modifier = Modifier.weight(1f).heightIn(min = 48.dp),
                                 )

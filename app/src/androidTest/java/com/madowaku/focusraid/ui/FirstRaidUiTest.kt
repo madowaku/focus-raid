@@ -28,6 +28,7 @@ class FirstRaidUiTest {
 
     @Test
     fun returnEchoStrikeAndCampFlowIsReachable() {
+        var strikes = 0
         compose.setContent {
             FocusRaidTheme {
                 ReturnRaidSequence(
@@ -35,6 +36,7 @@ class FirstRaidUiTest {
                     onFootprints = {},
                     onAgain = {},
                     onDone = {},
+                    onStrikeAudio = { strikes++ },
                 )
             }
         }
@@ -61,6 +63,7 @@ class FirstRaidUiTest {
         compose.onNodeWithText("👣  足跡を見る・残す").assertIsDisplayed()
         compose.onNodeWithText("もう25分").assertIsDisplayed()
         compose.onNodeWithText("今日はここまで").assertIsDisplayed()
+        compose.runOnIdle { org.junit.Assert.assertEquals(1, strikes) }
     }
 
     @Test
@@ -102,6 +105,46 @@ class FirstRaidUiTest {
         }
         compose.onNodeWithText("あなたが最初の火を残しました").assertIsDisplayed()
         compose.onAllNodesWithText("誰かの集中").assertCountEquals(0)
+    }
+
+    @Test
+    fun bossBreakPlaysVictoryCallbackOnce() {
+        var victories = 0
+        val breakingScenario = ReturnRaidScenario.fromEchoes(
+            bossName = "環焔竜ヴォルガ",
+            bossHp = 25,
+            bossMaxHp = 250,
+            playerDamage = 25,
+            creditedMinutes = 25,
+            echoes = emptyList(),
+            chainCountBefore = 0,
+            chainMinutesBefore = 0,
+        )
+
+        compose.setContent {
+            FocusRaidTheme {
+                ReturnRaidSequence(
+                    scenario = breakingScenario,
+                    onFootprints = {},
+                    onAgain = {},
+                    onDone = {},
+                    onVictoryAudio = { victories++ },
+                )
+            }
+        }
+
+        compose.waitUntil(timeoutMillis = 4_000) {
+            compose.onAllNodesWithTag("first_raid_strike")
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        compose.onNodeWithTag("first_raid_strike").performClick()
+        compose.waitUntil(timeoutMillis = 4_000) {
+            compose.onAllNodesWithTag("first_raid_camp")
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        compose.runOnIdle { org.junit.Assert.assertEquals(1, victories) }
     }
 
     @Test
