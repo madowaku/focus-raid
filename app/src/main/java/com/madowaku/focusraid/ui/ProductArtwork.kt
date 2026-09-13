@@ -38,6 +38,7 @@ internal fun BossArtwork(
     modifier: Modifier = Modifier,
     identity: BossIdentity = BossIdentity.VOLGA,
     presentation: BossPresentation = BossPresentation.Normal,
+    frameless: Boolean = false,
 ) {
     val key = ArtworkKey.Boss(identity, presentation)
     val accessible = modifier.clearAndSetSemantics { contentDescription = key.description() }
@@ -49,7 +50,11 @@ internal fun BossArtwork(
             }
             if (identity == BossIdentity.VOLGA) FallbackBossArtwork(pose) else FallbackMordArtwork(pose)
         }
-        is ArtworkSource.Atlas -> AtlasArtwork(source, accessible)
+        is ArtworkSource.Atlas -> AtlasArtwork(
+            source,
+            accessible,
+            transparentBackground = frameless,
+        )
         is ArtworkSource.Drawable -> Image(painterResource(source.resourceId), null, accessible, contentScale = ContentScale.Fit)
     }
 }

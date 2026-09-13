@@ -1,35 +1,110 @@
 package com.madowaku.focusraid.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.madowaku.focusraid.core.domain.*
 import com.madowaku.focusraid.core.model.SessionHistoryEntry
 
 @Composable
 internal fun CompanionRoster(state: FocusUiState, onSelect: (CompanionIdentity) -> Unit) {
-    Spacer(Modifier.height(16.dp))
-    Text("旅の仲間", style = MaterialTheme.typography.titleMedium)
-    Text("成長は全員で共有。相棒を替えても集中時間は減りません。", style = MaterialTheme.typography.bodySmall)
+    val stage = CompanionGrowth.from(state.totalFocusMinutes).stage
+    val unlockedCount = CompanionIdentity.entries.count { companion ->
+        AdventureCollection.canSelect(companion, state.totalFocusMinutes)
+    }
+
+    Spacer(Modifier.height(12.dp))
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text("相棒を選ぶ", style = MaterialTheme.typography.titleMedium)
+        Spacer(Modifier.weight(1f))
+        Text(
+            "$unlockedCount / ${CompanionIdentity.entries.size} 解放",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
     CompanionIdentity.entries.forEach { companion ->
         val unlocked = AdventureCollection.canSelect(companion, state.totalFocusMinutes)
-        Card(Modifier.fillMaxWidth().padding(top = 8.dp)) {
-            Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                CompanionArtwork(Modifier.size(64.dp), CompanionGrowth.from(state.totalFocusMinutes).stage, identity = companion)
-                Column(Modifier.weight(1f).padding(start = 12.dp)) {
-                    Text(companion.label, fontWeight = FontWeight.Bold)
-                    Text(companion.description, style = MaterialTheme.typography.bodySmall)
-                    Button(onClick = { onSelect(companion) }, enabled = unlocked && !state.saving && state.companion != companion) {
-                        Text(when {
-                            state.companion == companion -> "一緒に冒険中"
-                            unlocked -> "相棒にする"
-                            else -> "累計${companion.requiredMinutes}分で出会う"
-                        })
+        val remainingMinutes = (companion.requiredMinutes - state.totalFocusMinutes).coerceAtLeast(0)
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 6.dp),
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = .78f),
+            ),
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(54.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(
+                            if (unlocked) {
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = .22f)
+                            } else {
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .72f)
+                            },
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (unlocked) {
+                        CompanionArtwork(
+                            modifier = Modifier.size(52.dp),
+                            stage = stage,
+                            identity = companion,
+                        )
+                    } else {
+                        Text("🔒", fontSize = MaterialTheme.typography.titleMedium.fontSize)
                     }
+                }
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 10.dp),
+                ) {
+                    Text(
+                        if (unlocked) companion.label else "???",
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        if (unlocked) {
+                            if (state.companion == companion) "一緒に冒険中" else "解放済み"
+                        } else {
+                            "あと${remainingMinutes}分で解放"
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                TextButton(
+                    onClick = { onSelect(companion) },
+                    enabled = unlocked && !state.saving && state.companion != companion,
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
+                ) {
+                    Text(
+                        when {
+                            state.companion == companion -> "選択中"
+                            unlocked -> "相棒にする"
+                            else -> "ロック中"
+                        },
+                        fontSize = 11.sp,
+                    )
                 }
             }
         }
@@ -41,9 +116,9 @@ internal fun InventoryCard(entries: List<SessionHistoryEntry>) {
     val owned = ItemCatalog.owned(entries)
     Spacer(Modifier.height(16.dp))
     Text("持ちもの", style = MaterialTheme.typography.titleMedium)
-    Text("集中で見つけた冒険の記念品。Freeでも獲得した持ちものはすべて残ります。", style = MaterialTheme.typography.bodySmall)
+    Text("集中で見つけた記念品", style = MaterialTheme.typography.bodySmall)
     if (owned.isEmpty()) {
-        Text("まだ持ちものはありません。集中が累計25分進むと、遠征先の発見が記録されます。", modifier = Modifier.padding(vertical = 12.dp))
+        Text("まだありません。集中すると見つかります。", modifier = Modifier.padding(vertical = 10.dp), style = MaterialTheme.typography.bodySmall)
     }
     owned.forEach { ownedItem ->
         ListItem(

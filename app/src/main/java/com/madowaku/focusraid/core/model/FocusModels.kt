@@ -64,11 +64,11 @@ data class Footprint(
 data class WorldSnapshot(
     val generation: String? = null,
     val totalFocusMinutes: Long = 0,
-    val focusNow: Int = 4_218,
+    val focusNow: Int = 0,
     val bossName: String = "環焔竜ヴォルガ",
     val bossHp: Int = 428_192,
     val bossMaxHp: Int = 650_000,
-    val raidParticipants: Int = 12_481,
+    val raidParticipants: Int = 0,
     val towerFloor: Int = 4_281,
     val abyssDepth: Int = 12_481,
     val armoryReady: Int = 68,

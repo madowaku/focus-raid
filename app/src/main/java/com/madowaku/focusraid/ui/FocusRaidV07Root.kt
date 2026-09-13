@@ -33,18 +33,19 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeoutOrNull
 
-private sealed interface FirstRaidEchoFeed {
-    data object Idle : FirstRaidEchoFeed
-    data object Loading : FirstRaidEchoFeed
-    data object Failed : FirstRaidEchoFeed
+private sealed interface SignatureFirstRaidEchoFeed {
+    data object Idle : SignatureFirstRaidEchoFeed
+    data object Loading : SignatureFirstRaidEchoFeed
+    data object Failed : SignatureFirstRaidEchoFeed
     data class Ready(
         val echoes: List<RaidEcho>,
         val preview: Boolean,
-    ) : FirstRaidEchoFeed
+    ) : SignatureFirstRaidEchoFeed
 }
 
+/** v0.7 entry point. FIRST 25 and first-raid return sequences stay reserved exactly as in v0.6. */
 @Composable
-fun FocusRaidV06Root(
+fun FocusRaidV07Root(
     viewModel: FocusViewModel,
     proAccessViewModel: ProAccessViewModel,
     systemAccess: FocusSystemAccess = FocusSystemAccess(),
@@ -100,7 +101,7 @@ fun FocusRaidV06Root(
     )
 
     var echoFeed by remember(state.resultSessionId) {
-        mutableStateOf<FirstRaidEchoFeed>(FirstRaidEchoFeed.Idle)
+        mutableStateOf<SignatureFirstRaidEchoFeed>(SignatureFirstRaidEchoFeed.Idle)
     }
     var skipRaidSync by rememberSaveable(state.resultSessionId) { mutableStateOf(false) }
 
@@ -112,11 +113,11 @@ fun FocusRaidV06Root(
         skipRaidSync,
     ) {
         if (!firstRaidCandidate) {
-            echoFeed = FirstRaidEchoFeed.Idle
+            echoFeed = SignatureFirstRaidEchoFeed.Idle
             return@LaunchedEffect
         }
         if (skipRaidSync) {
-            echoFeed = FirstRaidEchoFeed.Failed
+            echoFeed = SignatureFirstRaidEchoFeed.Failed
             return@LaunchedEffect
         }
 
@@ -125,62 +126,67 @@ fun FocusRaidV06Root(
                 WorldSyncStatus.LOCAL_PREVIEW,
                 WorldSyncStatus.OFFLINE,
             ) -> {
-                echoFeed = FirstRaidEchoFeed.Ready(previewRaidEchoes(), preview = true)
+                echoFeed = SignatureFirstRaidEchoFeed.Ready(signaturePreviewRaidEchoes(), preview = true)
             }
 
             state.worldSyncStatus == WorldSyncStatus.CONNECTING -> {
-                echoFeed = FirstRaidEchoFeed.Loading
+                echoFeed = SignatureFirstRaidEchoFeed.Loading
                 delay(3_500)
-                echoFeed = FirstRaidEchoFeed.Failed
+                echoFeed = SignatureFirstRaidEchoFeed.Failed
             }
 
             state.worldSyncStatus != WorldSyncStatus.LIVE -> {
-                echoFeed = FirstRaidEchoFeed.Failed
+                echoFeed = SignatureFirstRaidEchoFeed.Failed
             }
 
             contributionAccepted -> {
-                echoFeed = FirstRaidEchoFeed.Loading
+                echoFeed = SignatureFirstRaidEchoFeed.Loading
                 echoFeed = try {
                     val echoes = withTimeoutOrNull(5_000) { loadRaidEchoes() }
                     if (echoes == null) {
-                        FirstRaidEchoFeed.Failed
+                        SignatureFirstRaidEchoFeed.Failed
                     } else {
-                        FirstRaidEchoFeed.Ready(echoes = echoes, preview = false)
+                        SignatureFirstRaidEchoFeed.Ready(echoes = echoes, preview = false)
                     }
                 } catch (e: CancellationException) {
                     throw e
                 } catch (_: Exception) {
-                    FirstRaidEchoFeed.Failed
+                    SignatureFirstRaidEchoFeed.Failed
                 }
             }
 
             contributionWaiting -> {
-                echoFeed = FirstRaidEchoFeed.Loading
+                echoFeed = SignatureFirstRaidEchoFeed.Loading
                 delay(4_000)
-                echoFeed = FirstRaidEchoFeed.Failed
+                echoFeed = SignatureFirstRaidEchoFeed.Failed
             }
 
             else -> {
-                echoFeed = FirstRaidEchoFeed.Failed
+                echoFeed = SignatureFirstRaidEchoFeed.Failed
             }
         }
     }
 
-    if (firstRaidCandidate && !skipRaidSync && echoFeed == FirstRaidEchoFeed.Loading) {
-        FirstRaidEchoLoading(
+    if (
+        firstRaidCandidate &&
+        !skipRaidSync &&
+        echoFeed == SignatureFirstRaidEchoFeed.Loading
+    ) {
+        SignatureFirstRaidEchoLoading(
             state = state,
             onSkip = { skipRaidSync = true },
         )
         return
     }
 
-    val readyFeed = echoFeed as? FirstRaidEchoFeed.Ready
+    val readyFeed = echoFeed as? SignatureFirstRaidEchoFeed.Ready
     val showFirstRaid = firstRaidCandidate && !skipRaidSync && readyFeed != null
     if (!showFirstRaid) {
-        FocusRaidRoot(
+        FocusRaidSignatureRoot(
             viewModel = viewModel,
             proAccessViewModel = proAccessViewModel,
             systemAccess = systemAccess,
+            loadRecentRaidEchoes = loadRaidEchoes,
             onRequestNotificationPermission = onRequestNotificationPermission,
             onRequestExactAlarmPermission = onRequestExactAlarmPermission,
             onPurchasePro = onPurchasePro,
@@ -236,7 +242,7 @@ fun FocusRaidV06Root(
 }
 
 @Composable
-internal fun FirstRaidEchoLoading(
+private fun SignatureFirstRaidEchoLoading(
     state: FocusUiState,
     onSkip: () -> Unit,
 ) {
@@ -269,7 +275,7 @@ internal fun FirstRaidEchoLoading(
     }
 }
 
-private fun previewRaidEchoes(): List<RaidEcho> = listOf(
+private fun signaturePreviewRaidEchoes(): List<RaidEcho> = listOf(
     RaidEcho("3時間前", 25, 25),
     RaidEcho("51分前", 50, 50),
     RaidEcho("12分前", 25, 25),

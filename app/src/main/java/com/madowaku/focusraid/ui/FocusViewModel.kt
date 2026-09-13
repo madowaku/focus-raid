@@ -138,6 +138,7 @@ class FocusViewModel(
     }
 
     private var raidAudioSession: String? = null
+    private var raidSelfAudioSession: String? = null
     private var raidVictorySession: String? = null
     private var raidAudioJob: Job? = null
     private var resultConfirmationEvent: String? = null
@@ -171,6 +172,28 @@ class FocusViewModel(
                 delay(if (index == 0) 460 else 620)
             }
         }
+    }
+
+    fun raidEcho(index: Int) {
+        val state = _uiState.value
+        val id = state.resultSessionId ?: return
+        if (state.phase != SessionPhase.COMPLETED) return
+        val safeIndex = index.coerceIn(0, 2)
+        sfx.play(
+            Sfx.RAID_HIT_OTHER,
+            "$id:echo:$safeIndex",
+            variant = safeIndex,
+            volume = listOf(.8f, .65f, .9f)[safeIndex],
+            pitch = listOf(.97f, 1.03f, .99f)[safeIndex],
+        )
+    }
+
+    fun raidSelfStrike() {
+        val state = _uiState.value
+        val id = state.resultSessionId ?: return
+        if (state.phase != SessionPhase.COMPLETED || raidSelfAudioSession == id) return
+        raidSelfAudioSession = id
+        sfx.play(Sfx.RAID_HIT_SELF, "$id:self")
     }
 
     fun raidVictory() {

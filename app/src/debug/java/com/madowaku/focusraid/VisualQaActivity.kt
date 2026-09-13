@@ -47,6 +47,10 @@ class VisualQaActivity : ComponentActivity() {
         )
 
         val phase = intent.getStringExtra(EXTRA_PHASE)?.uppercase().orEmpty()
+        if (phase.startsWith("SIGNATURE_")) {
+            setContent { FocusRaidTheme { SignatureVisualQaScreen(phase) } }
+            return
+        }
         if (phase.startsWith("WORLD_")) {
             val status = com.madowaku.focusraid.data.ContributionStatus.valueOf(phase.removePrefix("WORLD_"))
             val row = com.madowaku.focusraid.data.WorldContribution("visual-world", "qa-raid", 25, 25,

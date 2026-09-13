@@ -49,6 +49,12 @@ internal data class ReturnRaidScenario(
     val hpAfterPlayerStrike: Int
         get() = max(0, presentBossHp - playerDamage.coerceAtLeast(0))
 
+    private val totalEchoDamage: Int
+        get() = echoes.sumOf { it.displayDamage.coerceAtLeast(0) }
+
+    private val visibleEchoDamage: Int
+        get() = (initialDisplayedHp - presentBossHp).coerceAtLeast(0)
+
     val armorBreaks: Boolean
         get() = presentBossHp > 0 && hpAfterPlayerStrike == 0
 
@@ -64,7 +70,14 @@ internal data class ReturnRaidScenario(
         val remainingEchoDamage = echoes
             .drop(safeIndex + 1)
             .sumOf { it.displayDamage.coerceAtLeast(0) }
-        return min(bossMaxHp, presentBossHp + remainingEchoDamage)
+        if (totalEchoDamage == 0 || visibleEchoDamage == 0) {
+            return presentBossHp.coerceIn(0, bossMaxHp)
+        }
+
+        // When the reconstructed pre-echo HP would exceed max HP, preserve a visible
+        // step for each real echo by distributing the available HP range proportionally.
+        val remainingVisibleDamage = visibleEchoDamage.toLong() * remainingEchoDamage / totalEchoDamage
+        return (presentBossHp + remainingVisibleDamage.toInt()).coerceIn(0, bossMaxHp)
     }
 
     companion object {
