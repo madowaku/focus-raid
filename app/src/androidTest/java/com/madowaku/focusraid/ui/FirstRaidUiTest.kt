@@ -58,7 +58,7 @@ class FirstRaidUiTest {
                 .isNotEmpty()
         }
         compose.onNodeWithText("第001遠征隊").assertIsDisplayed()
-        compose.onNodeWithText("最近の残響 3件 · 100分").assertIsDisplayed()
+        compose.onNodeWithText("最近の残響 2件 · 75分").assertIsDisplayed()
         compose.onNodeWithText("火をつなぎました").assertIsDisplayed()
         compose.onNodeWithText("👣  足跡を見る・残す").assertIsDisplayed()
         compose.onNodeWithText("もう25分").assertIsDisplayed()

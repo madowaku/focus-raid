@@ -66,6 +66,7 @@ data class FocusUiState(
     val footprintPosted: Boolean = false,
     val footprintPostError: String? = null,
     val sessionHistory: List<SessionHistoryEntry> = emptyList(),
+    val firstRunVersion: Int = 0,
 ) {
     val progress: Float
         get() = if (durationSeconds <= 0) 0f
@@ -142,6 +143,7 @@ class FocusViewModel(
     private var raidVictorySession: String? = null
     private var raidAudioJob: Job? = null
     private var resultConfirmationEvent: String? = null
+    private val firstRunAudioEvents = mutableSetOf<String>()
 
     fun companionKnock() { sfx.play(Sfx.COMPANION_KNOCK) }
 
@@ -205,6 +207,38 @@ class FocusViewModel(
     }
 
     fun setSoundEnabled(enabled: Boolean) { sfx.setEnabled(enabled) }
+
+    fun firstRunSelfStrike() {
+        val eventId = "first-run-v$CURRENT_FIRST_RUN_VERSION:self"
+        if (firstRunAudioEvents.add(eventId)) {
+            sfx.play(Sfx.RAID_HIT_SELF, eventId, volume = .72f, pitch = .98f)
+        }
+    }
+
+    fun firstRunOtherLight(index: Int) {
+        val safeIndex = index.coerceIn(0, 2)
+        val eventId = "first-run-v$CURRENT_FIRST_RUN_VERSION:other:$safeIndex"
+        if (firstRunAudioEvents.add(eventId)) {
+            sfx.play(
+                Sfx.RAID_HIT_OTHER,
+                eventId,
+                variant = safeIndex,
+                volume = listOf(.42f, .34f, .48f)[safeIndex],
+                pitch = listOf(.97f, 1.03f, .99f)[safeIndex],
+            )
+        }
+    }
+
+    fun completeFirstRun() {
+        if (
+            !canChange(SessionPhase.READY) ||
+            _uiState.value.firstRunVersion >= CURRENT_FIRST_RUN_VERSION
+        ) return
+        transition {
+            preferences.markFirstRunComplete(CURRENT_FIRST_RUN_VERSION)
+            _uiState.value = _uiState.value.copy(firstRunVersion = CURRENT_FIRST_RUN_VERSION)
+        }
+    }
 
     override fun onCleared() {
         raidAudioJob?.cancel()
@@ -398,7 +432,9 @@ class FocusViewModel(
         _uiState.value = _uiState.value.copy(
             initialized = true, companion = saved.companion, selectedMinutes = saved.selectedMinutes, expedition = saved.expedition,
             durationSeconds = saved.selectedMinutes * 60, remainingSeconds = saved.selectedMinutes * 60,
-            totalFocusMinutes = saved.totalFocusMinutes, systemAccessEducationSeen = saved.systemAccessEducationSeen,
+            totalFocusMinutes = saved.totalFocusMinutes,
+            systemAccessEducationSeen = saved.systemAccessEducationSeen,
+            firstRunVersion = saved.firstRunVersion,
         )
         if (saved.finishedEntry != null) {
             reconcileFinished(saved.finishedEntry)

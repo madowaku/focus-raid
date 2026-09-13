@@ -7,6 +7,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -49,6 +51,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 
+private const val RETURNING_HOLD_MILLIS = 900L
+
 @Composable
 internal fun ReturnRaidSequence(
     scenario: ReturnRaidScenario,
@@ -61,35 +65,42 @@ internal fun ReturnRaidSequence(
 ) {
     val machine = remember(scenario) { ReturnRaidSequenceStateMachine(scenario) }
     var state by remember(scenario) { mutableStateOf(machine.state) }
+    val flight = remember(scenario) { RaidFocusArrival() }
     var impactTrigger by remember(scenario) { mutableStateOf(0) }
+    var arrivedHp by remember(scenario) { mutableStateOf(scenario.initialDisplayedHp) }
     val displayedHp = remember(scenario) { Animatable(scenario.initialDisplayedHp.toFloat()) }
     val haptics = LocalHapticFeedback.current
 
-    LaunchedEffect(state.displayedHp) {
+    LaunchedEffect(arrivedHp) {
         displayedHp.animateTo(
-            targetValue = state.displayedHp.toFloat(),
-            animationSpec = tween(
-                durationMillis = if (state.phase == ReturnRaidPhase.STRIKING) 650 else 420,
-            ),
+            targetValue = arrivedHp.toFloat(),
+            animationSpec = tween(durationMillis = 220),
         )
     }
 
-    LaunchedEffect(state.phase, state.echoIndex) {
+    LaunchedEffect(scenario, state.phase, state.echoIndex) {
         when (state.phase) {
             ReturnRaidPhase.RETURNING -> {
-                delay(1_250)
+                delay(RETURNING_HOLD_MILLIS)
                 state = machine.advance()
             }
 
             ReturnRaidPhase.ECHO -> {
-                onEchoAudio(state.echoIndex)
-                impactTrigger += 1
-                delay(820)
+                flight.deliver(state.echoIndex) {
+                    arrivedHp = state.displayedHp
+                    impactTrigger += 1
+                    onEchoAudio(state.echoIndex)
+                }
                 state = machine.advance()
             }
 
             ReturnRaidPhase.STRIKING -> {
-                delay(700)
+                flight.deliver(0, self = true) {
+                    arrivedHp = state.displayedHp
+                    impactTrigger += 1
+                    onStrikeAudio()
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                }
                 state = machine.advance()
             }
 
@@ -115,7 +126,7 @@ internal fun ReturnRaidSequence(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                "FIRST RAID",
+                "RETURN RAID",
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Bold,
@@ -123,63 +134,78 @@ internal fun ReturnRaidSequence(
             Spacer(Modifier.height(8.dp))
 
             Box(modifier = Modifier.weight(1f)) {
-                AnimatedContent(
-                    targetState = state.phase,
-                    transitionSpec = { fadeIn(tween(220)) togetherWith fadeOut(tween(160)) },
-                    label = "first-raid-phase",
-                    modifier = Modifier.fillMaxSize(),
-                ) { phase ->
-                    when (phase) {
-                        ReturnRaidPhase.RETURNING -> ReturnMoment(scenario)
-                        ReturnRaidPhase.ECHO -> EchoMoment(
-                            scenario = scenario,
-                            state = state,
-                            displayedHp = displayedHp.value.toInt(),
+                Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    if (state.phase != ReturnRaidPhase.RETURNING && state.phase != ReturnRaidPhase.CAMP) {
+                        Text(
+                            "世界中の集中が、同じボスへ。",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                        Box(Modifier.fillMaxWidth().height(210.dp), contentAlignment = Alignment.Center) {
+                            ReturnRaidBossArtwork(
+                                Modifier.size(150.dp),
+                                presentation = when {
+                                    state.phase == ReturnRaidPhase.RESULT && state.armorBroken -> BossPresentation.Defeated
+                                    displayedHp.value < scenario.initialDisplayedHp -> BossPresentation.Damaged
+                                    else -> BossPresentation.Normal
+                                },
+                            )
+                            RaidFocusArrivalLayer(flight, Modifier.fillMaxSize())
+                            KenneyCompletionOverlay(
+                                triggerKey = if (state.phase == ReturnRaidPhase.RESULT && state.armorBroken) {
+                                    "raid-completion-${scenario.hashCode()}"
+                                } else {
+                                    null
+                                },
+                            )
+                            KenneyRaidImpactOverlay(
+                                trigger = impactTrigger,
+                                emphasized = state.phase == ReturnRaidPhase.STRIKING || state.strikeCommitted,
+                            )
+                        }
+                        RaidIntegrityCard(scenario, displayedHp.value.toInt())
+                        Spacer(Modifier.height(20.dp))
+                    }
+                    AnimatedContent(
+                        targetState = state.phase,
+                        transitionSpec = { fadeIn(tween(220)) togetherWith fadeOut(tween(160)) },
+                        label = "first-raid-phase",
+                        modifier = Modifier.weight(1f),
+                    ) { phase ->
+                        when (phase) {
+                            ReturnRaidPhase.RETURNING -> ReturnMoment(scenario)
+                            ReturnRaidPhase.ECHO -> EchoMoment(
+                                scenario = scenario,
+                                state = state,
+                            )
 
-                        ReturnRaidPhase.YOUR_TURN -> YourTurnMoment(
-                            scenario = scenario,
-                            displayedHp = displayedHp.value.toInt(),
-                            onStrike = {
-                                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                                if (state.phase == ReturnRaidPhase.YOUR_TURN) {
-                                    onStrikeAudio()
-                                    impactTrigger += 1
-                                    state = machine.strike()
-                                }
-                            },
-                        )
+                            ReturnRaidPhase.YOUR_TURN -> YourTurnMoment(
+                                scenario = scenario,
+                                onStrike = {
+                                    if (state.phase == ReturnRaidPhase.YOUR_TURN) {
+                                        state = machine.strike()
+                                    }
+                                },
+                            )
 
-                        ReturnRaidPhase.STRIKING -> StrikeMoment(
-                            scenario = scenario,
-                            displayedHp = displayedHp.value.toInt(),
-                        )
+                            ReturnRaidPhase.STRIKING -> StrikeMoment(
+                                scenario = scenario,
+                            )
 
-                        ReturnRaidPhase.RESULT -> ResultMoment(
-                            scenario = scenario,
-                            state = state,
-                            displayedHp = displayedHp.value.toInt(),
-                        )
+                            ReturnRaidPhase.RESULT -> ResultMoment(
+                                scenario = scenario,
+                                state = state,
+                            )
 
-                        ReturnRaidPhase.CAMP -> CampMoment(
-                            scenario = scenario,
-                            onFootprints = onFootprints,
-                            onAgain = onAgain,
-                            onDone = onDone,
-                        )
+                            ReturnRaidPhase.CAMP -> CampMoment(
+                                scenario = scenario,
+                                onFootprints = onFootprints,
+                                onAgain = onAgain,
+                                onDone = onDone,
+                            )
+                        }
                     }
                 }
-                KenneyCompletionOverlay(
-                    triggerKey = if (state.phase == ReturnRaidPhase.RESULT && state.armorBroken) {
-                        "raid-completion-${scenario.hashCode()}"
-                    } else {
-                        null
-                    },
-                )
-                KenneyRaidImpactOverlay(
-                    trigger = impactTrigger,
-                    emphasized = state.strikeCommitted,
-                )
             }
         }
     }
@@ -220,21 +246,13 @@ private fun ReturnMoment(scenario: ReturnRaidScenario) {
 private fun EchoMoment(
     scenario: ReturnRaidScenario,
     state: ReturnRaidUiState,
-    displayedHp: Int,
 ) {
     val echo = scenario.echoes.getOrNull(state.echoIndex) ?: return
     Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        ReturnRaidBossArtwork(
-            Modifier.size(116.dp),
-            presentation = BossPresentation.Damaged,
-        )
-        Spacer(Modifier.height(12.dp))
-        RaidIntegrityCard(scenario, displayedHp)
-        Spacer(Modifier.height(14.dp))
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp),
@@ -251,10 +269,10 @@ private fun EchoMoment(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     SignatureRaidLight()
                     Spacer(Modifier.size(7.dp))
-                    Text("${echo.relativeTime}  ·  残響が届いた", style = MaterialTheme.typography.labelMedium)
+                    Text("${echo.relativeTime}  ·  集中の残響", style = MaterialTheme.typography.labelMedium)
                 }
                 Spacer(Modifier.height(4.dp))
-                Text("みんなの先行する一撃", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("誰かの集中が、このボスへ", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text("${echo.focusMinutes}分", fontSize = 24.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(5.dp))
                 Text(
@@ -271,25 +289,13 @@ private fun EchoMoment(
 @Composable
 private fun YourTurnMoment(
     scenario: ReturnRaidScenario,
-    displayedHp: Int,
     onStrike: () -> Unit,
 ) {
     Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        ReturnRaidBossArtwork(
-            Modifier.size(120.dp),
-            presentation = if (scenario.echoes.isEmpty()) {
-                BossPresentation.Normal
-            } else {
-                BossPresentation.Damaged
-            },
-        )
-        Spacer(Modifier.height(16.dp))
-        RaidIntegrityCard(scenario, displayedHp)
-        Spacer(Modifier.height(24.dp))
         Text(
             if (scenario.echoes.isEmpty()) "まだ他の残響はありません" else "みんなの灯のあとへ",
             style = MaterialTheme.typography.bodySmall,
@@ -329,28 +335,20 @@ private fun YourTurnMoment(
 @Composable
 private fun StrikeMoment(
     scenario: ReturnRaidScenario,
-    displayedHp: Int,
 ) {
     Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        ReturnRaidBossArtwork(
-            Modifier.size(128.dp),
-            presentation = BossPresentation.Damaged,
-        )
-        Spacer(Modifier.height(18.dp))
         Text("あなたの${scenario.creditedMinutes}分", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-        Text("↓", fontSize = 22.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("みんなと同じボスへ", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(
             "−${scenario.playerDamage} HP",
             fontSize = 34.sp,
             fontWeight = FontWeight.Black,
             color = MaterialTheme.colorScheme.secondary,
         )
-        Spacer(Modifier.height(18.dp))
-        RaidIntegrityCard(scenario, displayedHp)
     }
 }
 
@@ -358,11 +356,10 @@ private fun StrikeMoment(
 private fun ResultMoment(
     scenario: ReturnRaidScenario,
     state: ReturnRaidUiState,
-    displayedHp: Int,
 ) {
     Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
@@ -372,24 +369,13 @@ private fun ResultMoment(
             color = if (state.armorBroken) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
         )
         Spacer(Modifier.height(12.dp))
-        ReturnRaidBossArtwork(
-            Modifier.size(126.dp),
-            presentation = if (state.armorBroken) {
-                BossPresentation.Defeated
-            } else {
-                BossPresentation.Damaged
-            },
-        )
-        Spacer(Modifier.height(18.dp))
-        RaidIntegrityCard(scenario, displayedHp)
-        Spacer(Modifier.height(12.dp))
         Text(
             if (state.armorBroken) {
                 "あなたの${scenario.creditedMinutes}分が最後の一撃になりました"
             } else if (scenario.echoes.isEmpty()) {
                 "あなたの${scenario.creditedMinutes}分が、最初の足跡になりました"
             } else {
-                "あなたの${scenario.creditedMinutes}分が、遠征隊の続きになりました"
+                "あなたの${scenario.creditedMinutes}分が、遠征隊をつなぎました"
             },
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center,
@@ -437,7 +423,6 @@ private fun CampMoment(
     onDone: () -> Unit,
 ) {
     val recentMinutes = scenario.echoes.sumOf { it.focusMinutes.coerceAtLeast(0) }
-    val visibleLights = (scenario.echoes.size + 1).coerceIn(1, 4)
 
     Column(
         modifier = Modifier
@@ -458,9 +443,16 @@ private fun CampMoment(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-                    repeat(visibleLights) {
-                        Text("🔥", fontSize = 28.sp)
+                    scenario.echoes.forEach {
+                        SignatureRaidLight(
+                            modifier = Modifier.size(28.dp),
+                            color = MaterialTheme.colorScheme.primary,
+                        )
                     }
+                    SignatureRaidLight(
+                        modifier = Modifier.size(32.dp),
+                        color = MaterialTheme.colorScheme.tertiary,
+                    )
                 }
                 Spacer(Modifier.height(14.dp))
                 Text("集中の火", fontSize = 18.sp, fontWeight = FontWeight.Bold)

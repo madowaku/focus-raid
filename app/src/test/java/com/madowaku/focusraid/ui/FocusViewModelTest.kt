@@ -100,6 +100,53 @@ class FocusViewModelTest {
         assertEquals(SessionPhase.READY, model.uiState.value.phase)
     }
 
+    @Test fun `first run skip persists the current version and returns to ready home`() = scenario {
+        val model = vm(); runCurrent()
+        assertTrue(shouldShowFirstRun(model.uiState.value))
+
+        model.completeFirstRun(); runCurrent()
+
+        assertEquals(CURRENT_FIRST_RUN_VERSION, store.value.firstRunVersion)
+        assertFalse(shouldShowFirstRun(model.uiState.value))
+        assertEquals(SessionPhase.READY, model.uiState.value.phase)
+    }
+
+    @Test fun `first run completion survives recreation without changing focus time`() = scenario {
+        val model = vm(); runCurrent()
+        model.completeFirstRun(); runCurrent()
+        assertEquals(0, store.value.totalFocusMinutes)
+
+        models.first().clear()
+        val restored = vm(); runCurrent()
+
+        assertEquals(CURRENT_FIRST_RUN_VERSION, restored.uiState.value.firstRunVersion)
+        assertFalse(shouldShowFirstRun(restored.uiState.value))
+        assertEquals(SessionPhase.READY, restored.uiState.value.phase)
+    }
+
+    @Test fun `first run audio events stay unique across repeated callbacks`() = scenario {
+        val model = vm(); runCurrent(); sounds.clear()
+
+        model.firstRunSelfStrike()
+        model.firstRunSelfStrike()
+        model.firstRunOtherLight(0)
+        model.firstRunOtherLight(0)
+        model.firstRunOtherLight(1)
+        model.firstRunOtherLight(2)
+        model.firstRunOtherLight(3)
+        runCurrent()
+
+        assertEquals(
+            listOf(
+                Sfx.RAID_HIT_SELF,
+                Sfx.RAID_HIT_OTHER,
+                Sfx.RAID_HIT_OTHER,
+                Sfx.RAID_HIT_OTHER,
+            ),
+            sounds,
+        )
+    }
+
     @Test fun `generation and start time freeze across pause process restart and world rotation`() = scenario {
         val snapshot = MutableStateFlow(WorldSnapshot(generation = "N"))
         val world = object : WorldRepository by FakeWorldRepository() { override val world = snapshot }
@@ -327,4 +374,5 @@ private class MemorySessionStore : SessionStore {
         session.value = value.copy(phase = SessionPhase.READY, sessionId = null, totalFocusMinutes = value.totalFocusMinutes + creditedMinutes)
     }
     override suspend fun markSystemAccessEducationSeen() { session.value = value.copy(systemAccessEducationSeen = true) }
+    override suspend fun markFirstRunComplete(version: Int) { session.value = value.copy(firstRunVersion = version) }
 }

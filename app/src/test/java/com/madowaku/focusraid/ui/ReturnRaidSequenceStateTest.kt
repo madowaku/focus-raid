@@ -27,6 +27,7 @@ class ReturnRaidSequenceStateTest {
 
         assertEquals(ReturnRaidPhase.RETURNING, machine.state.phase)
         assertEquals(scenario.initialDisplayedHp, machine.state.displayedHp)
+        assertEquals(2, scenario.echoes.size)
 
         machine.advance()
         assertEquals(ReturnRaidPhase.ECHO, machine.state.phase)
@@ -34,9 +35,6 @@ class ReturnRaidSequenceStateTest {
 
         machine.advance()
         assertEquals(1, machine.state.echoIndex)
-
-        machine.advance()
-        assertEquals(2, machine.state.echoIndex)
 
         machine.advance()
         assertEquals(ReturnRaidPhase.YOUR_TURN, machine.state.phase)
@@ -49,7 +47,7 @@ class ReturnRaidSequenceStateTest {
     @Test
     fun strike_is_committed_only_once() {
         val machine = ReturnRaidSequenceStateMachine(scenario())
-        repeat(4) { machine.advance() }
+        repeat(3) { machine.advance() }
 
         machine.strike()
         val first = machine.state
@@ -65,7 +63,7 @@ class ReturnRaidSequenceStateTest {
     fun strike_then_result_then_camp_updates_chain() {
         val scenario = scenario()
         val machine = ReturnRaidSequenceStateMachine(scenario)
-        repeat(4) { machine.advance() }
+        repeat(3) { machine.advance() }
 
         machine.strike()
         assertEquals(scenario.hpAfterPlayerStrike, machine.state.displayedHp)
@@ -84,7 +82,7 @@ class ReturnRaidSequenceStateTest {
     fun strike_marks_armor_break_when_damage_reaches_zero() {
         val scenario = scenario(bossHp = 80, playerDamage = 100)
         val machine = ReturnRaidSequenceStateMachine(scenario)
-        repeat(4) { machine.advance() }
+        repeat(3) { machine.advance() }
         machine.strike()
         machine.advance()
 
@@ -100,7 +98,6 @@ class ReturnRaidSequenceStateTest {
             scenario.initialDisplayedHp,
             scenario.hpAfterEcho(0),
             scenario.hpAfterEcho(1),
-            scenario.hpAfterEcho(2),
         )
 
         assertTrue(hpSteps.zipWithNext().all { (before, after) -> after < before })

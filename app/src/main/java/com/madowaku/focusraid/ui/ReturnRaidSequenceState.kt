@@ -99,7 +99,8 @@ internal data class ReturnRaidScenario(
                 presentBossHp = safePresent,
                 playerDamage = playerDamage.coerceAtLeast(0),
                 creditedMinutes = creditedMinutes.coerceAtLeast(0),
-                echoes = echoes.take(3).map { echo ->
+                // At most two real echoes, followed by the player's light.
+                echoes = echoes.take(2).map { echo ->
                     RaidEchoUi(
                         relativeTime = echo.relativeLabel,
                         focusMinutes = echo.focusMinutes.coerceAtLeast(0),

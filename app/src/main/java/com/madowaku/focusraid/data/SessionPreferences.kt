@@ -31,6 +31,7 @@ data class PersistedSession(
     val systemAccessEducationSeen: Boolean = false,
     val sessionId: String? = null,
     val finishedEntry: SessionHistoryEntry? = null,
+    val firstRunVersion: Int = 0,
 )
 
 class SessionPreferences(private val context: Context) : SessionStore {
@@ -45,6 +46,7 @@ class SessionPreferences(private val context: Context) : SessionStore {
         val pausedRemainingMillis = longPreferencesKey("paused_remaining_millis")
         val totalFocusMinutes = intPreferencesKey("total_focus_minutes")
         val systemAccessEducationSeen = booleanPreferencesKey("system_access_education_seen")
+        val firstRunVersion = intPreferencesKey("first_run_version")
         val sessionId = stringPreferencesKey("session_id")
         val lastCreditedSessionId = stringPreferencesKey("last_credited_session_id")
         val finishedEntry = stringPreferencesKey("finished_entry")
@@ -66,6 +68,7 @@ class SessionPreferences(private val context: Context) : SessionStore {
             pausedRemainingMillis = prefs[Keys.pausedRemainingMillis] ?: 0L,
             totalFocusMinutes = prefs[Keys.totalFocusMinutes] ?: 0,
             systemAccessEducationSeen = prefs[Keys.systemAccessEducationSeen] ?: false,
+            firstRunVersion = prefs[Keys.firstRunVersion] ?: 0,
             sessionId = prefs[Keys.sessionId],
             finishedEntry = prefs[Keys.finishedEntry]?.let(::decodeEntry),
         )
@@ -157,6 +160,12 @@ class SessionPreferences(private val context: Context) : SessionStore {
     override suspend fun markSystemAccessEducationSeen() {
         context.focusRaidDataStore.edit {
             it[Keys.systemAccessEducationSeen] = true
+        }
+    }
+
+    override suspend fun markFirstRunComplete(version: Int) {
+        context.focusRaidDataStore.edit {
+            it[Keys.firstRunVersion] = version.coerceAtLeast(0)
         }
     }
 

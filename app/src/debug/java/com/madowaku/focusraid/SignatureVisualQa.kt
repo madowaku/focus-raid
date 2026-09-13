@@ -28,6 +28,7 @@ import com.madowaku.focusraid.core.model.SessionPhase
 import com.madowaku.focusraid.core.model.WorldSnapshot
 import com.madowaku.focusraid.data.RaidEcho
 import com.madowaku.focusraid.ui.FocusRaidSignatureContent
+import com.madowaku.focusraid.ui.FirstRunMoment
 import com.madowaku.focusraid.ui.FocusUiState
 import com.madowaku.focusraid.ui.LocalCompanionIdentity
 import com.madowaku.focusraid.ui.LocalProAccessLevel
@@ -39,6 +40,37 @@ import com.madowaku.focusraid.ui.SignatureBackdrop
 internal fun SignatureVisualQaScreen(phase: String) {
     when (phase) {
         "SIGNATURE_LAUNCHER" -> SignatureLauncherQa()
+
+        "FIRST_RUN_1", "FIRST_RUN_2", "FIRST_RUN_3" -> FirstRunMoment(
+            state = firstRunVisualState(),
+            initialAct = phase.removePrefix("FIRST_RUN_").toInt() - 1,
+            onSkip = {},
+            onComplete = {},
+        )
+
+        "FIRST_RUN_HOME" -> {
+            val state = firstRunVisualState().copy(firstRunVersion = 1)
+            CompositionLocalProvider(
+                LocalCompanionIdentity provides state.companion,
+                LocalProAccessLevel provides AccessLevel.FREE,
+            ) {
+                FocusRaidSignatureContent(
+                    state = state,
+                    tab = com.madowaku.focusraid.ui.MainTab.HOME,
+                    onTabChange = {},
+                    onSelectCompanion = {},
+                    onSelectMinutes = {},
+                    onSelectExpedition = {},
+                    onTimerClick = {},
+                    onStart = {},
+                    onPause = {},
+                    onResume = {},
+                    onFinishEarly = {},
+                    onAgain = {},
+                    onDone = {},
+                )
+            }
+        }
 
         "SIGNATURE_RETURN_ECHOES" -> {
             ReturnRaidSequence(
@@ -107,6 +139,16 @@ internal fun SignatureVisualQaScreen(phase: String) {
         }
     }
 }
+
+private fun firstRunVisualState(): FocusUiState = FocusUiState(
+    initialized = true,
+    totalFocusMinutes = 0,
+    world = WorldSnapshot(
+        bossName = "環焔竜ヴォルガ",
+        bossHp = 428_192,
+        bossMaxHp = 650_000,
+    ),
+)
 
 @Composable
 private fun SignatureLauncherQa() {

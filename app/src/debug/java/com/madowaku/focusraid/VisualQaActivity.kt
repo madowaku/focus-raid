@@ -47,7 +47,7 @@ class VisualQaActivity : ComponentActivity() {
         )
 
         val phase = intent.getStringExtra(EXTRA_PHASE)?.uppercase().orEmpty()
-        if (phase.startsWith("SIGNATURE_")) {
+        if (phase.startsWith("SIGNATURE_") || phase.startsWith("FIRST_RUN_")) {
             setContent { FocusRaidTheme { SignatureVisualQaScreen(phase) } }
             return
         }

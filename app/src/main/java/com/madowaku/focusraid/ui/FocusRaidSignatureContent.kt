@@ -47,6 +47,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -54,6 +55,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.madowaku.focusraid.billing.FeatureAccess
@@ -172,12 +174,20 @@ private fun SignatureReadyScreen(
                 SignatureDurationSelector(
                     selected = state.selectedMinutes,
                     onSelect = onSelectMinutes,
-                    onCustom = onTimerClick,
                 )
                 SignatureExpeditionSelector(
                     selected = state.expedition,
                     onSelect = onSelectExpedition,
                 )
+                if (onTimerClick != null) {
+                    TextButton(
+                        onClick = onTimerClick,
+                        modifier = Modifier.align(Alignment.End),
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
+                    ) {
+                        Text("時間を変更", fontSize = 11.sp)
+                    }
+                }
                 if (recentEchoes.isNotEmpty()) SignatureRecentEchoes(recentEchoes)
 
                 if (!state.initialized || state.saving) {
@@ -232,6 +242,11 @@ private fun SignatureRaidHero(
 ) {
     val world = state.world
     val bossPresentation = signatureBossPresentation(world.bossHp, world.bossMaxHp)
+    val hpLabel = if (LocalDensity.current.fontScale >= 1.3f) {
+        "${signatureCompactCount(world.bossHp)} / ${signatureCompactCount(world.bossMaxHp)}"
+    } else {
+        "${signatureComma(world.bossHp)} / ${signatureComma(world.bossMaxHp)}"
+    }
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(30.dp),
@@ -275,7 +290,7 @@ private fun SignatureRaidHero(
                     SignatureHpBar(world.bossHp, world.bossMaxHp)
                     Spacer(Modifier.height(5.dp))
                     Text(
-                        "${signatureComma(world.bossHp)} / ${signatureComma(world.bossMaxHp)} HP",
+                        hpLabel,
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -430,7 +445,6 @@ private fun SignatureCompanionRow(state: FocusUiState) {
 private fun SignatureDurationSelector(
     selected: Int,
     onSelect: (Int) -> Unit,
-    onCustom: (() -> Unit)?,
 ) {
     Column {
         Row(
@@ -451,16 +465,9 @@ private fun SignatureDurationSelector(
                     },
                     modifier = Modifier
                         .weight(1f)
-                        .heightIn(min = 42.dp),
+                    .heightIn(min = 42.dp),
                 )
             }
-        }
-        TextButton(
-            onClick = { onCustom?.invoke() },
-            enabled = onCustom != null,
-            modifier = Modifier.align(Alignment.End),
-        ) {
-            Text("時間を変更", fontSize = 11.sp)
         }
     }
 }
@@ -485,11 +492,13 @@ private fun SignatureExpeditionSelector(
                         when (expedition) {
                             Expedition.TOWER -> "天空塔"
                             Expedition.ABYSS -> "深層"
-                            Expedition.STAR_ROUTE -> if (locked) "🔒 星渡り" else "✦ 星渡り"
+                            Expedition.STAR_ROUTE -> if (locked) "🔒 星" else "✦ 星渡り"
                         },
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Center,
                         fontSize = 11.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 },
                 modifier = Modifier
@@ -909,14 +918,18 @@ internal fun SignatureBackdrop(content: @Composable () -> Unit) {
 }
 
 @Composable
-internal fun SignatureRaidLight(modifier: Modifier = Modifier.size(8.dp)) {
+internal fun SignatureRaidLight(
+    modifier: Modifier = Modifier.size(8.dp),
+    color: Color? = null,
+) {
+    val light = color ?: MaterialTheme.colorScheme.tertiary
     Box(
         modifier = modifier
             .background(
                 Brush.radialGradient(
                     listOf(
                         Color.White.copy(alpha = .96f),
-                        MaterialTheme.colorScheme.tertiary.copy(alpha = .92f),
+                        light.copy(alpha = .92f),
                         Color.Transparent,
                     ),
                 ),
@@ -926,7 +939,7 @@ internal fun SignatureRaidLight(modifier: Modifier = Modifier.size(8.dp)) {
 }
 
 @Composable
-private fun SignatureBrandMark(
+internal fun SignatureBrandMark(
     modifier: Modifier = Modifier,
     alpha: Float,
 ) {
@@ -975,3 +988,12 @@ private fun signatureClock(totalSeconds: Int): String {
 }
 
 private fun signatureComma(value: Int): String = "%,d".format(value)
+
+private fun signatureCompactCount(value: Int): String {
+    val safe = value.coerceAtLeast(0)
+    return when {
+        safe >= 1_000_000 -> "${safe / 1_000_000}M"
+        safe >= 1_000 -> "${safe / 1_000}k"
+        else -> safe.toString()
+    }
+}

@@ -105,4 +105,5 @@ private class NavigationStore : SessionStore {
             totalFocusMinutes = value.totalFocusMinutes + creditedMinutes)
     }
     override suspend fun markSystemAccessEducationSeen() { session.value = value.copy(systemAccessEducationSeen = true) }
+    override suspend fun markFirstRunComplete(version: Int) { session.value = value.copy(firstRunVersion = version) }
 }

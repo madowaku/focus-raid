@@ -17,4 +17,5 @@ interface SessionStore {
     suspend fun stageFinishedSession(entry: SessionHistoryEntry)
     suspend fun commitFinishedSession(sessionId: String, creditedMinutes: Int)
     suspend fun markSystemAccessEducationSeen()
+    suspend fun markFirstRunComplete(version: Int)
 }

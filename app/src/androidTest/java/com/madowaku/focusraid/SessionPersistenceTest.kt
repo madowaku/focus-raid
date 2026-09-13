@@ -4,6 +4,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.madowaku.focusraid.core.model.*
 import com.madowaku.focusraid.data.*
+import com.madowaku.focusraid.ui.CURRENT_FIRST_RUN_VERSION
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import org.junit.Test
@@ -20,6 +21,8 @@ class SessionPersistenceTest {
         assertEquals(com.madowaku.focusraid.core.domain.CompanionIdentity.LUNE, store.session.first().companion)
         store.setCompanion(com.madowaku.focusraid.core.domain.CompanionIdentity.RAG)
         store.saveReady()
+        store.markFirstRunComplete(CURRENT_FIRST_RUN_VERSION)
+        assertEquals(CURRENT_FIRST_RUN_VERSION, store.session.first().firstRunVersion)
         val before = store.session.first().totalFocusMinutes
         val id = UUID.randomUUID().toString()
         val entry = SessionHistoryEntry(id, 1000, 25, 2, Expedition.TOWER, SessionOutcome.ABORTED, 2, Rarity.RARE, "古代の鍵")
@@ -48,6 +51,10 @@ class SessionPersistenceTest {
             assertEquals(SessionPhase.PAUSED, store.session.first().phase)
             assertEquals(42_123, store.session.first().pausedRemainingMillis)
             assertEquals(0, store.session.first().endEpochMillis)
-        } finally { store.saveReady(); db.close() }
+        } finally {
+            store.markFirstRunComplete(0)
+            store.saveReady()
+            db.close()
+        }
     }
 }
