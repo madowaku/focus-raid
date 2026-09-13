@@ -135,7 +135,7 @@ private fun SignatureLauncherQa() {
                 )
             }
             Spacer(Modifier.size(24.dp))
-            Text("Focus Ring  ·  Raid Strike  ·  Glowing Core", fontSize = 12.sp)
+            Text("Focus Ring  ·  Raid Strike  ·  Meteor Spark", fontSize = 12.sp)
             Spacer(Modifier.size(18.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
                 LauncherSwatch(R.drawable.ic_launcher_foreground, "adaptive")

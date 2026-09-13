@@ -38,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -171,7 +172,10 @@ internal fun ReturnRaidSequence(
                         null
                     },
                 )
-                KenneyRaidImpactOverlay(trigger = impactTrigger)
+                KenneyRaidImpactOverlay(
+                    trigger = impactTrigger,
+                    emphasized = state.strikeCommitted,
+                )
             }
         }
     }
@@ -204,7 +208,7 @@ private fun ReturnMoment(scenario: ReturnRaidScenario) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(14.dp))
-        BossArtwork(Modifier.size(86.dp), presentation = BossPresentation.Normal)
+        ReturnRaidBossArtwork(Modifier.size(86.dp), presentation = BossPresentation.Normal)
     }
 }
 
@@ -220,7 +224,7 @@ private fun EchoMoment(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        BossArtwork(
+        ReturnRaidBossArtwork(
             Modifier.size(116.dp),
             presentation = BossPresentation.Damaged,
         )
@@ -271,9 +275,13 @@ private fun YourTurnMoment(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        BossArtwork(
+        ReturnRaidBossArtwork(
             Modifier.size(120.dp),
-            presentation = BossPresentation.Damaged,
+            presentation = if (scenario.echoes.isEmpty()) {
+                BossPresentation.Normal
+            } else {
+                BossPresentation.Damaged
+            },
         )
         Spacer(Modifier.height(16.dp))
         RaidIntegrityCard(scenario, displayedHp)
@@ -324,7 +332,7 @@ private fun StrikeMoment(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        BossArtwork(
+        ReturnRaidBossArtwork(
             Modifier.size(128.dp),
             presentation = BossPresentation.Damaged,
         )
@@ -360,7 +368,7 @@ private fun ResultMoment(
             color = if (state.armorBroken) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
         )
         Spacer(Modifier.height(12.dp))
-        BossArtwork(
+        ReturnRaidBossArtwork(
             Modifier.size(126.dp),
             presentation = if (state.armorBroken) {
                 BossPresentation.Defeated
@@ -382,6 +390,37 @@ private fun ResultMoment(
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun ReturnRaidBossArtwork(
+    modifier: Modifier,
+    presentation: BossPresentation,
+) {
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.radialGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.secondary.copy(alpha = .18f),
+                            MaterialTheme.colorScheme.primary.copy(alpha = .08f),
+                            androidx.compose.ui.graphics.Color.Transparent,
+                        ),
+                    ),
+                    CircleShape,
+                ),
+        )
+        BossArtwork(
+            modifier = Modifier.fillMaxSize(),
+            presentation = presentation,
+            frameless = true,
         )
     }
 }
@@ -514,7 +553,15 @@ private fun RaidIntegrityCard(scenario: ReturnRaidScenario, displayedHp: Int) {
                     .fillMaxWidth(progress)
                     .height(18.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.secondary),
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(
+                                MaterialTheme.colorScheme.primary,
+                                MaterialTheme.colorScheme.secondary,
+                                MaterialTheme.colorScheme.tertiary,
+                            ),
+                        ),
+                    ),
             )
         }
         Spacer(Modifier.height(5.dp))

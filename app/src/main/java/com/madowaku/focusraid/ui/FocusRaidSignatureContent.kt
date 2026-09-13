@@ -1,5 +1,6 @@
 package com.madowaku.focusraid.ui
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -39,8 +41,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -134,24 +140,35 @@ private fun SignatureReadyScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 SignatureTopBar(state)
-                SignatureRaidHero(state, recentEchoes)
-                SignatureCompanionRow(state)
+                SignatureRaidHero(state)
 
-                Button(
-                    onClick = onStart,
-                    enabled = state.initialized && !state.saving && state.persistenceError == null,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 62.dp),
-                    shape = RoundedCornerShape(28.dp),
-                    contentPadding = PaddingValues(horizontal = 22.dp),
-                ) {
-                    Text(
-                        signatureDepartureLabel(state.selectedMinutes, state.expedition),
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Black,
+                Box(Modifier.fillMaxWidth()) {
+                    Button(
+                        onClick = onStart,
+                        enabled = state.initialized && !state.saving && state.persistenceError == null,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 62.dp),
+                        shape = RoundedCornerShape(28.dp),
+                        contentPadding = PaddingValues(horizontal = 22.dp),
+                    ) {
+                        Text(
+                            signatureDepartureLabel(state.selectedMinutes, state.expedition),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Black,
+                        )
+                    }
+                    SignatureBrandMark(
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .padding(end = 16.dp)
+                            .size(28.dp),
+                        alpha = .10f,
                     )
                 }
+
+                if (recentEchoes.isNotEmpty()) SignatureRecentEchoes(recentEchoes)
+                SignatureCompanionRow(state)
 
                 SignatureDurationSelector(
                     selected = state.selectedMinutes,
@@ -220,7 +237,6 @@ private fun SignatureTopBar(state: FocusUiState) {
 @Composable
 private fun SignatureRaidHero(
     state: FocusUiState,
-    recentEchoes: List<RaidEcho>,
 ) {
     val world = state.world
     val bossPresentation = signatureBossPresentation(world.bossHp, world.bossMaxHp)
@@ -228,12 +244,6 @@ private fun SignatureRaidHero(
         world.raidParticipants.coerceAtLeast(0) == 0
     val lowHp = world.bossHp > 0 && world.bossMaxHp > 0 &&
         world.bossHp.toFloat() / world.bossMaxHp.toFloat() <= .25f
-    val compactEchoes = recentEchoes.isNotEmpty()
-    val artworkBoxSize = if (compactEchoes) 122.dp else 132.dp
-    val artworkSize = if (compactEchoes) 116.dp else 126.dp
-    val heroPadding = if (compactEchoes) 10.dp else 14.dp
-    val copyVerticalPadding = if (compactEchoes) 6.dp else 8.dp
-
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(30.dp),
@@ -253,7 +263,7 @@ private fun SignatureRaidHero(
                         ),
                     ),
                 )
-                .padding(horizontal = 16.dp, vertical = heroPadding),
+                .padding(horizontal = 16.dp, vertical = 14.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -284,18 +294,18 @@ private fun SignatureRaidHero(
                 }
                 Box(
                     modifier = Modifier
-                        .size(artworkBoxSize)
-                        .offset(x = 4.dp),
+                        .size(154.dp)
+                        .offset(x = 12.dp, y = (-4).dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(artworkBoxSize)
+                            .size(154.dp)
                             .background(
                                 Brush.radialGradient(
                                     listOf(
-                                        MaterialTheme.colorScheme.secondary.copy(alpha = .28f),
-                                        MaterialTheme.colorScheme.primary.copy(alpha = .10f),
+                                        MaterialTheme.colorScheme.secondary.copy(alpha = .24f),
+                                        MaterialTheme.colorScheme.primary.copy(alpha = .08f),
                                         Color.Transparent,
                                     ),
                                 ),
@@ -303,13 +313,14 @@ private fun SignatureRaidHero(
                             ),
                     )
                     BossArtwork(
-                        modifier = Modifier.size(artworkSize),
+                        modifier = Modifier.size(148.dp),
                         presentation = bossPresentation,
+                        frameless = true,
                     )
                 }
             }
 
-            Spacer(Modifier.height(if (compactEchoes) 4.dp else 6.dp))
+            Spacer(Modifier.height(6.dp))
             Surface(
                 shape = RoundedCornerShape(18.dp),
                 color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = .62f),
@@ -320,12 +331,12 @@ private fun SignatureRaidHero(
                         bossPresentation == BossPresentation.Defeated -> "このRaidは討伐済み。次の旅を待っています"
                         else -> "${state.selectedMinutes}分集中すると、この世界へ一撃が届く。"
                     },
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = copyVerticalPadding),
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
                 )
             }
-            Spacer(Modifier.height(if (compactEchoes) 6.dp else 8.dp))
+            Spacer(Modifier.height(8.dp))
             if (quietWorld) {
                 Text(
                     if (world.totalFocusMinutes > 0L) {
@@ -355,41 +366,50 @@ private fun SignatureRaidHero(
                 }
             }
 
-            if (recentEchoes.isNotEmpty()) {
-                Spacer(Modifier.height(6.dp))
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(18.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .34f),
+        }
+    }
+}
+
+@Composable
+private fun SignatureRecentEchoes(echoes: List<RaidEcho>) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .20f),
+    ) {
+        Column(Modifier.padding(horizontal = 12.dp, vertical = 7.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                SignatureRaidLight(Modifier.size(6.dp))
+                Spacer(Modifier.size(6.dp))
+                Text(
+                    "最近届いた集中",
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .80f),
+                    fontWeight = FontWeight.Medium,
+                )
+            }
+            Spacer(Modifier.height(3.dp))
+            echoes.take(3).forEach { echo ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 19.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Column(Modifier.padding(horizontal = 11.dp, vertical = 6.dp)) {
-                        Text(
-                            "最近届いた集中",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontWeight = FontWeight.Bold,
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        recentEchoes.take(3).forEach { echo ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .heightIn(min = 20.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                SignatureRaidLight()
-                                Spacer(Modifier.size(7.dp))
-                                Text(echo.relativeLabel, fontSize = 11.sp)
-                                Spacer(Modifier.weight(1f))
-                                Text(
-                                    "+${echo.focusMinutes.coerceAtLeast(0)}分",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.tertiary,
-                                )
-                            }
-                        }
-                    }
+                    SignatureRaidLight(Modifier.size(5.dp))
+                    Spacer(Modifier.size(7.dp))
+                    Text(
+                        echo.relativeLabel,
+                        fontSize = 10.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.weight(1f))
+                    Text(
+                        "+${echo.focusMinutes.coerceAtLeast(0)}分",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.tertiary.copy(alpha = .84f),
+                    )
                 }
             }
         }
@@ -619,7 +639,9 @@ private fun SignatureFocusingScreen(
                 lastMinute = lastMinute,
             )
 
-            Spacer(Modifier.height(18.dp))
+            Spacer(Modifier.height(10.dp))
+            SignatureRaidApproachLink(lastMinute = lastMinute, paused = paused)
+            Spacer(Modifier.height(10.dp))
             SignatureFocusWorldCard(state)
             Spacer(Modifier.height(18.dp))
 
@@ -648,6 +670,53 @@ private fun SignatureFocusingScreen(
                 Text("セッションを終了", fontSize = 12.sp)
             }
             Spacer(Modifier.height(16.dp))
+        }
+    }
+}
+
+@Composable
+private fun SignatureRaidApproachLink(lastMinute: Boolean, paused: Boolean) {
+    val alpha = when {
+        paused -> .16f
+        lastMinute -> .84f
+        else -> .34f
+    }
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(24.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = 38.dp)
+                .width(2.dp)
+                .height(24.dp)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.tertiary.copy(alpha = alpha * .70f),
+                            MaterialTheme.colorScheme.primary.copy(alpha = alpha),
+                            Color.Transparent,
+                        ),
+                    ),
+                    CircleShape,
+                ),
+        )
+        SignatureBrandMark(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = 22.dp)
+                .size(25.dp),
+            alpha = if (paused) .035f else if (lastMinute) .16f else .065f,
+        )
+        if (lastMinute && !paused) {
+            SignatureRaidLight(
+                Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 35.dp)
+                    .size(6.dp),
+            )
         }
     }
 }
@@ -844,7 +913,15 @@ private fun SignatureHpBar(current: Int, max: Int) {
                 .fillMaxWidth(progress)
                 .height(8.dp)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.secondary),
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.primary,
+                            MaterialTheme.colorScheme.secondary,
+                            MaterialTheme.colorScheme.tertiary,
+                        ),
+                    ),
+                ),
         )
     }
 }
@@ -898,10 +975,9 @@ internal fun SignatureBackdrop(content: @Composable () -> Unit) {
 }
 
 @Composable
-internal fun SignatureRaidLight(modifier: Modifier = Modifier) {
+internal fun SignatureRaidLight(modifier: Modifier = Modifier.size(8.dp)) {
     Box(
         modifier = modifier
-            .size(8.dp)
             .background(
                 Brush.radialGradient(
                     listOf(
@@ -913,6 +989,35 @@ internal fun SignatureRaidLight(modifier: Modifier = Modifier) {
                 CircleShape,
             ),
     )
+}
+
+@Composable
+private fun SignatureBrandMark(
+    modifier: Modifier = Modifier,
+    alpha: Float,
+) {
+    val ring = MaterialTheme.colorScheme.primary.copy(alpha = alpha)
+    val strike = MaterialTheme.colorScheme.secondary.copy(alpha = alpha * .95f)
+    Canvas(modifier) {
+        val strokeWidth = size.minDimension * .11f
+        val inset = strokeWidth / 2f
+        drawArc(
+            color = ring,
+            startAngle = -52f,
+            sweepAngle = 282f,
+            useCenter = false,
+            topLeft = Offset(inset, inset),
+            size = Size(size.width - strokeWidth, size.height - strokeWidth),
+            style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+        )
+        drawLine(
+            color = strike,
+            start = Offset(size.width * .24f, size.height * .76f),
+            end = Offset(size.width * .76f, size.height * .24f),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round,
+        )
+    }
 }
 
 internal fun signatureBossPresentation(current: Int, max: Int): BossPresentation {

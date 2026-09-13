@@ -93,6 +93,21 @@ class ReturnRaidSequenceStateTest {
     }
 
     @Test
+    fun capped_echoes_still_show_a_hp_drop_for_each_real_echo() {
+        val scenario = scenario(bossHp = 181, bossMaxHp = 250)
+
+        val hpSteps = listOf(
+            scenario.initialDisplayedHp,
+            scenario.hpAfterEcho(0),
+            scenario.hpAfterEcho(1),
+            scenario.hpAfterEcho(2),
+        )
+
+        assertTrue(hpSteps.zipWithNext().all { (before, after) -> after < before })
+        assertEquals(scenario.presentBossHp, hpSteps.last())
+    }
+
+    @Test
     fun first_25_moment_is_reserved_only_when_crossing_threshold() {
         assertTrue(reservesFirst25Moment(totalFocusMinutes = 25, creditedMinutes = 25))
         assertTrue(reservesFirst25Moment(totalFocusMinutes = 30, creditedMinutes = 10))

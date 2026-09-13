@@ -53,7 +53,10 @@ internal fun KenneyCompletionOverlay(
 }
 
 @Composable
-internal fun KenneyRaidImpactOverlay(trigger: Int) {
+internal fun KenneyRaidImpactOverlay(
+    trigger: Int,
+    emphasized: Boolean = false,
+) {
     if (trigger == 0) return
 
     val progress = remember(trigger) { Animatable(0f) }
@@ -68,6 +71,7 @@ internal fun KenneyRaidImpactOverlay(trigger: Int) {
     KenneyVfxLayer(
         progress = progress.value,
         mode = KenneyVfxMode.RAID_IMPACT,
+        emphasized = emphasized,
     )
 }
 
@@ -90,6 +94,7 @@ private fun KenneyVfxLayer(
     progress: Float,
     mode: KenneyVfxMode,
     anchorTop: Dp? = null,
+    emphasized: Boolean = false,
 ) {
     if (progress >= .999f) return
 
@@ -131,7 +136,11 @@ private fun KenneyVfxLayer(
                 modifier = Modifier
                     .fillMaxSize()
                     .graphicsLayer {
-                        alpha = flash * if (mode == KenneyVfxMode.COMPLETION) .34f else .18f
+                        alpha = flash * when {
+                            mode == KenneyVfxMode.COMPLETION -> .34f
+                            emphasized -> .24f
+                            else -> .18f
+                        }
                         val scale = if (mode == KenneyVfxMode.COMPLETION) {
                             .68f + flash * .28f
                         } else {
@@ -149,7 +158,11 @@ private fun KenneyVfxLayer(
                 modifier = Modifier
                     .fillMaxSize()
                     .graphicsLayer {
-                        alpha = flash * if (mode == KenneyVfxMode.COMPLETION) .52f else .50f
+                        alpha = flash * when {
+                            mode == KenneyVfxMode.COMPLETION -> .52f
+                            emphasized -> .60f
+                            else -> .50f
+                        }
                         val scale = if (mode == KenneyVfxMode.COMPLETION) {
                             .56f + flash * .62f
                         } else {
@@ -169,7 +182,7 @@ private fun KenneyVfxLayer(
                     modifier = Modifier
                         .fillMaxSize()
                         .graphicsLayer {
-                            alpha = flash * .30f
+                            alpha = flash * if (emphasized) .38f else .30f
                             val scale = .44f + flash * .50f
                             scaleX = scale
                             scaleY = scale
@@ -193,7 +206,9 @@ private fun KenneyVfxLayer(
             }
             particles.forEach { spec ->
                 val local = ((progress - spec.delay) / .62f).coerceIn(0f, 1f)
-                val particleAlpha = if (progress < spec.delay) 0f else (1f - local) * .78f
+                val particleAlpha = if (progress < spec.delay) 0f else {
+                    (1f - local) * if (emphasized) .86f else .78f
+                }
                 Image(
                     painter = painterResource(spec.resourceId),
                     contentDescription = null,
