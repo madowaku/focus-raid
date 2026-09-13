@@ -153,7 +153,7 @@ private fun SignatureReadyScreen(
                         contentPadding = PaddingValues(horizontal = 22.dp),
                     ) {
                         Text(
-                            signatureDepartureLabel(state.selectedMinutes, state.expedition),
+                            signatureDepartureLabel(state.selectedMinutes),
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Black,
                         )
@@ -167,7 +167,6 @@ private fun SignatureReadyScreen(
                     )
                 }
 
-                if (recentEchoes.isNotEmpty()) SignatureRecentEchoes(recentEchoes)
                 SignatureCompanionRow(state)
 
                 SignatureDurationSelector(
@@ -179,7 +178,7 @@ private fun SignatureReadyScreen(
                     selected = state.expedition,
                     onSelect = onSelectExpedition,
                 )
-                SignatureWorldPresence(state)
+                if (recentEchoes.isNotEmpty()) SignatureRecentEchoes(recentEchoes)
 
                 if (!state.initialized || state.saving) {
                     Text(
@@ -204,14 +203,7 @@ private fun SignatureTopBar(state: FocusUiState) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Column {
-            Text("Focus Raid", fontSize = 22.sp, fontWeight = FontWeight.Black)
-            Text(
-                "集中すると、世界が進む",
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+        Text("Focus Raid", fontSize = 22.sp, fontWeight = FontWeight.Black)
         Row(verticalAlignment = Alignment.CenterVertically) {
             TextButton(onClick = LocalOpenProPaywall.current) {
                 Text(
@@ -240,10 +232,6 @@ private fun SignatureRaidHero(
 ) {
     val world = state.world
     val bossPresentation = signatureBossPresentation(world.bossHp, world.bossMaxHp)
-    val quietWorld = world.focusNow.coerceAtLeast(0) == 0 &&
-        world.raidParticipants.coerceAtLeast(0) == 0
-    val lowHp = world.bossHp > 0 && world.bossMaxHp > 0 &&
-        world.bossHp.toFloat() / world.bossMaxHp.toFloat() <= .25f
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(30.dp),
@@ -280,7 +268,7 @@ private fun SignatureRaidHero(
                     Spacer(Modifier.height(3.dp))
                     Text(
                         world.bossName,
-                        fontSize = 21.sp,
+                        fontSize = 19.sp,
                         fontWeight = FontWeight.Black,
                     )
                     Spacer(Modifier.height(9.dp))
@@ -326,44 +314,24 @@ private fun SignatureRaidHero(
                 color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = .62f),
             ) {
                 Text(
-                    when {
-                        lowHp -> "あと少し。世界中の集中が押し込んでいる"
-                        bossPresentation == BossPresentation.Defeated -> "このRaidは討伐済み。次の旅を待っています"
-                        else -> "${state.selectedMinutes}分集中すると、この世界へ一撃が届く。"
+                    if (bossPresentation == BossPresentation.Defeated) {
+                        "討伐完了！ 次のボスを待っています"
+                    } else {
+                        "完走すると、ボスへ一撃"
                     },
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
                 )
             }
-            Spacer(Modifier.height(8.dp))
-            if (quietWorld) {
+            if (world.focusNow > 0) {
+                Spacer(Modifier.height(8.dp))
                 Text(
-                    if (world.totalFocusMinutes > 0L) {
-                        "これまで${signatureCommaLong(world.totalFocusMinutes)}分の集中が届いた"
-                    } else {
-                        "あなたの${state.selectedMinutes}分から、このRaidが動き出す"
-                    },
+                    "いま ${signatureComma(world.focusNow)}人が集中中",
                     modifier = Modifier.fillMaxWidth(),
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-            } else {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Text(
-                        "いま ${signatureComma(world.focusNow.coerceAtLeast(0))}人が集中中",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        "${signatureComma(world.raidParticipants.coerceAtLeast(0))}人が参加",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
             }
 
         }
@@ -442,7 +410,7 @@ private fun SignatureCompanionRow(state: FocusUiState) {
                     fontSize = 14.sp,
                 )
                 Text(
-                    companionStatusCopy(identity.label, growth),
+                    "集中すると、相棒も育つ",
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -475,7 +443,7 @@ private fun SignatureDurationSelector(
                     onClick = { onSelect(minutes) },
                     label = {
                         Text(
-                            "$minutes",
+                            "${minutes}分",
                             modifier = Modifier.fillMaxWidth(),
                             textAlign = TextAlign.Center,
                             fontSize = 12.sp,
@@ -492,7 +460,7 @@ private fun SignatureDurationSelector(
             enabled = onCustom != null,
             modifier = Modifier.align(Alignment.End),
         ) {
-            Text("時間を細かく設定", fontSize = 11.sp)
+            Text("時間を変更", fontSize = 11.sp)
         }
     }
 }
@@ -533,28 +501,6 @@ private fun SignatureExpeditionSelector(
 }
 
 @Composable
-private fun SignatureWorldPresence(state: FocusUiState) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = .58f),
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text("✦", color = MaterialTheme.colorScheme.tertiary, fontSize = 16.sp)
-            Spacer(Modifier.size(8.dp))
-            Text(
-                "遠くでも集中が積み上がっています。あなたの${state.selectedMinutes}分も、その続きになる。",
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-@Composable
 private fun SignatureFocusingScreen(
     state: FocusUiState,
     onPause: () -> Unit,
@@ -582,14 +528,7 @@ private fun SignatureFocusingScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Column {
-                    Text("Focus Raid", fontSize = 18.sp, fontWeight = FontWeight.Black)
-                    Text(
-                        if (paused) "旅はここで止まっています" else "静かに進んでいます",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+                Text("Focus Raid", fontSize = 18.sp, fontWeight = FontWeight.Black)
                 Surface(
                     shape = CircleShape,
                     color = if (paused) {
@@ -599,11 +538,7 @@ private fun SignatureFocusingScreen(
                     },
                 ) {
                     Text(
-                        when {
-                            paused -> "PAUSED"
-                            state.expedition == Expedition.STAR_ROUTE -> "STAR ROUTE"
-                            else -> "FOCUS"
-                        },
+                        if (paused) "一時停止中" else "集中中",
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
@@ -624,7 +559,7 @@ private fun SignatureFocusingScreen(
                 },
             )
             Text(
-                if (lastMinute) "レイド地点の灯が見えてきた" else "${state.selectedMinutes}分の旅",
+                if (lastMinute) "あと1分" else "${state.selectedMinutes}分集中",
                 fontSize = 12.sp,
                 color = if (lastMinute) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = if (lastMinute) FontWeight.Bold else FontWeight.Normal,
@@ -724,7 +659,7 @@ private fun SignatureRaidApproachLink(lastMinute: Boolean, paused: Boolean) {
 @Composable
 private fun SignatureJourneyRail(
     progress: Float,
-    stage: com.madowaku.focusraid.core.domain.CompanionStage,
+    stage: CompanionStage,
     expedition: Expedition,
     paused: Boolean,
     lastMinute: Boolean,
@@ -732,9 +667,8 @@ private fun SignatureJourneyRail(
     val safeProgress = progress.coerceIn(0f, 1f)
     val currentIndex = signatureJourneyIndex(safeProgress)
     val labels = when (expedition) {
-        Expedition.TOWER -> listOf("CAMP", "PATH", "RIDGE", "GATE", "RAID")
-        Expedition.ABYSS -> listOf("CAMP", "DESCENT", "VEIN", "GATE", "RAID")
-        Expedition.STAR_ROUTE -> listOf("DOCK", "DRIFT", "ORBIT", "GATE", "BEACON")
+        Expedition.STAR_ROUTE -> listOf("出発", "", "", "", "星渡り")
+        else -> listOf("出発", "", "", "", "ボスへ")
     }
 
     Surface(
@@ -862,7 +796,7 @@ private fun SignatureFocusWorldCard(state: FocusUiState) {
                 Column {
                     Text("星渡り航路", fontWeight = FontWeight.Bold)
                     Text(
-                        "完走すると、この集中が航路の進行へ加わります。",
+                        "完走すると、航路が進む",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -881,7 +815,7 @@ private fun SignatureFocusWorldCard(state: FocusUiState) {
                 SignatureHpBar(state.world.bossHp, state.world.bossMaxHp)
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "完走後に、この集中を世界へ送信",
+                    if (state.world.bossHp <= 0) "討伐完了" else "完走すると、ボスへ一撃",
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -1030,20 +964,10 @@ internal fun signatureBossPresentation(current: Int, max: Int): BossPresentation
     }
 }
 
-private fun companionStatusCopy(name: String, growth: com.madowaku.focusraid.core.domain.CompanionGrowthStatus): String =
-    when (growth.stage) {
-        CompanionStage.EGG -> "${name}は出発を待っている"
-        CompanionStage.MATURE -> "${name}は次の旅を待っている"
-        else -> "${name}は一緒に進む準備ができている"
-    }
-
 internal fun signatureJourneyIndex(progress: Float): Int =
     (progress.coerceIn(0f, 1f) * 5f).toInt().coerceIn(0, 4)
 
-internal fun signatureDepartureLabel(minutes: Int, expedition: Expedition): String = when (expedition) {
-    Expedition.STAR_ROUTE -> "✦  ${minutes}分、星渡りへ"
-    else -> "${minutes}分、出発する"
-}
+internal fun signatureDepartureLabel(minutes: Int): String = "${minutes}分集中する"
 
 private fun signatureClock(totalSeconds: Int): String {
     val safe = totalSeconds.coerceAtLeast(0)
@@ -1051,5 +975,3 @@ private fun signatureClock(totalSeconds: Int): String {
 }
 
 private fun signatureComma(value: Int): String = "%,d".format(value)
-
-private fun signatureCommaLong(value: Long): String = "%,d".format(value.coerceAtLeast(0L))

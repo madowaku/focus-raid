@@ -1,6 +1,5 @@
 package com.madowaku.focusraid.ui
 
-import com.madowaku.focusraid.core.model.Expedition
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -17,9 +16,9 @@ class FocusRaidSignatureTest {
 
     @Test
     fun departureCopyKeepsFocusMinutesPrimary() {
-        assertEquals("25分、出発する", signatureDepartureLabel(25, Expedition.TOWER))
-        assertEquals("45分、出発する", signatureDepartureLabel(45, Expedition.ABYSS))
-        assertEquals("✦  25分、星渡りへ", signatureDepartureLabel(25, Expedition.STAR_ROUTE))
+        assertEquals("25分集中する", signatureDepartureLabel(25))
+        assertEquals("45分集中する", signatureDepartureLabel(45))
+        assertEquals("60分集中する", signatureDepartureLabel(60))
     }
 
     @Test

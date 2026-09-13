@@ -97,7 +97,7 @@ Rag starts as an egg on a fresh install and visually evolves as credited focus t
 - 1,800 min: second growth
 - 4,500 min: mature
 
-The Companion tab shows the current form, progress to the next form, time spent together, today's contribution, and a five-form progression strip. Future forms stay dimmed until unlocked.
+The Companions tab shows the current form, cumulative focus time, progress to the next form, and the companion roster. Future forms and undiscovered companions stay behind locks and `???` until unlocked.
 
 When a completed or partially credited session crosses a growth threshold, the result state records the old and new form. An evolution card shows the selected companion’s previous artwork before revealing its newly unlocked form. Evolution never depends on streaks or paid acceleration.
 

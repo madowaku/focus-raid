@@ -38,12 +38,11 @@ The Companion tab shows:
 
 - current visual form
 - total time spent together
-- today's credited focus
 - progress toward the next stage
 - remaining minutes to the next stage
 - a five-form progression strip
 
-Future forms are dimmed and labeled `???` until unlocked. This exposes the existence of future growth without spoiling the exact unlocked silhouette too aggressively.
+Future forms show a lock and `???` without loading their artwork. Undiscovered companions use the same concealment with a short unlock requirement; unlocked companions remain selectable. The compact current-form card puts cumulative focus and time to the next growth together, while the roster makes the existence of multiple companions visible.
 
 ## QA
 
