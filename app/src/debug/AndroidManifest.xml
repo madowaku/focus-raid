@@ -6,6 +6,11 @@
             android:exported="true"
             android:screenOrientation="portrait" />
 
+        <activity
+            android:name=".PixelExpeditionQaActivity"
+            android:exported="true"
+            android:screenOrientation="portrait" />
+
         <receiver
             android:name=".DurabilityDebugReceiver"
             android:enabled="true"
