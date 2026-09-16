@@ -35,7 +35,7 @@ import com.madowaku.focusraid.data.SessionPreferences
 import com.madowaku.focusraid.data.WorldRepositoryFactory
 import com.madowaku.focusraid.data.loadRecentRaidEchoes
 import com.madowaku.focusraid.timer.FocusAlarmScheduler
-import com.madowaku.focusraid.ui.FocusRaidV08Root
+import com.madowaku.focusraid.ui.FocusRaidV10Root
 import com.madowaku.focusraid.ui.FocusSystemAccess
 import com.madowaku.focusraid.ui.FocusViewModel
 import com.madowaku.focusraid.ui.theme.FocusRaidTheme
@@ -93,7 +93,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             FocusRaidTheme {
-                FocusRaidV08Root(
+                FocusRaidV10Root(
                     viewModel = viewModel,
                     proAccessViewModel = proAccessViewModel,
                     systemAccess = systemAccess,
