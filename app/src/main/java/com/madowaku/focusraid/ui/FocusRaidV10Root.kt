@@ -1,0 +1,85 @@
+package com.madowaku.focusraid.ui
+
+import androidx.activity.compose.BackHandler
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.madowaku.focusraid.billing.ProAccessViewModel
+import com.madowaku.focusraid.core.model.SessionPhase
+
+/**
+ * v0.10 entry point.
+ *
+ * Only RUNNING / PAUSED are replaced by the Pixel Expedition vertical slice. READY, FIRST RUN,
+ * Return Raid, billing and all result flows stay on the established v0.8 shell.
+ */
+@Composable
+fun FocusRaidV10Root(
+    viewModel: FocusViewModel,
+    proAccessViewModel: ProAccessViewModel,
+    systemAccess: FocusSystemAccess = FocusSystemAccess(),
+    loadRaidEchoes: suspend () -> List<com.madowaku.focusraid.data.RaidEcho> = { emptyList() },
+    onRequestNotificationPermission: () -> Unit = {},
+    onRequestExactAlarmPermission: () -> Unit = {},
+    onPurchasePro: () -> Unit = {},
+    onRestorePurchases: () -> Unit = {},
+) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val focusing = state.phase == SessionPhase.RUNNING || state.phase == SessionPhase.PAUSED
+    var showEndConfirmation by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(state.phase) {
+        if (!focusing) showEndConfirmation = false
+    }
+
+    if (focusing) {
+        BackHandler(enabled = !state.saving && state.persistenceError == null) {
+            showEndConfirmation = true
+        }
+
+        PixelExpeditionFocusingScreen(
+            state = state,
+            onPause = viewModel::pause,
+            onResume = viewModel::resume,
+            onRequestFinish = { showEndConfirmation = true },
+        )
+
+        if (showEndConfirmation) {
+            AlertDialog(
+                onDismissRequest = { showEndConfirmation = false },
+                title = { Text("この遠征をここで終えますか？") },
+                text = { Text("ここまでの集中時間は記録されます。") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showEndConfirmation = false
+                            viewModel.finishEarly()
+                        },
+                    ) { Text("終了する") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showEndConfirmation = false }) { Text("続ける") }
+                },
+            )
+        }
+        return
+    }
+
+    FocusRaidV08Root(
+        viewModel = viewModel,
+        proAccessViewModel = proAccessViewModel,
+        systemAccess = systemAccess,
+        loadRaidEchoes = loadRaidEchoes,
+        onRequestNotificationPermission = onRequestNotificationPermission,
+        onRequestExactAlarmPermission = onRequestExactAlarmPermission,
+        onPurchasePro = onPurchasePro,
+        onRestorePurchases = onRestorePurchases,
+    )
+}
