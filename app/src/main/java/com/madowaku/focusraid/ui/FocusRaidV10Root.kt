@@ -12,13 +12,14 @@ import androidx.compose.runtime.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.madowaku.focusraid.billing.ProAccessViewModel
+import com.madowaku.focusraid.core.model.Expedition
 import com.madowaku.focusraid.core.model.SessionPhase
 
 /**
  * v0.10 entry point.
  *
- * Only RUNNING / PAUSED are replaced by the Pixel Expedition vertical slice. READY, FIRST RUN,
- * Return Raid, billing and all result flows stay on the established v0.8 shell.
+ * The first Pixel Expedition vertical slice belongs to 深層 only. Other expeditions deliberately
+ * stay on the established v0.8 shell until they get their own world art and route spec.
  */
 @Composable
 fun FocusRaidV10Root(
@@ -33,13 +34,14 @@ fun FocusRaidV10Root(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val focusing = state.phase == SessionPhase.RUNNING || state.phase == SessionPhase.PAUSED
+    val pixelSliceActive = focusing && state.expedition == Expedition.ABYSS
     var showEndConfirmation by rememberSaveable { mutableStateOf(false) }
 
-    LaunchedEffect(state.phase) {
-        if (!focusing) showEndConfirmation = false
+    LaunchedEffect(state.phase, state.expedition) {
+        if (!pixelSliceActive) showEndConfirmation = false
     }
 
-    if (focusing) {
+    if (pixelSliceActive) {
         BackHandler(enabled = !state.saving && state.persistenceError == null) {
             showEndConfirmation = true
         }
