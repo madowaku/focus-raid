@@ -3,8 +3,12 @@ package com.madowaku.focusraid.ui
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -12,7 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import kotlin.math.roundToInt
+import androidx.compose.ui.unit.dp
 
 /**
  * v0.10 vertical-slice world model.
@@ -71,20 +75,19 @@ internal fun pixelExpeditionCameraX(progress: Float): Float {
 internal fun pixelExpeditionStatusCopy(progress: Float, paused: Boolean): String {
     if (paused) return "旅はここで止まっています"
     return when (pixelExpeditionStage(progress)) {
-        PixelExpeditionStage.CAMP -> "キャンプを離れ、静かに歩きはじめた"
-        PixelExpeditionStage.PATH -> "森道を越えて、世界の奥へ"
+        PixelExpeditionStage.CAMP -> "夜明け前のキャンプを出る"
+        PixelExpeditionStage.PATH -> "灯りを頼りに、森道の奥へ"
         PixelExpeditionStage.RIDGE -> "もう山道まで来た"
-        PixelExpeditionStage.GATE -> "レイド地点の灯が近づいてきた"
-        PixelExpeditionStage.RAID -> "レイド地点の灯が見えてきた"
+        PixelExpeditionStage.GATE -> "火口の門が見えてきた"
+        PixelExpeditionStage.RAID -> "ヴォルガの気配が近い"
     }
 }
 
 /**
  * Procedural first-pass renderer for the Pixel Expedition vertical slice.
  *
- * This intentionally uses geometry instead of final bitmap art so the travel/camera language can
- * be validated before committing to a sprite pipeline. Final art can replace each layer without
- * changing the progress/camera contract.
+ * Geometry owns the world depth and camera language. Crisp text-defined sprites sit above it so
+ * the slice already reads as an intentional pixel world before final bitmap art exists.
  */
 @Composable
 internal fun PixelExpeditionWorld(
@@ -104,38 +107,51 @@ internal fun PixelExpeditionWorld(
 
             fun sx(worldX: Float, factor: Float = 1f): Float {
                 val virtualViewport = 420f
-                val center = 500f
+                val center = w * .50f
                 return center + (worldX - cameraX * factor) / virtualViewport * w
             }
 
-            val skyTop = if (stage >= PixelExpeditionStage.GATE) Color(0xFF151126) else Color(0xFF091120)
-            val skyBottom = if (stage >= PixelExpeditionStage.GATE) Color(0xFF45211F) else Color(0xFF172744)
+            val skyTop = if (stage >= PixelExpeditionStage.GATE) Color(0xFF171024) else Color(0xFF08101E)
+            val skyBottom = if (stage >= PixelExpeditionStage.GATE) Color(0xFF54261E) else Color(0xFF1C2C49)
             drawRect(
                 brush = Brush.verticalGradient(listOf(skyTop, skyBottom)),
                 size = size,
             )
 
-            // Moon / distant raid glow.
+            // Sparse stars and a moon keep the upper half calm rather than game-HUD busy.
+            listOf(
+                .07f to .17f, .18f to .10f, .31f to .20f, .48f to .12f,
+                .62f to .18f, .78f to .09f, .92f to .22f,
+            ).forEach { (x, y) ->
+                drawRect(
+                    Color(0xFFDCE6F6).copy(alpha = if (paused) .22f else .52f),
+                    topLeft = Offset(w * x, h * y),
+                    size = Size(w * .006f, w * .006f),
+                )
+            }
             drawCircle(
-                color = Color(0xFFE6E3C9).copy(alpha = if (paused) .30f else .62f),
+                color = Color(0xFFE6E3C9).copy(alpha = if (paused) .26f else .58f),
                 radius = h * .045f,
                 center = Offset(w * .15f, h * .19f),
             )
+
+            // The raid glow gets warmer and larger as the camera approaches Volga.
             val raidGlowX = sx(920f, .30f)
             drawCircle(
                 brush = Brush.radialGradient(
                     colors = listOf(
-                        Color(0xFFFF9B45).copy(alpha = if (paused) .10f else .36f + safeProgress * .22f),
+                        Color(0xFFFF9B45).copy(alpha = if (paused) .10f else .28f + safeProgress * .34f),
+                        Color(0xFFE85732).copy(alpha = if (paused) .04f else .10f + safeProgress * .12f),
                         Color.Transparent,
                     ),
                     center = Offset(raidGlowX, h * .36f),
-                    radius = h * .28f,
+                    radius = h * (.24f + safeProgress * .08f),
                 ),
-                radius = h * .28f,
+                radius = h * (.24f + safeProgress * .08f),
                 center = Offset(raidGlowX, h * .36f),
             )
 
-            // Parallax mountain silhouettes.
+            // Far mountains: slow parallax.
             repeat(8) { index ->
                 val worldX = index * 170f - 60f
                 val x = sx(worldX, .30f)
@@ -146,22 +162,40 @@ internal fun PixelExpeditionWorld(
                     lineTo(x + w * .22f, baseY)
                     close()
                 }
-                drawPath(mountain, Color(0xFF17243A).copy(alpha = .92f))
+                drawPath(
+                    mountain,
+                    if (index % 2 == 0) Color(0xFF1A2940) else Color(0xFF222A45),
+                )
+            }
+
+            // Mid-ground cliffs create a valley the traveler actually crosses.
+            repeat(6) { index ->
+                val worldX = index * 210f - 40f
+                val x = sx(worldX, .72f)
+                val base = h * .72f
+                val ridge = Path().apply {
+                    moveTo(x - w * .30f, base)
+                    lineTo(x - w * .14f, h * (.52f + (index % 2) * .06f))
+                    lineTo(x + w * .04f, h * (.58f - (index % 3) * .025f))
+                    lineTo(x + w * .27f, base)
+                    close()
+                }
+                drawPath(ridge, Color(0xFF101A2A).copy(alpha = .96f))
             }
 
             // Chasm / lower world.
-            drawRect(Color(0xFF070B12), topLeft = Offset(0f, h * .64f), size = Size(w, h * .36f))
+            drawRect(Color(0xFF050910), topLeft = Offset(0f, h * .70f), size = Size(w, h * .30f))
 
             // Travel path, transformed by the main camera.
             val pathPoints = listOf(
-                70f to .76f,
-                190f to .68f,
-                320f to .71f,
-                450f to .61f,
-                585f to .66f,
-                720f to .56f,
-                840f to .60f,
-                930f to .50f,
+                70f to .78f,
+                190f to .70f,
+                320f to .73f,
+                450f to .63f,
+                585f to .67f,
+                720f to .57f,
+                840f to .61f,
+                930f to .51f,
             )
             val road = Path()
             pathPoints.forEachIndexed { index, (worldX, yRatio) ->
@@ -170,95 +204,153 @@ internal fun PixelExpeditionWorld(
             }
             drawPath(
                 path = road,
-                color = Color(0xFF7D7161),
-                style = Stroke(width = h * .045f, cap = StrokeCap.Round),
+                color = Color(0xFF6E665E),
+                style = Stroke(width = h * .050f, cap = StrokeCap.Round),
             )
             drawPath(
                 path = road,
-                color = Color(0xFFD1B57A).copy(alpha = if (paused) .30f else .54f),
+                color = Color(0xFFCDB07A).copy(alpha = if (paused) .24f else .56f),
                 style = Stroke(width = h * .012f, cap = StrokeCap.Round),
             )
 
             // Camp at the beginning of the world.
             val campX = sx(85f)
-            val campY = h * .74f
-            drawRect(Color(0xFF6E4935), Offset(campX - w * .055f, campY - h * .05f), Size(w * .11f, h * .055f))
+            val campY = h * .77f
             val tent = Path().apply {
                 moveTo(campX - w * .10f, campY)
                 lineTo(campX, campY - h * .13f)
                 lineTo(campX + w * .10f, campY)
                 close()
             }
-            drawPath(tent, Color(0xFF9A633C))
-            drawCircle(
-                color = Color(0xFFFFC14F).copy(alpha = if (paused) .35f else .95f),
-                radius = h * .025f,
-                center = Offset(campX + w * .13f, campY),
-            )
-
-            // Gate / raid approach.
-            val gateX = sx(760f)
-            val gateY = h * .59f
-            drawRect(Color(0xFF39313A), Offset(gateX - w * .10f, gateY - h * .15f), Size(w * .055f, h * .17f))
-            drawRect(Color(0xFF39313A), Offset(gateX + w * .045f, gateY - h * .15f), Size(w * .055f, h * .17f))
-            drawRect(Color(0xFF55424A), Offset(gateX - w * .10f, gateY - h * .15f), Size(w * .20f, h * .035f))
-
-            // Distant Volga: first-pass silhouette. Scale/visibility grows as the raid approaches.
-            val bossX = sx(920f)
-            val bossY = h * .42f
-            val bossScale = .55f + safeProgress * .70f
-            val bossAlpha = if (paused) .34f else .48f + safeProgress * .38f
-            drawCircle(Color(0xFF1B1420).copy(alpha = bossAlpha), h * .105f * bossScale, Offset(bossX, bossY))
-            drawCircle(Color(0xFFDF6235).copy(alpha = bossAlpha), h * .018f * bossScale, Offset(bossX - w * .018f, bossY - h * .015f))
-            drawLine(
-                color = Color(0xFFD34930).copy(alpha = bossAlpha),
-                start = Offset(bossX, bossY + h * .04f),
-                end = Offset(bossX + w * .10f * bossScale, bossY - h * .11f * bossScale),
-                strokeWidth = h * .015f,
-                cap = StrokeCap.Round,
-            )
-
-            // Companion traveler remains near the middle while the world moves around it.
-            val travelerX = w * .48f
-            val travelerY = when (stage) {
-                PixelExpeditionStage.CAMP -> h * .72f
-                PixelExpeditionStage.PATH -> h * .66f
-                PixelExpeditionStage.RIDGE -> h * .60f
-                PixelExpeditionStage.GATE -> h * .56f
-                PixelExpeditionStage.RAID -> h * .52f
-            }
-            val eggW = w * .075f
-            val eggH = h * .105f
-            drawOval(
-                brush = Brush.verticalGradient(
-                    listOf(Color(0xFFFFE8A2), Color(0xFFFF9A3E), Color(0xFFC64D27)),
-                    startY = travelerY - eggH / 2f,
-                    endY = travelerY + eggH / 2f,
-                ),
-                topLeft = Offset(travelerX - eggW / 2f, travelerY - eggH / 2f),
-                size = Size(eggW, eggH),
+            drawPath(tent, Color(0xFF8B5A3B))
+            drawPath(
+                Path().apply {
+                    moveTo(campX - w * .065f, campY)
+                    lineTo(campX, campY - h * .09f)
+                    lineTo(campX + w * .065f, campY)
+                    close()
+                },
+                Color(0xFFB67B4B),
             )
             drawCircle(
-                color = Color(0xFFFFD76A).copy(alpha = if (paused) .20f else .32f),
+                color = Color(0xFFFFC14F).copy(alpha = if (paused) .30f else .95f),
+                radius = h * .024f,
+                center = Offset(campX + w * .14f, campY),
+            )
+            drawCircle(
+                color = Color(0xFFFF8D3B).copy(alpha = if (paused) .12f else .24f),
                 radius = h * .085f,
-                center = Offset(travelerX, travelerY),
-                style = Stroke(width = 2f),
+                center = Offset(campX + w * .14f, campY),
             )
 
-            // Sparse world lights hint that other focus journeys exist without implying fake live users.
-            listOf(340f, 545f, 675f).forEachIndexed { index, worldX ->
+            // Lanterns mark the route without pretending to be live users.
+            listOf(250f to .69f, 470f to .62f, 675f to .58f).forEach { (worldX, yRatio) ->
                 val x = sx(worldX)
-                val y = h * listOf(.61f, .58f, .54f)[index]
+                val y = h * yRatio
+                drawLine(
+                    color = Color(0xFF554B45),
+                    start = Offset(x, y),
+                    end = Offset(x, y - h * .085f),
+                    strokeWidth = w * .010f,
+                )
+                drawRect(
+                    color = Color(0xFFFFD06C).copy(alpha = if (paused) .26f else .92f),
+                    topLeft = Offset(x - w * .012f, y - h * .095f),
+                    size = Size(w * .024f, h * .030f),
+                )
                 drawCircle(
-                    color = Color(0xFFDDE6FF).copy(alpha = if (paused) .12f else .34f),
-                    radius = h * .008f,
-                    center = Offset(x, y),
+                    color = Color(0xFFFFB44E).copy(alpha = if (paused) .08f else .14f),
+                    radius = h * .060f,
+                    center = Offset(x, y - h * .080f),
                 )
             }
 
+            // Gate / raid approach.
+            val gateX = sx(760f)
+            val gateY = h * .60f
+            drawRect(Color(0xFF352F39), Offset(gateX - w * .105f, gateY - h * .17f), Size(w * .060f, h * .19f))
+            drawRect(Color(0xFF352F39), Offset(gateX + w * .045f, gateY - h * .17f), Size(w * .060f, h * .19f))
+            drawRect(Color(0xFF58434A), Offset(gateX - w * .105f, gateY - h * .17f), Size(w * .21f, h * .038f))
+            drawRect(
+                Color(0xFFFF8B43).copy(alpha = .18f + safeProgress * .20f),
+                Offset(gateX - w * .08f, gateY - h * .125f),
+                Size(w * .16f, h * .115f),
+            )
+
+            // Near foreground: faster parallax makes the scene feel spatial, not wallpaper-flat.
+            val leftForeground = sx(cameraX - 210f, 1.15f)
+            val rightForeground = sx(cameraX + 230f, 1.15f)
+            val foregroundColor = Color(0xFF05080D).copy(alpha = .98f)
+            drawPath(
+                Path().apply {
+                    moveTo(0f, h)
+                    lineTo(0f, h * .80f)
+                    lineTo(leftForeground, h * .74f)
+                    lineTo(leftForeground + w * .18f, h)
+                    close()
+                },
+                foregroundColor,
+            )
+            drawPath(
+                Path().apply {
+                    moveTo(w, h)
+                    lineTo(w, h * .76f)
+                    lineTo(rightForeground, h * .70f)
+                    lineTo(rightForeground - w * .18f, h)
+                    close()
+                },
+                foregroundColor,
+            )
+
             if (paused) {
-                drawRect(Color.Black.copy(alpha = .30f), size = size)
+                drawRect(Color.Black.copy(alpha = .27f), size = size)
             }
         }
+
+        // Crisp sprites live above the procedural depth layers. They can later be replaced by final
+        // bitmap/atlas assets without touching camera or session logic.
+        val bossSize = when (stage) {
+            PixelExpeditionStage.CAMP -> 54.dp
+            PixelExpeditionStage.PATH -> 64.dp
+            PixelExpeditionStage.RIDGE -> 76.dp
+            PixelExpeditionStage.GATE -> 94.dp
+            PixelExpeditionStage.RAID -> 116.dp
+        }
+        PixelVolgaSprite(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = when (stage) {
+                    PixelExpeditionStage.CAMP -> 62.dp
+                    PixelExpeditionStage.PATH -> 66.dp
+                    PixelExpeditionStage.RIDGE -> 72.dp
+                    PixelExpeditionStage.GATE -> 76.dp
+                    PixelExpeditionStage.RAID -> 82.dp
+                }, end = 18.dp)
+                .size(bossSize)
+                .alpha(if (paused) .38f else .62f + safeProgress * .30f),
+        )
+
+        PixelRagEggSprite(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(
+                    start = when (stage) {
+                        PixelExpeditionStage.CAMP -> 78.dp
+                        PixelExpeditionStage.PATH -> 104.dp
+                        PixelExpeditionStage.RIDGE -> 128.dp
+                        PixelExpeditionStage.GATE -> 146.dp
+                        PixelExpeditionStage.RAID -> 164.dp
+                    },
+                    bottom = when (stage) {
+                        PixelExpeditionStage.CAMP -> 58.dp
+                        PixelExpeditionStage.PATH -> 76.dp
+                        PixelExpeditionStage.RIDGE -> 92.dp
+                        PixelExpeditionStage.GATE -> 104.dp
+                        PixelExpeditionStage.RAID -> 112.dp
+                    },
+                )
+                .size(if (stage >= PixelExpeditionStage.GATE) 52.dp else 46.dp)
+                .alpha(if (paused) .56f else 1f),
+        )
     }
 }
