@@ -220,15 +220,30 @@ fun FocusRaidV07Root(
         viewModel.resetAfterResult()
     }
 
-    ReturnRaidSequence(
-        scenario = scenario,
-        onEchoAudio = viewModel::raidEcho,
-        onStrikeAudio = viewModel::raidSelfStrike,
-        onVictoryAudio = viewModel::raidVictory,
-        onFootprints = { showFootprints = true },
-        onAgain = viewModel::startAgain,
-        onDone = viewModel::confirmResultAndReset,
-    )
+    val usePixelReturnRaid = state.expedition == com.madowaku.focusraid.core.model.Expedition.ABYSS &&
+        state.companion == com.madowaku.focusraid.core.domain.CompanionIdentity.RAG
+
+    if (usePixelReturnRaid) {
+        PixelReturnRaidSequence(
+            scenario = scenario,
+            onEchoAudio = viewModel::raidEcho,
+            onStrikeAudio = viewModel::raidSelfStrike,
+            onVictoryAudio = viewModel::raidVictory,
+            onFootprints = { showFootprints = true },
+            onAgain = viewModel::startAgain,
+            onDone = viewModel::confirmResultAndReset,
+        )
+    } else {
+        ReturnRaidSequence(
+            scenario = scenario,
+            onEchoAudio = viewModel::raidEcho,
+            onStrikeAudio = viewModel::raidSelfStrike,
+            onVictoryAudio = viewModel::raidVictory,
+            onFootprints = { showFootprints = true },
+            onAgain = viewModel::startAgain,
+            onDone = viewModel::confirmResultAndReset,
+        )
+    }
 
     if (showFootprints) {
         FootprintDialog(
