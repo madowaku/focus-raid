@@ -50,7 +50,7 @@ fun FocusRaidV10Root(
             showEndConfirmation = true
         }
 
-        PixelExpeditionFocusingScreen(
+        PixelExpeditionDestinationScreen(
             state = state,
             onPause = viewModel::pause,
             onResume = viewModel::resume,
