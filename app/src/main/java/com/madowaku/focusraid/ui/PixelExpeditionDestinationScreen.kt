@@ -1,7 +1,6 @@
 package com.madowaku.focusraid.ui
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +13,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -257,8 +257,6 @@ private fun DestinationPresenceOverlay(
             center = center,
         )
 
-        // A deliberately incomplete silhouette: enough horn/wing/body language to promise Volga
-        // without turning the quiet focus screen into a battle scene.
         val body = Path().apply {
             moveTo(center.x - w * .08f, center.y + h * .08f)
             lineTo(center.x - w * .02f, center.y - h * .06f)
