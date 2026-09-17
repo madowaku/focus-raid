@@ -50,7 +50,6 @@ internal fun PixelReturnRaidWorld(
                 size = size,
             )
 
-            // Distant crater wall.
             repeat(7) { index ->
                 val centerX = w * (index / 6f)
                 val baseY = h * .55f
@@ -67,7 +66,6 @@ internal fun PixelReturnRaidWorld(
                 )
             }
 
-            // Arena / causeway. Same visual language as the final Pixel Expedition gate.
             val arenaY = h * .72f
             drawRect(
                 color = Color(0xFF16151D),
@@ -82,7 +80,6 @@ internal fun PixelReturnRaidWorld(
                 size = Size(w * .88f, h * .075f),
             )
 
-            // Broken columns frame the battle space without becoming a combat HUD.
             listOf(.12f, .22f, .78f, .88f).forEachIndexed { index, xRatio ->
                 val top = h * if (index % 2 == 0) .43f else .49f
                 val columnH = arenaY - top
@@ -98,7 +95,6 @@ internal fun PixelReturnRaidWorld(
                 )
             }
 
-            // Crater glow behind Volga. It calms after defeat rather than exploding.
             val glowAlpha = when {
                 defeated -> .10f
                 result -> .18f
@@ -118,7 +114,6 @@ internal fun PixelReturnRaidWorld(
                 radius = h * .32f,
             )
 
-            // Ember lights hint at other journeys without inventing live users.
             listOf(.18f to .64f, .30f to .67f, .42f to .65f).forEach { (x, y) ->
                 drawCircle(
                     color = Color(0xFFFFCF74).copy(alpha = if (defeated) .28f else .58f),
@@ -142,14 +137,11 @@ internal fun PixelReturnRaidWorld(
             frameless = true,
         )
 
-        // Rag is the first world-integrated companion. Other companions stay on the legacy return
-        // presentation until they receive equivalent world sprites.
         if (phase in setOf(ReturnRaidPhase.YOUR_TURN, ReturnRaidPhase.STRIKING, ReturnRaidPhase.RESULT)) {
             PixelRagEggSprite(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
                     .size(if (phase == ReturnRaidPhase.STRIKING) 62.dp else 54.dp),
-                paused = false,
             )
         }
     }
