@@ -4,6 +4,7 @@ data class RaidEcho(
     val relativeLabel: String,
     val focusMinutes: Int,
     val damage: Int,
+    val generation: String? = null,
 )
 
 suspend fun WorldRepository.loadRecentRaidEchoes(limit: Int = 3): List<RaidEcho> =

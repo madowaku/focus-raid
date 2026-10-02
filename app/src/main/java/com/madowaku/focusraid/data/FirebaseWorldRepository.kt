@@ -110,6 +110,7 @@ class FirebaseWorldRepository internal constructor(
                     return@mapNotNull null
                 }
                 RaidEcho(
+                    generation = result["generation"] as? String,
                     relativeLabel = relativeLabel(ageMinutes),
                     focusMinutes = focusMinutes,
                     damage = damage,

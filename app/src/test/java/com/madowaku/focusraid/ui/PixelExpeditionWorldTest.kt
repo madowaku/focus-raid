@@ -36,7 +36,7 @@ class PixelExpeditionWorldTest {
     fun status_copy_preserves_pause_and_raid_meaning() {
         assertEquals("旅はここで止まっています", pixelExpeditionStatusCopy(.5f, paused = true))
         assertEquals("もう山道まで来た", pixelExpeditionStatusCopy(.5f, paused = false))
-        assertEquals("レイド地点の灯が見えてきた", pixelExpeditionStatusCopy(.95f, paused = false))
+        assertEquals("ヴォルガの気配が近い", pixelExpeditionStatusCopy(.95f, paused = false))
     }
 
     @Test

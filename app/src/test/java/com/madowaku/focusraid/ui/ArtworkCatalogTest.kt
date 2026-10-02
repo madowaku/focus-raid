@@ -34,8 +34,9 @@ class ArtworkCatalogTest {
         }
         assertEquals(90, keys.size)
         val sources = keys.map { ArtworkCatalog.Production.resolve(it) }
-        assertTrue(sources.all { it is ArtworkSource.Atlas })
+        assertTrue(sources.all { it is ArtworkSource.Atlas || it is ArtworkSource.Drawable })
         assertEquals(90, sources.distinct().size)
+        assertEquals(6, sources.filterIsInstance<ArtworkSource.Drawable>().size)
         assertEquals(7, sources.filterIsInstance<ArtworkSource.Atlas>().map { it.resourceId }.distinct().size)
     }
     @Test fun `frame registration rejects out of bounds and legacy items retain safe fallback`() {

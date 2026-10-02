@@ -7,6 +7,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,7 +22,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -119,7 +120,8 @@ internal fun PixelReturnRaidSequence(
                 .fillMaxSize()
                 .statusBarsPadding()
                 .navigationBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 10.dp),
+                .padding(horizontal = 16.dp, vertical = 10.dp)
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
@@ -128,18 +130,20 @@ internal fun PixelReturnRaidSequence(
                 fontWeight = FontWeight.SemiBold,
                 color = Color(0xFFC8BFCE),
             )
+            if (scenario.presentationLabel.isNotEmpty()) Text(scenario.presentationLabel,
+                fontSize = 11.sp, color = Color(0xFF97D7CC), textAlign = TextAlign.Center)
             Spacer(Modifier.height(8.dp))
 
             if (state.phase != ReturnRaidPhase.CAMP) {
                 val presentation = when {
-                    state.phase == ReturnRaidPhase.RESULT && state.armorBroken -> BossPresentation.Defeated
+                    displayedHp.value <= 0f -> BossPresentation.Defeated
                     displayedHp.value < scenario.initialDisplayedHp -> BossPresentation.Damaged
                     else -> BossPresentation.Normal
                 }
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(330.dp)
+                        .height(260.dp)
                         .clip(RoundedCornerShape(28.dp)),
                 ) {
                     PixelReturnRaidWorld(
@@ -172,7 +176,7 @@ internal fun PixelReturnRaidSequence(
                 targetState = state.phase,
                 transitionSpec = { fadeIn(tween(180)) togetherWith fadeOut(tween(140)) },
                 label = "pixel-return-raid-phase",
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.fillMaxWidth(),
             ) { phase ->
                 when (phase) {
                     ReturnRaidPhase.RETURNING -> PixelReturningMoment(scenario)
@@ -222,7 +226,7 @@ private fun PixelRaidHpBar(bossName: String, hp: Int, maxHp: Int) {
                     .clip(CircleShape)
                     .background(
                         Brush.horizontalGradient(
-                            listOf(Color(0xFFB79AFF), Color(0xFFFF7D8C), Color(0xFFFFC867)),
+                            listOf(Color(0xFF65BEAE), Color(0xFF97D7CC), Color(0xFFFFC867)),
                         ),
                     ),
             )
@@ -247,7 +251,7 @@ private fun PixelReturningMoment(scenario: ReturnRaidScenario) {
 private fun PixelEchoMoment(scenario: ReturnRaidScenario, state: ReturnRaidUiState) {
     val echo = scenario.echoes.getOrNull(state.echoIndex) ?: return
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("別の道から、灯が届く", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        Text("仲間の集中が、同じボスへ届く", fontSize = 18.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(5.dp))
         Text(
             "${echo.relativeTime} · ${echo.focusMinutes}分の集中",
@@ -269,7 +273,7 @@ private fun PixelYourTurnMoment(scenario: ReturnRaidScenario, onStrike: () -> Un
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(6.dp))
-        Text("ラグと、最後の一歩へ。", fontSize = 12.sp, color = Color(0xFFFFC867))
+        Text("みんなの集中に、あなたの時間を重ねよう。", fontSize = 12.sp, color = Color(0xFFFFC867))
         Spacer(Modifier.height(14.dp))
         Button(
             onClick = onStrike,
@@ -279,7 +283,7 @@ private fun PixelYourTurnMoment(scenario: ReturnRaidScenario, onStrike: () -> Un
                 .testTag("first_raid_strike"),
             shape = RoundedCornerShape(30.dp),
         ) {
-            Text("一撃を刻む", fontSize = 18.sp, fontWeight = FontWeight.Black)
+            Text("集中の光を重ねる", fontSize = 18.sp, fontWeight = FontWeight.Black)
         }
     }
 }
@@ -288,7 +292,7 @@ private fun PixelYourTurnMoment(scenario: ReturnRaidScenario, onStrike: () -> Un
 private fun PixelStrikeMoment(scenario: ReturnRaidScenario) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text("あなたの${scenario.creditedMinutes}分", fontSize = 22.sp, fontWeight = FontWeight.Black)
-        Text("火口の広場へ届いた", fontSize = 13.sp, color = Color(0xFFC8BFCE))
+        Text("みんなの集中に合流した", fontSize = 13.sp, color = Color(0xFFC8BFCE))
         Text("−${scenario.playerDamage} HP", fontSize = 30.sp, fontWeight = FontWeight.Black, color = Color(0xFFFF8B91))
     }
 }
@@ -304,7 +308,7 @@ private fun PixelResultMoment(scenario: ReturnRaidScenario, state: ReturnRaidUiS
         )
         Spacer(Modifier.height(6.dp))
         Text(
-            if (state.armorBroken) "あなたの${scenario.creditedMinutes}分が、最後の一撃になった。"
+            if (state.armorBroken) "みんなの集中が重なって、ボスを倒した。"
             else "この遠征は、次の誰かへつながっていく。",
             textAlign = TextAlign.Center,
             color = Color(0xFFC8BFCE),
@@ -328,15 +332,15 @@ private fun PixelCampMoment(
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
             scenario.echoes.forEach {
-                SignatureRaidLight(modifier = Modifier.size(22.dp), color = MaterialTheme.colorScheme.primary)
+                SignatureRaidLight(modifier = Modifier.size(22.dp), color = MaterialTheme.colorScheme.secondary)
             }
             SignatureRaidLight(modifier = Modifier.size(28.dp), color = Color(0xFFFFC867))
         }
         Spacer(Modifier.height(12.dp))
-        Text("火口に、集中の灯が残った", fontSize = 19.sp, fontWeight = FontWeight.Bold)
+        Text("あなたの時間が、みんなの力に", fontSize = 19.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(5.dp))
         Text(
-            "あなたの${scenario.creditedMinutes}分も、この遠征の一部になった。",
+            "仲間の${scenario.chainMinutesBefore}分 ＋ あなたの${scenario.creditedMinutes}分\nこの場に届いた集中 ${scenario.chainMinutesAfter}分",
             textAlign = TextAlign.Center,
             color = Color(0xFFC8BFCE),
         )

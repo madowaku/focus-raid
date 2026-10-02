@@ -478,6 +478,14 @@ class FocusViewModel(
         catch (_: Exception) { /* Shared world availability cannot block local focus. */ }
     }
 
+    internal suspend fun refreshRaidSnapshot(generation: String?): WorldSnapshot? {
+        if (generation == null) return null
+        refreshWorldIfQuiet()
+        return worldRepository.snapshot().takeIf {
+            worldRepository.syncStatus.value == WorldSyncStatus.LIVE && it.generation == generation
+        }
+    }
+
     fun refreshSharedWorld() {
         viewModelScope.launch { refreshWorldIfQuiet() }
     }

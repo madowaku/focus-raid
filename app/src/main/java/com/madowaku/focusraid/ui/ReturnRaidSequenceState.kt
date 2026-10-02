@@ -39,6 +39,7 @@ internal data class ReturnRaidScenario(
     val echoes: List<RaidEchoUi>,
     val chainCountBefore: Int,
     val chainMinutesBefore: Int,
+    val presentationLabel: String = "",
 ) {
     val initialDisplayedHp: Int
         get() = min(
@@ -81,6 +82,19 @@ internal data class ReturnRaidScenario(
     }
 
     companion object {
+        /** Replay accepted contributions ending at the post-receipt snapshot, without resubmission. */
+        fun fromSharedSnapshot(world: com.madowaku.focusraid.core.model.WorldSnapshot,
+            appliedDamage: Int, creditedMinutes: Int, echoes: List<RaidEcho>): ReturnRaidScenario {
+            val maxHp = world.bossMaxHp.coerceAtLeast(1)
+            val after = world.bossHp.coerceIn(0, maxHp)
+            val damage = appliedDamage.coerceIn(0, maxHp - after)
+            val sameRaid = if (world.generation == null) emptyList()
+                else echoes.filter { it.generation == world.generation }.take(2)
+            return fromEchoes(world.bossName, after + damage, maxHp, damage, creditedMinutes,
+                sameRaid, sameRaid.size, sameRaid.sumOf { it.focusMinutes.coerceAtLeast(0) })
+                .copy(presentationLabel = "反映済みの集中を再現 · 受信時点の共有HP")
+        }
+
         fun fromEchoes(
             bossName: String,
             bossHp: Int,

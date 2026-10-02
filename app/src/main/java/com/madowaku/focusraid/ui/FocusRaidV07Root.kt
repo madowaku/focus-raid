@@ -31,6 +31,7 @@ import com.madowaku.focusraid.data.RaidEcho
 import com.madowaku.focusraid.data.WorldSyncStatus
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
 
 private sealed interface SignatureFirstRaidEchoFeed {
@@ -40,6 +41,7 @@ private sealed interface SignatureFirstRaidEchoFeed {
     data class Ready(
         val echoes: List<RaidEcho>,
         val preview: Boolean,
+        val world: com.madowaku.focusraid.core.model.WorldSnapshot? = null,
     ) : SignatureFirstRaidEchoFeed
 }
 
@@ -108,7 +110,6 @@ fun FocusRaidV07Root(
     LaunchedEffect(
         state.resultSessionId,
         firstRaidCandidate,
-        state.worldSyncStatus,
         currentContribution?.status,
         skipRaidSync,
     ) {
@@ -121,32 +122,26 @@ fun FocusRaidV07Root(
             return@LaunchedEffect
         }
 
+        echoFeed = SignatureFirstRaidEchoFeed.Loading
+        val connection = if (state.worldSyncStatus == WorldSyncStatus.CONNECTING) {
+            withTimeoutOrNull(4_000) {
+                viewModel.uiState.first { it.worldSyncStatus != WorldSyncStatus.CONNECTING }.worldSyncStatus
+            } ?: WorldSyncStatus.OFFLINE
+        } else state.worldSyncStatus
         when {
-            BuildConfig.DEBUG && state.worldSyncStatus in setOf(
-                WorldSyncStatus.LOCAL_PREVIEW,
-                WorldSyncStatus.OFFLINE,
-            ) -> {
+            BuildConfig.DEBUG && connection == WorldSyncStatus.LOCAL_PREVIEW -> {
                 echoFeed = SignatureFirstRaidEchoFeed.Ready(signaturePreviewRaidEchoes(), preview = true)
             }
-
-            state.worldSyncStatus == WorldSyncStatus.CONNECTING -> {
-                echoFeed = SignatureFirstRaidEchoFeed.Loading
-                delay(3_500)
-                echoFeed = SignatureFirstRaidEchoFeed.Failed
-            }
-
-            state.worldSyncStatus != WorldSyncStatus.LIVE -> {
-                echoFeed = SignatureFirstRaidEchoFeed.Failed
-            }
-
+            connection != WorldSyncStatus.LIVE -> { echoFeed = SignatureFirstRaidEchoFeed.Failed }
             contributionAccepted -> {
                 echoFeed = SignatureFirstRaidEchoFeed.Loading
                 echoFeed = try {
-                    val echoes = withTimeoutOrNull(5_000) { loadRaidEchoes() }
-                    if (echoes == null) {
+                    val shared = viewModel.refreshRaidSnapshot(currentContribution?.generation)
+                    val echoes = if (shared != null) withTimeoutOrNull(5_000) { loadRaidEchoes() } else null
+                    if (echoes == null || shared == null) {
                         SignatureFirstRaidEchoFeed.Failed
                     } else {
-                        SignatureFirstRaidEchoFeed.Ready(echoes = echoes, preview = false)
+                        SignatureFirstRaidEchoFeed.Ready(echoes = echoes, preview = false, world = shared)
                     }
                 } catch (e: CancellationException) {
                     throw e
@@ -202,19 +197,19 @@ fun FocusRaidV07Root(
     } else {
         currentContribution?.appliedDamage?.coerceAtLeast(0) ?: 0
     }
-    val recentEchoMinutes = resolvedFeed.echoes.sumOf { it.focusMinutes.coerceAtLeast(0) }
     var showFootprints by rememberSaveable(state.resultSessionId) { mutableStateOf(false) }
 
-    val scenario = ReturnRaidScenario.fromEchoes(
-        bossName = state.world.bossName,
-        bossHp = 181,
-        bossMaxHp = 250,
-        playerDamage = playerDamage,
-        creditedMinutes = completedReward.creditedMinutes,
-        echoes = resolvedFeed.echoes,
-        chainCountBefore = resolvedFeed.echoes.size,
-        chainMinutesBefore = recentEchoMinutes,
-    )
+    val scenario = if (resolvedFeed.preview) {
+        ReturnRaidScenario.fromEchoes(
+            bossName = state.world.bossName, bossHp = 181, bossMaxHp = 250,
+            playerDamage = playerDamage, creditedMinutes = completedReward.creditedMinutes,
+            echoes = resolvedFeed.echoes, chainCountBefore = resolvedFeed.echoes.take(2).size,
+            chainMinutesBefore = resolvedFeed.echoes.take(2).sumOf { it.focusMinutes.coerceAtLeast(0) },
+        ).copy(presentationLabel = "体験プレビュー · 人数・HPはサンプル")
+    } else {
+        ReturnRaidScenario.fromSharedSnapshot(checkNotNull(resolvedFeed.world), playerDamage,
+            completedReward.creditedMinutes, resolvedFeed.echoes)
+    }
 
     BackHandler(enabled = !state.saving) {
         viewModel.resetAfterResult()

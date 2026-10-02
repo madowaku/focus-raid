@@ -188,7 +188,12 @@ private fun SignatureReadyScreen(
                         Text("時間を変更", fontSize = 11.sp)
                     }
                 }
-                if (recentEchoes.isNotEmpty()) SignatureRecentEchoes(recentEchoes)
+                val sameRaidEchoes = recentEchoes.filter {
+                    state.world.generation != null && it.generation == state.world.generation
+                }
+                if (state.worldSyncStatus == com.madowaku.focusraid.data.WorldSyncStatus.LIVE && sameRaidEchoes.isNotEmpty()) {
+                    SignatureRecentEchoes(sameRaidEchoes)
+                }
 
                 if (!state.initialized || state.saving) {
                     Text(
@@ -241,114 +246,30 @@ private fun SignatureRaidHero(
     state: FocusUiState,
 ) {
     val world = state.world
-    val bossPresentation = signatureBossPresentation(world.bossHp, world.bossMaxHp)
-    val hpLabel = if (LocalDensity.current.fontScale >= 1.3f) {
-        "${signatureCompactCount(world.bossHp)} / ${signatureCompactCount(world.bossMaxHp)}"
-    } else {
-        "${signatureComma(world.bossHp)} / ${signatureComma(world.bossMaxHp)}"
-    }
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(30.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = .90f),
-        ),
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    Brush.linearGradient(
-                        listOf(
-                            MaterialTheme.colorScheme.primary.copy(alpha = .14f),
-                            MaterialTheme.colorScheme.surface.copy(alpha = .02f),
-                            MaterialTheme.colorScheme.tertiary.copy(alpha = .12f),
-                        ),
-                    ),
-                )
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        "WORLD RAID",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Spacer(Modifier.height(3.dp))
-                    Text(
-                        world.bossName,
-                        fontSize = 19.sp,
-                        fontWeight = FontWeight.Black,
-                    )
-                    Spacer(Modifier.height(9.dp))
-                    SignatureHpBar(world.bossHp, world.bossMaxHp)
-                    Spacer(Modifier.height(5.dp))
-                    Text(
-                        hpLabel,
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                Box(
-                    modifier = Modifier
-                        .size(154.dp)
-                        .offset(x = 12.dp, y = (-4).dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(154.dp)
-                            .background(
-                                Brush.radialGradient(
-                                    listOf(
-                                        MaterialTheme.colorScheme.secondary.copy(alpha = .24f),
-                                        MaterialTheme.colorScheme.primary.copy(alpha = .08f),
-                                        Color.Transparent,
-                                    ),
-                                ),
-                                CircleShape,
-                            ),
-                    )
-                    BossArtwork(
-                        modifier = Modifier.size(148.dp),
-                        presentation = bossPresentation,
-                        frameless = true,
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(6.dp))
-            Surface(
-                shape = RoundedCornerShape(18.dp),
-                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = .62f),
-            ) {
-                Text(
-                    if (bossPresentation == BossPresentation.Defeated) {
-                        "討伐完了！ 次のボスを待っています"
-                    } else {
-                        "完走すると、ボスへ一撃"
-                    },
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
-            if (world.focusNow > 0) {
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    "いま ${signatureComma(world.focusNow)}人が集中中",
-                    modifier = Modifier.fillMaxWidth(),
-                    fontSize = 11.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
+    val live = state.worldSyncStatus == com.madowaku.focusraid.data.WorldSyncStatus.LIVE && world.generation != null
+    val ownMinutes = acceptedRaidMinutes(world.generation, state.contributions)
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(Color(0xFF101C29))) {
+        Box(Modifier.fillMaxWidth().height(224.dp)) {
+            RaidEnvironment(com.madowaku.focusraid.R.drawable.world_arena_v13)
+            BossArtwork(Modifier.align(Alignment.CenterEnd).padding(end = 16.dp, top = 20.dp).size(184.dp),
+                presentation = signatureBossPresentation(world.bossHp, world.bossMaxHp), frameless = true)
+            Text("みんなで挑む、ひとつのレイド",
+                modifier = Modifier.align(Alignment.TopStart).fillMaxWidth().background(Color(0xE6070B12)).padding(12.dp),
+                fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFFFFD18B))
+        }
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(world.bossName, fontSize = 21.sp, fontWeight = FontWeight.Black)
+            Text("あなたの集中が、みんなの力になる。", fontSize = 14.sp)
+            SignatureHpBar(world.bossHp, world.bossMaxHp)
+            Text("${if (live) "共有HP" else "参考HP"}  ${signatureComma(world.bossHp)} / ${signatureComma(world.bossMaxHp)}",
+                fontSize = 12.sp, color = Color(0xFFCAD5E0))
+            Text(sharedRaidSummary(world, state.worldSyncStatus), fontSize = 13.sp, color = Color(0xFF97D7CC))
+            if (live && ownMinutes > 0) Text("そのうち、あなたが届けた集中 ${ownMinutes}分", fontSize = 12.sp, color = Color(0xFFFFD18B))
+            if (live && world.focusNow > 0) Text("いま ${signatureComma(world.focusNow)}人が集中中", fontSize = 12.sp, color = Color(0xFFCAD5E0))
+            Text(if (live && world.bossHp <= 0) "討伐完了！ 次のレイドを待っています"
+                else if (live) "今回の${state.selectedMinutes}分も、完了後に合流。集中1分が1ダメージに。"
+                else "集中は端末に記録。共有レイドへの反映には接続が必要です。",
+                fontSize = 13.sp, color = Color(0xFFFFD18B))
         }
     }
 }
@@ -906,9 +827,9 @@ internal fun SignatureBackdrop(content: @Composable () -> Unit) {
             .background(
                 Brush.verticalGradient(
                     listOf(
-                        Color(0xFF090713),
-                        Color(0xFF151024),
-                        Color(0xFF211431),
+                        Color(0xFF070B12),
+                        Color(0xFF101B28),
+                        Color(0xFF152A32),
                     ),
                 ),
             ),

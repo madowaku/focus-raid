@@ -42,7 +42,7 @@ internal class RaidFocusArrival {
 /** Draw in the boss's own bounds so every origin converges on the same chest point. */
 @Composable
 internal fun RaidFocusArrivalLayer(flight: RaidFocusArrival, modifier: Modifier = Modifier) {
-    val light = if (flight.isSelf) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
+    val light = if (flight.isSelf) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.secondary
     Canvas(modifier.clearAndSetSemantics { }) {
         val progress = flight.progress.value
         if (progress >= 1f) return@Canvas

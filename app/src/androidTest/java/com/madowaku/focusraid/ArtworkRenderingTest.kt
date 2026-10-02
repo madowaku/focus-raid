@@ -18,7 +18,13 @@ class ArtworkRenderingTest {
             BossIdentity.entries.forEach { identity -> BossPresentation.entries.forEach { add(ArtworkKey.Boss(identity, it)) } }
             ItemCatalog.all.forEach { add(ArtworkKey.Item(it.id, it.name)) }
         }
-        val sources = keys.map { ArtworkCatalog.Production.resolve(it) as ArtworkSource.Atlas }
+        val sources = keys.map { key ->
+            when (val source = ArtworkCatalog.Production.resolve(key)) {
+                is ArtworkSource.Atlas -> source
+                is ArtworkSource.Drawable -> ArtworkSource.Atlas(source.resourceId, ArtworkFrame(0f, 0f, 1f, 1f))
+                ArtworkSource.CanvasFallback -> error("Missing production art for $key")
+            }
+        }
         sources.groupBy { it.resourceId }.forEach { (id, frames) ->
             val bitmap = requireNotNull(BitmapFactory.decodeResource(resources, id, BitmapFactory.Options().apply { inScaled = false }))
             try {

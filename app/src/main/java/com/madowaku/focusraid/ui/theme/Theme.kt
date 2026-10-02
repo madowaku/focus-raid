@@ -15,20 +15,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 private val FocusRaidColors = darkColorScheme(
-    primary = Color(0xFFB69CFF),
-    onPrimary = Color(0xFF1B0B38),
-    primaryContainer = Color(0xFF3E246C),
-    onPrimaryContainer = Color(0xFFF0E8FF),
-    secondary = Color(0xFFFF7A96),
-    onSecondary = Color(0xFF3B0715),
+    primary = Color(0xFFFFCB80),
+    onPrimary = Color(0xFF30200C),
+    primaryContainer = Color(0xFF514027),
+    onPrimaryContainer = Color(0xFFFFE4B8),
+    secondary = Color(0xFF8CD5C8),
+    onSecondary = Color(0xFF092F29),
     tertiary = Color(0xFFFFD36A),
     onTertiary = Color(0xFF2F2200),
-    background = Color(0xFF090712),
-    onBackground = Color(0xFFF5F0FF),
-    surface = Color(0xFF161126),
-    onSurface = Color(0xFFF5F0FF),
-    surfaceVariant = Color(0xFF272037),
-    onSurfaceVariant = Color(0xFFD3CBE3),
+    background = Color(0xFF070B12),
+    onBackground = Color(0xFFF1F5F8),
+    surface = Color(0xFF101C29),
+    onSurface = Color(0xFFF1F5F8),
+    surfaceVariant = Color(0xFF243442),
+    onSurfaceVariant = Color(0xFFCBD6DF),
     error = Color(0xFFFF7B88),
 )
 

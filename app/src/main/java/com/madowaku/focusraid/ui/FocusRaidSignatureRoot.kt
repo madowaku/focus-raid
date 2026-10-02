@@ -62,7 +62,7 @@ fun FocusRaidSignatureRoot(
     var pendingProExpeditionName by rememberSaveable { mutableStateOf<String?>(null) }
     var recentRaidEchoes by remember { mutableStateOf<List<RaidEcho>>(emptyList()) }
 
-    LaunchedEffect(state.phase, state.worldSyncStatus) {
+    LaunchedEffect(state.phase, state.worldSyncStatus, state.world.generation) {
         if (state.phase != SessionPhase.READY) {
             recentRaidEchoes = emptyList()
             return@LaunchedEffect

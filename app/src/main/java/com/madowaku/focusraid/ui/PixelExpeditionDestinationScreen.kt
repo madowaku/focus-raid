@@ -1,6 +1,7 @@
 package com.madowaku.focusraid.ui
 
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,7 +14,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -25,10 +25,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -99,74 +96,77 @@ internal fun PixelExpeditionDestinationScreen(
                 }
             }
 
-            Spacer(Modifier.height(8.dp))
-            Text(
-                destinationClock(state.remainingSeconds),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .semantics {
-                        contentDescription = "残り時間"
-                        stateDescription = destinationClock(state.remainingSeconds)
-                    },
-                textAlign = TextAlign.Center,
-                fontSize = 58.sp,
-                fontWeight = FontWeight.Normal,
-                fontFamily = FontFamily.Monospace,
-                letterSpacing = 1.sp,
-                color = Color(0xFFF3EDF9),
-            )
-            Text(
-                statusCopy,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center,
-                fontSize = 13.sp,
-                fontWeight = if (lastMinute) FontWeight.SemiBold else FontWeight.Normal,
-                color = if (lastMinute) Color(0xFFFFC867) else Color(0xFFC7C0CF),
-            )
+            Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    destinationClock(state.remainingSeconds),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .semantics {
+                            contentDescription = "残り時間"
+                            stateDescription = destinationClock(state.remainingSeconds)
+                        },
+                    textAlign = TextAlign.Center,
+                    fontSize = 48.sp,
+                    fontWeight = FontWeight.Normal,
+                    fontFamily = FontFamily.Monospace,
+                    letterSpacing = 1.sp,
+                    color = Color(0xFFF3EDF9),
+                )
+                Text(
+                    statusCopy,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center,
+                    fontSize = 13.sp,
+                    fontWeight = if (lastMinute) FontWeight.SemiBold else FontWeight.Normal,
+                    color = if (lastMinute) Color(0xFFFFC867) else Color(0xFFC7C0CF),
+                )
 
-            Spacer(Modifier.height(12.dp))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(292.dp)
-                    .semantics {
-                        contentDescription = "深層の遠征世界"
-                        stateDescription = "$location ${(progress * 100).toInt()}パーセント"
+                Spacer(Modifier.height(12.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(292.dp)
+                        .semantics {
+                            contentDescription = "深層の遠征世界"
+                            stateDescription = "$location ${(progress * 100).toInt()}パーセント"
+                        },
+                ) {
+                    PixelExpeditionWorld(
+                        progress = progress,
+                        paused = paused,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+
+                }
+
+                Spacer(Modifier.height(14.dp))
+                Text(
+                    location,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Black,
+                    color = Color(0xFFF4EFF8),
+                )
+                Spacer(Modifier.height(7.dp))
+                Text(
+                    journeyCopy,
+                    fontSize = 13.sp,
+                    color = Color(0xFFC7C0CF),
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    when (state.worldSyncStatus) {
+                        com.madowaku.focusraid.data.WorldSyncStatus.LOCAL_PREVIEW -> "体験プレビュー · 集中時間を端末に記録します。"
+                        com.madowaku.focusraid.data.WorldSyncStatus.LIVE -> "今回の${state.selectedMinutes}分を、みんなの集中へ。完了後、共有レイドに送ります。"
+                        else -> "集中は端末に記録。共有レイドへの反映には接続が必要です。"
                     },
-            ) {
-                PixelExpeditionWorld(
-                    progress = progress,
-                    paused = paused,
-                    modifier = Modifier.fillMaxSize(),
+                    fontSize = 11.sp,
+                    color = Color(0xFFAFA8B7),
                 )
-                DestinationPresenceOverlay(
-                    progress = progress,
-                    paused = paused,
-                    modifier = Modifier.fillMaxSize(),
-                )
+
+                Spacer(Modifier.height(16.dp))
             }
-
-            Spacer(Modifier.height(14.dp))
-            Text(
-                location,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Black,
-                color = Color(0xFFF4EFF8),
-            )
-            Spacer(Modifier.height(7.dp))
-            Text(
-                journeyCopy,
-                fontSize = 13.sp,
-                color = Color(0xFFC7C0CF),
-            )
             Spacer(Modifier.height(8.dp))
-            Text(
-                "環焔竜ヴォルガ · 完走すると、ボスへ一撃",
-                fontSize = 11.sp,
-                color = Color(0xFFAFA8B7),
-            )
-
-            Spacer(Modifier.weight(1f))
             if (paused) {
                 Button(
                     onClick = onResume,
@@ -225,65 +225,6 @@ internal fun destinationJourneyCopy(
         PixelExpeditionStage.RIDGE -> "ラグの卵と、谷を渡る道の途中。"
         PixelExpeditionStage.GATE -> "ラグの卵と、火口へ続く石段を登る。"
         PixelExpeditionStage.RAID -> "ラグの卵と、ヴォルガの待つ門へ。"
-    }
-}
-
-@Composable
-private fun DestinationPresenceOverlay(
-    progress: Float,
-    paused: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    val safe = progress.coerceIn(0f, 1f)
-    val reveal = ((safe - .52f) / .48f).coerceIn(0f, 1f)
-    if (reveal <= 0f) return
-
-    Canvas(modifier = modifier) {
-        val w = size.width
-        val h = size.height
-        val alpha = reveal * if (paused) .32f else .68f
-        val center = Offset(w * (.83f - reveal * .06f), h * .37f)
-
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(
-                    Color(0xFFFF7A3D).copy(alpha = reveal * if (paused) .07f else .16f),
-                    Color.Transparent,
-                ),
-                center = center,
-                radius = h * (.20f + reveal * .06f),
-            ),
-            radius = h * (.20f + reveal * .06f),
-            center = center,
-        )
-
-        val body = Path().apply {
-            moveTo(center.x - w * .08f, center.y + h * .08f)
-            lineTo(center.x - w * .02f, center.y - h * .06f)
-            lineTo(center.x + w * .08f, center.y - h * .03f)
-            lineTo(center.x + w * .13f, center.y + h * .08f)
-            lineTo(center.x + w * .04f, center.y + h * .12f)
-            close()
-        }
-        drawPath(body, Color(0xFF120F16).copy(alpha = alpha))
-
-        val leftWing = Path().apply {
-            moveTo(center.x - w * .01f, center.y)
-            lineTo(center.x - w * .15f, center.y - h * .12f)
-            lineTo(center.x - w * .11f, center.y + h * .03f)
-            close()
-        }
-        drawPath(leftWing, Color(0xFF17111B).copy(alpha = alpha * .92f))
-
-        val hornColor = Color(0xFF2B2028).copy(alpha = alpha)
-        drawLine(hornColor, center, Offset(center.x - w * .035f, center.y - h * .10f), strokeWidth = 5f)
-        drawLine(hornColor, center, Offset(center.x + w * .045f, center.y - h * .11f), strokeWidth = 5f)
-
-        if (reveal > .55f) {
-            val eyeAlpha = ((reveal - .55f) / .45f).coerceIn(0f, 1f) * if (paused) .34f else .92f
-            drawCircle(Color(0xFFFF9A46).copy(alpha = eyeAlpha), radius = 3.2f, center = Offset(center.x - w * .024f, center.y - h * .015f))
-            drawCircle(Color(0xFFFFC25C).copy(alpha = eyeAlpha * .55f), radius = 7.5f, center = Offset(center.x - w * .024f, center.y - h * .015f))
-        }
     }
 }
 

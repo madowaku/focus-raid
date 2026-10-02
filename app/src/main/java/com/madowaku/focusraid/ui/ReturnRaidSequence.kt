@@ -166,6 +166,7 @@ internal fun ReturnRaidSequence(
                         RaidIntegrityCard(scenario, displayedHp.value.toInt())
                         Spacer(Modifier.height(20.dp))
                     }
+                    if (scenario.presentationLabel.isNotEmpty()) Text(scenario.presentationLabel, fontSize = 11.sp, textAlign = TextAlign.Center)
                     AnimatedContent(
                         targetState = state.phase,
                         transitionSpec = { fadeIn(tween(220)) togetherWith fadeOut(tween(160)) },
@@ -371,9 +372,9 @@ private fun ResultMoment(
         Spacer(Modifier.height(12.dp))
         Text(
             if (state.armorBroken) {
-                "あなたの${scenario.creditedMinutes}分が最後の一撃になりました"
+                "みんなの集中が重なって、ボスを倒しました"
             } else if (scenario.echoes.isEmpty()) {
-                "あなたの${scenario.creditedMinutes}分が、最初の足跡になりました"
+                "あなたの${scenario.creditedMinutes}分が、共有レイドへ届きました"
             } else {
                 "あなたの${scenario.creditedMinutes}分が、遠征隊をつなぎました"
             },
@@ -470,7 +471,7 @@ private fun CampMoment(
                     )
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        "あなたが最初の火を残しました",
+                        "あなたの火を残しました",
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
                     )

@@ -34,5 +34,16 @@ internal fun productionArtworkCatalog(): ArtworkCatalog {
                 registeredArtworkFrame(resource, index))
         }
     }
+    mapOf(
+        BossPresentation.Normal to R.drawable.volga_normal_v13,
+        BossPresentation.Damaged to R.drawable.volga_damaged_v13,
+        BossPresentation.Defeated to R.drawable.volga_defeated_v13,
+    ).forEach { (pose, resource) -> assets[ArtworkKey.Boss(BossIdentity.VOLGA, pose)] = ArtworkSource.Drawable(resource) }
+    mapOf("abyss-common-5" to R.drawable.item_moss_lantern_v13,
+        "star_route-rare-4" to R.drawable.item_comet_ink_v13,
+        "tower-rare-4" to R.drawable.item_storm_brooch_v13).forEach { (id, resource) ->
+        val item = ItemCatalog.all.single { it.id == id }
+        assets[ArtworkKey.Item(id, item.name)] = ArtworkSource.Drawable(resource)
+    }
     return ArtworkCatalog(assets)
 }

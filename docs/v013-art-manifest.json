@@ -1,0 +1,96 @@
+{
+  "generation_mode": "built-in image_gen",
+  "model_note": "Tool does not expose a model selector; ImageGen2.5 is not asserted.",
+  "assets": [
+    {
+      "file": "app/src/main/res/drawable-nodpi/world_camp_v13.png",
+      "prompt_spec": "Portrait 2:3. Quiet pre-dawn mountain camp, warm amber lantern and canvas tent, stone bridge and path toward distant volcano. Painted HD-2D miniature; ink navy, pine green, slate blue and amber. Open foreground for companion, quiet sky for UI. No characters, text or watermark.",
+      "sha256": "37a5b28d671dfec5ed8686d6d72d948fbac9a6d9c0f16dc83745d97a78cff96f",
+      "dimensions": [
+        1024,
+        1536
+      ],
+      "mode": "RGB"
+    },
+    {
+      "file": "app/src/main/res/drawable-nodpi/world_ridge_v13.png",
+      "prompt_spec": "Reference camp style. Portrait 2:3, stone path through slate mountain ridge, sparse pines, two amber lanterns, same volcano closer. Open path for companion, quiet navy sky. No tent, characters or UI.",
+      "sha256": "7d5a71121597abe880fca1501007ddfd27ec15c14be164cc92e04121ff6fd00c",
+      "dimensions": [
+        1024,
+        1536
+      ],
+      "mode": "RGB"
+    },
+    {
+      "file": "app/src/main/res/drawable-nodpi/world_arena_v13.png",
+      "prompt_spec": "Reference camp style. Square empty ancient circular slate arena in a volcanic crater. Broken pillars, blue pre-dawn sky, restrained amber fissures. Clear center/right for boss and foreground left for companion. No characters or UI.",
+      "sha256": "88f57543cca7383471b50d9a05ca721e8d8c5ae66db4611ec12569b069322269",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "mode": "RGB"
+    },
+    {
+      "file": "app/src/main/res/drawable-nodpi/volga_normal_v13.png",
+      "prompt_spec": "Reference original atlas left-column dragon only. Charcoal stone scales, ivory-gold horns, ember eyes and amber cracks, two leathery wings. Full-body three-quarter facing left, hand-painted HD-2D. Genuine transparent background, no ground, UI or text.",
+      "sha256": "102a861a512198b538fe36ffd8356639caf66fe66fe6c66d2f4d217fc50e2bd3",
+      "dimensions": [
+        1312,
+        1199
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "file": "app/src/main/res/drawable-nodpi/volga_damaged_v13.png",
+      "prompt_spec": "Edit normal Volga; preserve identity, rendering, palette and anatomy. Weary crouch, lowered head, half-folded wings, eyes open, dimmer cracks. Transparent background; no wounds or blood.",
+      "sha256": "1f20575217ebc1d0ae07cdc8dc54bc05e412bc0b5cd31c60928ab8309d6011a1",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "file": "app/src/main/res/drawable-nodpi/volga_defeated_v13.png",
+      "prompt_spec": "Edit normal Volga; preserve identity. Peacefully asleep curled up, head on paws, folded wings, wrapped tail, dim amber cracks and two tiny gold twinkles. Transparent background.",
+      "sha256": "380764af0eb103db7a379456db765fb656372067893cba5c9f2a1acc1d33db73",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "file": "app/src/main/res/drawable-nodpi/item_moss_lantern_v13.png",
+      "prompt_spec": "One moss-overgrown weathered bronze lantern, green glass and warm amber glow, curved handle and leaf details. Hand-painted HD-2D inventory sprite, three-quarter view. Transparent background, no text, frame or terrain.",
+      "sha256": "e969cf7a67ad56b06251da50bdd90a2434a950e8e8beb56f18e9602d135a9854",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "file": "app/src/main/res/drawable-nodpi/item_comet_ink_v13.png",
+      "prompt_spec": "Reference lantern rendering. One faceted midnight-blue glass ink bottle with cyan stardust, gold comet stopper and silver star charm. Hand-painted miniature inventory sprite, transparent background, no text or other items.",
+      "sha256": "0d9e7c9b730009ea7908129b305764b4419489c27b974659c7c90ba63f86c5cc",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "file": "app/src/main/res/drawable-nodpi/item_storm_brooch_v13.png",
+      "prompt_spec": "Reference lantern rendering. One curved silver feather brooch with deep teal enamel, amber gemstone and antique gold filigree. Diagonal silhouette, hand-painted miniature, transparent background, no text, frame, fabric or terrain.",
+      "sha256": "a9c24b9b9f8ebad7d699f3f5f663afe903091450edfe09a23071ad99b5360a7e",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "mode": "RGBA"
+    }
+  ]
+}

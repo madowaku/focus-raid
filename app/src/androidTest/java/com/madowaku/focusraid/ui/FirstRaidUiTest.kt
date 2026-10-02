@@ -103,7 +103,7 @@ class FirstRaidUiTest {
                 .fetchSemanticsNodes()
                 .isNotEmpty()
         }
-        compose.onNodeWithText("あなたが最初の火を残しました").assertIsDisplayed()
+        compose.onNodeWithText("あなたの火を残しました").assertIsDisplayed()
         compose.onAllNodesWithText("誰かの集中").assertCountEquals(0)
     }
 
