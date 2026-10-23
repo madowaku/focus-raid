@@ -24,7 +24,7 @@ Focus Raid currently does **not** intentionally include:
 - Crashlytics
 - free-form chat or free-form Footprint text
 - a custom email/password account system
-- location, contacts, camera, microphone, health, SMS, or call-log features
+- location, contacts, camera, microphone, SMS, or call-log features
 
 Re-check the dependency graph before release instead of assuming this list remains true forever.
 
@@ -151,3 +151,8 @@ Before submitting Data Safety:
 - Google Play Data Safety form: https://support.google.com/googleplay/android-developer/answer/10787469
 - Firebase Android Play data disclosure: https://firebase.google.com/docs/android/play-data-disclosure
 - RevenueCat Google Play Data Safety guidance: https://www.revenuecat.com/docs/platform-resources/google-platform-resources/google-plays-data-safety
+
+
+## Walking Expedition release gate (2026-10-24)
+
+Declare READ_STEPS and its optional exploration use in Play Console Health apps / Health Connect permissions. Daily steps and discoveries are processed only on-device, never included in Firebase payloads or Android backup/device transfer. No WRITE_STEPS, location or background health-read permission. Publish the updated bilingual privacy policy before a Play release and verify the Console declaration against the actual release bundle. This repository change does not complete Console review or production publication.

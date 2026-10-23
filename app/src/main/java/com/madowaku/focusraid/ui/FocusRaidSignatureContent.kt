@@ -202,6 +202,7 @@ private fun SignatureReadyScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+                com.madowaku.focusraid.walking.WalkingHomeCard()
                 WorldStatusLabel(state.worldSyncStatus)
                 Spacer(Modifier.height(4.dp))
             }

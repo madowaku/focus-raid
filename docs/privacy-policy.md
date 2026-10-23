@@ -100,7 +100,6 @@ Focus Raid は、RevenueCat に氏名、メールアドレス、電話番号な�
 - マイク
 - 写真・動画・音声ファイル
 - SMS／通話履歴
-- 健康・フィットネス情報
 - 自由文チャット
 - 広告目的のトラッキング
 
@@ -228,7 +227,6 @@ The current Focus Raid release does not use the following for app functionality:
 - microphone;
 - photos, videos, or audio files;
 - SMS or call logs;
-- health or fitness data;
 - free-form chat; or
 - advertising tracking.
 
@@ -260,3 +258,10 @@ For privacy questions or requests to delete server-side or RevenueCat customer d
 ### 11. Changes to this policy
 
 This policy may be updated when Focus Raid's features, SDKs, legal requirements, or platform requirements change. Material updates will be reflected by updating the date on this page and, where appropriate, through the app or store listing.
+
+
+## Walking Expedition — 2026-10-24
+
+歩数探索は任意です。Health ConnectのREAD_STEPSのみを使い、日別歩数・開始日・記録用タイムゾーン・発見を端末内に保存します。これらをFirebaseや第三者へ送らず、Androidバックアップ・端末移行から除外します。GPS、歩数書き込み、バックグラウンド読み取り権限、常駐サービスは使用しません。アプリ内で読み取り停止、Health Connectで権限取り消しが可能です。ストレージ消去／アンインストールで端末内記録を削除できます。Health Connect内の元データはHealth Connectで管理してください。
+
+Optional Health Connect steps are used only for local exploration. Daily steps, start date, calendar zone and discoveries stay on-device, excluded from cloud backup/device transfer. No health data is sent to Firebase or third parties. No location, step writing or persistent walking service is used. Stop reading in-app or revoke Health Connect access. Clear app storage/uninstall to remove local records; manage source records in Health Connect.

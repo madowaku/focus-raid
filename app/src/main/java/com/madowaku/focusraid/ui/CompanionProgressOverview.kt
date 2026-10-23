@@ -72,6 +72,7 @@ internal fun CompanionProgressOverview(
         Spacer(Modifier.height(10.dp))
         GrowthFormsCard(currentStage = growth.stage)
         InventoryCard(state.sessionHistory)
+        com.madowaku.focusraid.walking.WalkingNotebookEntry()
 
         Spacer(Modifier.height(16.dp))
     }

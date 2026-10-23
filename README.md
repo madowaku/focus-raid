@@ -7,7 +7,9 @@ verification remain separate release gates.
 
 Focus Raid is an Android-native focus timer where real-world concentration powers a shared fantasy world.
 
-Worldwide integration lives on `feat/v0.2-worldwide-raid-integration`, based on the completed v0.1 productization branch. The older `main` branch is not its implementation baseline.
+The integration baseline is the Android-native v0.13 line, promoted to `main` together with Walking Expedition. The original PWA remains on `archive/pwa-mvp-v0.1`.
+
+Walking Expedition is free and optional: read Health Connect steps on foreground entry, discover places and keepsakes, and revisit them in the companion notebook. Steps never become focus credit, companion growth, or raid damage. See [behavior, verification and device limits](docs/walking-expedition.md).
 
 ## Product principles
 

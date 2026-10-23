@@ -76,6 +76,7 @@ class FirstRunUiTest {
 
     @Test
     fun act_two_delivers_three_lights_without_fake_activity_copy() {
+        compose.mainClock.autoAdvance = false
         val delivered = mutableListOf<Int>()
         compose.setContent {
             FocusRaidTheme {
@@ -89,7 +90,9 @@ class FirstRunUiTest {
             }
         }
 
-        compose.waitUntil(timeoutMillis = 4_000) { delivered.size == 3 }
+        // Travel uses Compose's animation clock. Advance it explicitly rather than
+        // timing emulator rendering against a four-second wall-clock deadline.
+        compose.mainClock.advanceTimeBy(3_500)
         compose.onNodeWithText("世界中の集中が、\n同じボスへ。").assertIsDisplayed()
         compose.onNodeWithText("fake").assertDoesNotExist()
         compose.runOnIdle { assertEquals(listOf(0, 1, 2), delivered) }

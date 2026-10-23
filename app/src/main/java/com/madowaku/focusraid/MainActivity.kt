@@ -21,6 +21,7 @@ import androidx.lifecycle.Lifecycle
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 import com.madowaku.focusraid.data.ContributionWorker
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -41,6 +42,7 @@ import com.madowaku.focusraid.ui.FocusViewModel
 import com.madowaku.focusraid.ui.theme.FocusRaidTheme
 
 class MainActivity : ComponentActivity() {
+    private val walkingViewModel: com.madowaku.focusraid.walking.WalkingViewModel by viewModels()
     private var systemAccess by mutableStateOf(FocusSystemAccess())
 
     private val notificationPermissionLauncher =
@@ -93,16 +95,19 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             FocusRaidTheme {
-                FocusRaidV10Root(
-                    viewModel = viewModel,
-                    proAccessViewModel = proAccessViewModel,
-                    systemAccess = systemAccess,
-                    loadRaidEchoes = { worldRepository.loadRecentRaidEchoes() },
-                    onRequestNotificationPermission = ::requestNotificationAccess,
-                    onRequestExactAlarmPermission = ::requestExactAlarmAccess,
-                    onPurchasePro = { proAccessViewModel.purchasePro(this) },
-                    onRestorePurchases = proAccessViewModel::restorePurchases,
-                )
+                val focusState by viewModel.uiState.collectAsStateWithLifecycle()
+                com.madowaku.focusraid.walking.WalkingProvider(walkingViewModel, focusState.phase == com.madowaku.focusraid.core.model.SessionPhase.READY) {
+                    FocusRaidV10Root(
+                        viewModel = viewModel,
+                        proAccessViewModel = proAccessViewModel,
+                        systemAccess = systemAccess,
+                        loadRaidEchoes = { worldRepository.loadRecentRaidEchoes() },
+                        onRequestNotificationPermission = ::requestNotificationAccess,
+                        onRequestExactAlarmPermission = ::requestExactAlarmAccess,
+                        onPurchasePro = { proAccessViewModel.purchasePro(this) },
+                        onRestorePurchases = proAccessViewModel::restorePurchases,
+                    )
+                }
             }
         }
     }
