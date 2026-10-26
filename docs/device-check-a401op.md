@@ -10,7 +10,9 @@ Use a physical A401OP on Android 15 with a test profile. The script rejects emul
 4. Run `powershell -ExecutionPolicy Bypass -File .\scripts\device-check-a401op.ps1 -Serial <physical-A401OP-serial>`.
 5. Follow each prompt. Enter `PASS`, `FAIL`, `BLOCKED` or `NOT TESTED` and an observation. The script captures each prompted screen. Review `results.md` and screenshots afterward.
 
-The script restores the prior `font_scale` and leaves the device out of forced Doze. It changes notification and exact-alarm permission states while testing; review their final states in Android Settings and restore your preferred settings afterward. Its `CLEAR_TIMER` broadcast clears debug timer state. A failed or interrupted run may leave permission state changed; check it manually.
+> **Status (2026-10-26): not yet run on a physical A401OP.** No device results exist. The release candidate must not be judged releasable until this table is filled from a real run.
+
+Device settings are restored in a `finally` block, including after a failure or Ctrl+C: `font_scale`, the exact-alarm app-op mode and the `POST_NOTIFICATIONS` grant are put back to the values recorded at start; forced Doze and battery simulation are reset; the diagnostic timer is cleared. `READ_STEPS` is changed only by the operator in the Health Connect UI, so restore it there. If PowerShell itself is killed, check those settings manually. The debug APK stays installed (it replaces any installed build of the app).
 
 ## Expected behavior and evidence
 

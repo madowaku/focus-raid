@@ -107,11 +107,19 @@ function Timer-Scenario([string]$Name, [bool]$ExactAllowed, [bool]$Doze) {
 }
 
 $originalFont = $null
+$originalExactMode = $null
+$originalNotificationGranted = $null
 try {
     $originalFont = Invoke-Adb @('shell', 'settings', 'get', 'system', 'font_scale')
+    Invoke-Adb @('install', '-r', $apk) | Out-Null
+    # Record the permission states this check changes so the finally block can put them back.
+    $exactOp = Invoke-Adb @('shell', 'appops', 'get', $package, 'SCHEDULE_EXACT_ALARM')
+    $originalExactMode = if ($exactOp -match 'SCHEDULE_EXACT_ALARM:\s*(\w+)') { $Matches[1] } else { 'default' }
+    $packageDump = Invoke-Adb @('shell', 'dumpsys', 'package', $package)
+    $originalNotificationGranted = $packageDump -match 'android\.permission\.POST_NOTIFICATIONS: granted=true'
+    Write-Host "Original exact-alarm mode=$originalExactMode; notifications granted=$originalNotificationGranted."
     $rows.Add("| Android version | OBSERVED | $(Invoke-Adb @('shell', 'getprop', 'ro.build.version.release')) |")
     $rows.Add("| Display size | OBSERVED | $(Invoke-Adb @('shell', 'wm', 'size')) |")
-    Invoke-Adb @('install', '-r', $apk) | Out-Null
     Invoke-Adb @('shell', 'settings', 'put', 'system', 'font_scale', '1.5') | Out-Null
     Write-Host "Original font_scale=$originalFont; set to 1.5."
 
@@ -139,7 +147,16 @@ try {
     if ($originalFont -and $originalFont -ne 'null') {
         try { Invoke-Adb @('shell', 'settings', 'put', 'system', 'font_scale', $originalFont) | Out-Null } catch { Write-Warning "Could not restore font scale: $_" }
     }
+    if ($originalExactMode) {
+        try { Invoke-Adb @('shell', 'appops', 'set', $package, 'SCHEDULE_EXACT_ALARM', $originalExactMode) | Out-Null } catch { Write-Warning "Could not restore exact-alarm mode: $_" }
+    }
+    if ($null -ne $originalNotificationGranted) {
+        try { Set-NotificationGrant $originalNotificationGranted } catch { Write-Warning "Could not restore notification permission: $_" }
+    }
+    try { Broadcast 'CLEAR_TIMER' | Out-Null } catch { Write-Warning "Could not clear the diagnostic timer: $_" }
     $rows.Add('')
     $rows.Add("Font scale restoration attempted: $originalFont")
+    $rows.Add("Exact-alarm mode restoration attempted: $originalExactMode; notification grant restored to: $originalNotificationGranted")
+    $rows.Add('READ_STEPS and Health Connect settings are changed by the operator in the Health Connect UI; restore them there.')
     if ($report) { $rows | Set-Content -LiteralPath $report -Encoding UTF8; Write-Host "Results: $report" }
 }
