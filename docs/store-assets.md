@@ -38,15 +38,22 @@ Secondary directions worth comparing only if the primary direction fails:
 
 ## Android launcher asset
 
-The repository currently has no `mipmap` launcher resources and no `android:icon` declaration. Before release:
+The current Android app already declares `android:icon` and `android:roundIcon` as
+`@mipmap/ic_launcher` in `app/src/main/AndroidManifest.xml`. The adaptive icon is
+defined in `app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml` with background,
+foreground, and monochrome layers. The app's `minSdk` is 26, so a separate
+pre-Android-8 legacy icon is not a release requirement.
 
-- [ ] create adaptive launcher icon foreground/background resources;
-- [ ] provide legacy fallback launcher icon;
-- [ ] add `android:icon` and `android:roundIcon` to the application manifest;
-- [ ] verify common adaptive masks (circle, squircle, rounded square);
+PR #28 replaces the foreground and monochrome references with safe-zone inset
+variants. Those candidate resources are not yet part of `main`. Before release:
+
+- [x] provide adaptive icon resources and manifest icon declarations;
+- [ ] verify the candidate safe-zone inset against the exact release build;
+- [ ] verify common adaptive masks (circle, squircle, rounded square) and themed icons;
 - [ ] verify the icon at small launcher size on a real Android device.
 
-The launcher foreground should keep all essential geometry inside the adaptive-icon safe zone.
+Keep all essential geometry inside the adaptive-icon safe zone. Automated asset
+checks do not replace the real-launcher acceptance gate.
 
 ## Google Play icon
 
@@ -61,7 +68,7 @@ Google Play's store icon is separate from the launcher resource and should be a 
 Output target:
 
 ```text
-store/google-play/icon-512.png
+store/google-play/v1.0/ja-JP/icon-512.png
 ```
 
 ## Shipaton icon
@@ -93,7 +100,7 @@ Recommended composition:
 Output target:
 
 ```text
-store/google-play/feature-graphic-1024x500.png
+store/google-play/v1.0/ja-JP/feature-graphic-1024x500.png
 ```
 
 ## Phone screenshots
