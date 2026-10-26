@@ -13,6 +13,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.platform.app.InstrumentationRegistry
 import com.madowaku.focusraid.StoreCaptureActivity
 import com.madowaku.focusraid.billing.AccessLevel
@@ -51,18 +52,23 @@ class StoreCaptureTest {
         world = WorldSnapshot(bossName = "環焔竜ヴォルガ", bossHp = 181, bossMaxHp = 250),
     )
 
-    // Today's demo walk: 3,240 steps reached the first two checkpoints. Device-local only.
+    // Three demo days of walking; checkpoints are the 1,000 / 3,000 / 5,000-step thresholds. Device-local only.
     private val walking: WalkingActions = run {
-        val zone = ZoneId.systemDefault()
-        val now = Instant.now()
-        val today = now.atZone(zone).toLocalDate()
+        // Fixed diary zone and check time keep the capture independent of the emulator's clock settings.
+        val zone = ZoneId.of("Asia/Tokyo")
+        val today = Instant.now().atZone(zone).toLocalDate()
+        val now = today.atTime(18, 30).atZone(zone).toInstant()
         WalkingActions(
             state = WalkingUiState(
                 journal = WalkingJournal(
                     enabled = true,
                     firstDay = today.minusDays(2),
                     zone = zone.id,
-                    days = mapOf(today to WalkingDay(steps = 3_240, checkpoints = setOf(1_000, 3_000))),
+                    days = mapOf(
+                        today to WalkingDay(steps = 3_240, checkpoints = setOf(1_000, 3_000)),
+                        today.minusDays(1) to WalkingDay(steps = 5_812, checkpoints = setOf(1_000, 3_000, 5_000)),
+                        today.minusDays(2) to WalkingDay(steps = 1_450, checkpoints = setOf(1_000)),
+                    ),
                 ),
                 status = WalkingStatus.READY,
                 checkedAt = now,
@@ -182,6 +188,23 @@ class StoreCaptureTest {
         compose.mainClock.advanceTimeBy(500)
         compose.onNodeWithText("今日の探索", substring = true).assertExists()
         save("home")
+    }
+
+    /** Walking Expedition: the home card scrolled into view, then the notebook dialog. */
+    @Test fun walking() {
+        content { app(fixture) }
+        compose.mainClock.advanceTimeBy(500)
+        // Scrolling waits for idle; with a paused clock that never arrives.
+        compose.mainClock.autoAdvance = true
+        // Scroll to the card's last control so the whole card is on screen.
+        compose.onNodeWithText("探索手帳を開く").performScrollTo()
+        compose.waitForIdle()
+        compose.onNodeWithText("今日の探索: 3240歩").assertIsDisplayed()
+        save("walking-home")
+        compose.onNodeWithText("探索手帳を開く").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("歩きの探索手帳", substring = false).assertExists()
+        save("walking-notebook")
     }
 
     /** 深層 + ラグ focusing is the Pixel Expedition destination screen in production (FocusRaidV10Root). */

@@ -470,6 +470,69 @@
       "bottom": 1874
     },
     {
+      "asset": "06-walking",
+      "value": "Focus Raid",
+      "size": 34,
+      "left": 64,
+      "right": 245.83056640625,
+      "top": 71,
+      "bottom": 100
+    },
+    {
+      "asset": "06-walking",
+      "value": "集中タイマー",
+      "size": 28,
+      "left": 848,
+      "right": 1016,
+      "top": 72,
+      "bottom": 99
+    },
+    {
+      "asset": "06-walking",
+      "value": "歩いた日も、",
+      "size": 108,
+      "left": 64,
+      "right": 708.760009765625,
+      "top": 173,
+      "bottom": 278
+    },
+    {
+      "asset": "06-walking",
+      "value": "小さな冒険に。",
+      "size": 108,
+      "left": 64,
+      "right": 820,
+      "top": 309.08000000000004,
+      "bottom": 413.08000000000004
+    },
+    {
+      "asset": "06-walking",
+      "value": "歩数で、景色と記念品を発見。無料・任意。",
+      "size": 36,
+      "left": 64,
+      "right": 782.5599975585938,
+      "top": 439,
+      "bottom": 474
+    },
+    {
+      "asset": "06-walking",
+      "value": "実際のアプリ画面 / 演出デモ",
+      "size": 30,
+      "left": 64,
+      "right": 449.20001220703125,
+      "top": 1847,
+      "bottom": 1879
+    },
+    {
+      "asset": "06-walking",
+      "value": "06",
+      "size": 30,
+      "left": 981.8000183105469,
+      "right": 1016,
+      "top": 1850,
+      "bottom": 1874
+    },
+    {
       "asset": "feature-graphic-1024x500",
       "value": "Focus Raid",
       "size": 32,
@@ -740,6 +803,15 @@
       "bottom": 30
     },
     {
+      "asset": "sequence-180",
+      "value": "06-walking",
+      "size": 12,
+      "left": 1000,
+      "right": 1064.1716003417969,
+      "top": 17,
+      "bottom": 30
+    },
+    {
       "asset": "hero-ab-360",
       "value": "01-hero-a",
       "size": 12,
@@ -997,6 +1069,38 @@
         748,
         724,
         1039.65
+      ]
+    },
+    {
+      "asset": "06-walking",
+      "source": "raw/walking-home.png",
+      "rect": [
+        0,
+        1680,
+        1080,
+        450
+      ],
+      "destination": [
+        48,
+        506,
+        984,
+        410
+      ]
+    },
+    {
+      "asset": "06-walking",
+      "source": "raw/walking-notebook.png",
+      "rect": [
+        76,
+        326,
+        928,
+        1080
+      ],
+      "destination": [
+        170,
+        936,
+        740,
+        861.21
       ]
     },
     {

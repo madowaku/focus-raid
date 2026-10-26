@@ -7,7 +7,7 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 STORE = ROOT / 'store/google-play/v1.0'
-SHOTS = ['01-hero-a', '01-hero-b', '02-shared-raid', '03-companion', '04-return-raid', '05-everyday']
+SHOTS = ['01-hero-a', '01-hero-b', '02-shared-raid', '03-companion', '04-return-raid', '05-everyday', '06-walking']
 
 
 def digest(path):
@@ -43,13 +43,21 @@ def main():
     records.append({'file': 'en-US/feature-graphic-1024x500.png', 'width': 1024, 'height': 500, 'mode': 'RGB', 'bytes': en_feature.stat().st_size, 'sha256': digest(en_feature)})
 
     copy = json.loads((STORE / 'listing-copy.json').read_text(encoding='utf-8'))
-    for item in copy['shortDescriptions']:
-        if not 1 <= len(item['text']) <= 80 or '\n' in item['text']:
-            errors.append(f'Short description {item["id"]} violates 80-character/single-line limit')
+    copy_en = json.loads((STORE / 'listing-copy.en-US.json').read_text(encoding='utf-8'))
     assert len(copy['shortDescriptions']) == len(copy['longDescriptionOpenings']) == 3
-    for item in copy['assets']:
-        if len(item['alt']) > 140:
-            errors.append(f'Alt text too long: {item["id"]}')
+    # Play limits: title 30, short description 80, full description 4000 characters.
+    for listing in (copy, copy_en):
+        locale = listing['locale']
+        if not 1 <= len(listing['title']) <= 30:
+            errors.append(f'{locale} title exceeds 30 characters')
+        if not 1 <= len(listing['fullDescription']) <= 4000:
+            errors.append(f'{locale} full description exceeds 4000 characters')
+        for item in listing['shortDescriptions']:
+            if not 1 <= len(item['text']) <= 80 or '\n' in item['text']:
+                errors.append(f'{locale} short description {item["id"]} violates 80-character/single-line limit')
+        for item in listing['assets']:
+            if len(item['alt']) > 140:
+                errors.append(f'{locale} alt text too long: {item["id"]}')
 
     evidence_path = STORE / 'review' / 'layout-evidence.json'
     if args.normalize:
@@ -80,7 +88,7 @@ def main():
     for source in sources:
         if capture['captures'].get(Path(source['file']).name) != source['sha256']:
             errors.append(f'Raw capture differs from provenance: {source["file"]}')
-    for path in ['creative.js', 'creative.html', 'listing-copy.json']:
+    for path in ['creative.js', 'creative.html', 'listing-copy.json', 'listing-copy.en-US.json']:
         sources.append({'file': path, 'sha256': digest(STORE / path)})
     for path in ['app/src/main/res/drawable-nodpi/ic_launcher_foreground.png', 'app/src/main/res/drawable-nodpi/ic_launcher_monochrome.png']:
         sources.append({'file': '../../../' + path, 'sha256': digest(ROOT / path)})
@@ -90,7 +98,8 @@ def main():
         'outputs': records,
         'sources': sources,
         'shortDescriptionCharacters': {item['id']: len(item['text']) for item in copy['shortDescriptions']},
-        'validation': ['PNG dimensions and color modes', '80-character descriptions and 140-character alt text', 'text bounds and overlaps', 'raw source hashes and dimensions'],
+        'shortDescriptionCharactersEnUS': {item['id']: len(item['text']) for item in copy_en['shortDescriptions']},
+        'validation': ['PNG dimensions and color modes', '30/80/4000-character title and descriptions (ja-JP, en-US) and 140-character alt text', 'text bounds and overlaps', 'raw source hashes and dimensions'],
         'pending': ['3–5 independent five-second reviews', 'Play Console and actual launcher mask/themed-icon review', 'release-candidate production shared-raid verification'],
         'errors': errors,
     }

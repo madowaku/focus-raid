@@ -1,11 +1,11 @@
 {
-  "productCommit": "32d61cbed7f2c712434040cd5415ea5694d38614",
-  "capturedAtUtc": "2026-10-26T13:58:42.5859277Z",
+  "productCommit": "4cc830c2a02b1008a63b34ac76a6feddf510685e",
+  "capturedAtUtc": "2026-10-26T14:41:41.4140343Z",
   "device": "emulator-5554",
   "viewport": "360x800 dp / 1080x2400 px / font scale 1",
   "data": "Local deterministic demo fixtures. No production users, timestamps, purchases or network calls.",
-  "tests": "OK (7 tests)",
-  "testSourceSha256": "6c3110ebac73558d4d29881b644757ac23719144ff602a7d34c9de9157df2a7f",
+  "tests": "OK (8 tests)",
+  "testSourceSha256": "0d1c43dfdc728dda02d7ebd0c1735b4a2aedec532df51e62740eaad72e9c50e1",
   "captures": {
     "companion-egg.png": "7b7be08e0adce1a7a397e5f49a01524a81a3e5d00f065249d138373953b07f8d",
     "companion-locks.png": "398aa4c7fde44a9cd1fa99228944c54103551f50c109c4f00a8d6bd0bc0d8bf3",
@@ -19,6 +19,8 @@
     "shared-arrived.png": "b4315d7d4af32ee383ff502cd1c8f345214e399ba3412a8a40e3227d5f238385",
     "shared-bottom.png": "52e5ae4c2ef473aebcc79711e3642cf914ad16f1c7485ce26d5bc39b4c8ef3cc",
     "shared-left.png": "52d1fe8d5c23b724a5acac67cdd7e4fea12e9ed30d473528021cebbe9df14c3b",
-    "shared-right.png": "28323efbca0f998d3087422b3b630bee25e7e25e98883a4a66e3cbd373de84c2"
+    "shared-right.png": "28323efbca0f998d3087422b3b630bee25e7e25e98883a4a66e3cbd373de84c2",
+    "walking-home.png": "56992453963cd09451af3a0e2c63b1bd51df9c05ffc92927cfcf2907cd203a7c",
+    "walking-notebook.png": "174c47554e4243cf5a5fb4b1a9447802d87c41f410940dcd2129935f33cc72b9"
   }
 }

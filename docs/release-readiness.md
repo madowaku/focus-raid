@@ -173,7 +173,12 @@ Before publishing store copy, screenshots, or the Shipaton demo:
 - [ ] Keep the core focus timer fully usable in Free.
 - [ ] Confirm all screenshots correspond to the release candidate UI.
 - [x] Replace companion/egg/boss placeholders with the adopted production atlas catalog.
-- [ ] Prepare final store screenshot crops using the adopted artwork.
+- [x] Prepare final store screenshot crops using the adopted artwork. Candidate set: [store/google-play/v1.0](../store/google-play/v1.0/README.md) (6 ja-JP screenshots incl. Walking Expedition, ja/en feature graphics, ja/en listing copy).
+- [ ] Re-capture the store set from the exact release-candidate commit (`scripts/capture-store.ps1`) if any UI changed after the candidate was rendered.
+- [ ] Choose hero A/B after 3–5 independent five-second reviews.
+- [ ] Check the 21% inset launcher icon on real launchers (circle, squircle, themed icon, light/dark wallpaper).
+- [ ] Decide on English screenshots. The app UI is Japanese-only; the English listing says so.
+- [ ] Use shared-raid wording in the listing only after the worldwide contribution check below passes.
 - [ ] Claim worldwide contribution is live only after deploying and verifying the v0.2 callable, rules and generation schema on production with two Play installations.
 - [ ] Keep Mord and Zephyr's personal challenges distinct from the shared Volga world raid.
 
@@ -190,6 +195,18 @@ For the 2026 submission:
 - [ ] Prepare the required app icon and screenshots.
 - [ ] Provide a practical judge path to unlock/test the paid experience.
 - [ ] Submit early enough to absorb Play review risk.
+
+## Current publish blockers (2026-10-26)
+
+Status: **release-ready development, not releasable.** Do not publish to Play or deploy production services until every item below is closed.
+
+- [ ] A401OP real-device check run and recorded (timer background completion, exact-alarm denied, READ_STEPS deny/re-grant, font scale 1.5). Procedure: `docs/device-check-a401op.md` (PR madowaku/focus-raid#27).
+- [ ] Play Console: app created, privacy policy URL, Data Safety, Health apps declaration, `READ_STEPS` permission declaration.
+- [ ] `focus_raid_pro_lifetime` created, attached to RevenueCat `pro`, license-tested purchase / cancel / restore.
+- [ ] Production Firebase: rules deployed, callable deployed, two-installation contribution verified.
+- [ ] Signed AAB with production keys and `FOCUS_RAID_PRIVACY_POLICY_URL`; `versionCode` above any build ever uploaded to Play.
+- [ ] Internal test track installed and smoke-tested; closed test started (personal accounts: 12 testers opted in for 14 consecutive days before production access).
+- [ ] Store listing: hero A/B decided, launcher icon checked on device, English screenshot decision.
 
 ## Release-candidate rule
 

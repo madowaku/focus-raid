@@ -1,0 +1,17 @@
+{
+  "locale": "en-US",
+  "title": "Focus Raid: Focus Timer RPG",
+  "positioning": "Your focus time reaches a raid everyone shares. Your companion grows too.",
+  "recommended": "A",
+  "shortDescriptions": [
+    {"id": "A", "text": "Turn 25 focused minutes into a strike on a raid boss everyone fights together."},
+    {"id": "B", "text": "Study or work focus strikes one shared raid boss. Raise a companion as you go."},
+    {"id": "C", "text": "Focus, and the journey moves. Strike a boss and raise a companion as you go."}
+  ],
+  "fullDescription": "Focus Raid is a focus timer where the time you focus becomes a strike on a shared raid boss. Focus on study or work for 25 minutes, and that time lands as one strike. Your focus and everyone else's reach the same raid.\n\n■ 25 minutes become one strike\nFinish a focus session and its time strikes the raid boss. The focusing screen stays calm. You can pause or end early, the timer keeps running when the app is closed, and a notification tells you when you are done.\n\n■ Everyone's focus, one boss\nWhen you return from an expedition, your golden strike follows the lights of other people's focus. You can leave a preset footprint where you arrived.\nShared-raid updates need a network connection. Offline, your focus time is still saved on the device, and unsent contributions are retried when you are back online. The lights replay past focus sessions.\n\n■ A companion that grows with you\nYour first companion is Rag, a small dragon who grows from an egg as you focus. Meet Miko at 75 total minutes and Lune at 180. Keepsakes found on expeditions stay in your adventure log.\n\n■ Walking days become small adventures (free, optional)\nWalking Exploration reads your step count from Health Connect. At 1,000, 3,000 and 5,000 steps a day you discover scenes and keepsakes in your exploration notebook. Steps stay on your device and are never sent to a server or third party. Steps never turn into focus time or raid damage, so days without walking cost you nothing. Some devices need another app that records steps to Health Connect.\n\n■ Free and Pro\nFree: the focus timer, notifications and background timing, the Sky Tower and Deep Labyrinth expeditions, companion growth, the last 7 days of history and Walking Exploration. No ads.\nPro (one-time purchase, no subscription): the Pro-only Star Route expedition, detailed statistics (completion rate, average time, longest session, focus time per expedition) and your full history. History saved while on Free is never deleted, so Pro lets you look back on all of it. The price is shown in the store.\n\n■ No account needed\nStart without an email address or password. See the privacy policy for how data is handled.\n\nThe app interface is currently in Japanese.",
+  "sharedWorldNote": "Shared-raid updates need a network connection. Offline, focus time is saved on the device and unsent contributions are retried later. The lights replay past focus sessions.",
+  "publicationGate": "Candidate copy. Use only after production shared-raid connection and two-installation contribution are verified on the release candidate. Store art is an effect demo, not proof of live operation. The app UI is Japanese-only; keep the last sentence while that is true.",
+  "assets": [
+    {"id": "feature-graphic-1024x500", "headline": "Focus 25 minutes. Strike the boss together.", "alt": "Focus Raid. Focus 25 minutes and strike the raid boss together. Real app screen of the boss and a golden strike, effect demo."}
+  ]
+}

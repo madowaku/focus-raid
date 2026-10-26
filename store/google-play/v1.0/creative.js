@@ -130,6 +130,16 @@ function everyday() {
   footer(ctx, '05');
 }
 
+function walking() {
+  const ctx = canvas('06-walking'); background(ctx, '#2c4034');
+  header(ctx, ['歩いた日も、', '小さな冒険に。'], 108, '#9fe3b3');
+  text(ctx, '歩数で、景色と記念品を発見。無料・任意。', 64, 470, 36, PALETTE.muted, 500);
+  // Real home card and notebook; steps are a local demo fixture, never sent off the device.
+  crop(ctx, 'walking-home', [0, 1680, 1080, 450], [48, 506, 984, 410], 36);
+  crop(ctx, 'walking-notebook', [76, 326, 928, 1080], [170, 936, 740, 861.21], 36);
+  footer(ctx, '06');
+}
+
 function feature() {
   const ctx = canvas('feature-graphic-1024x500', 1024, 500); background(ctx, '#593d30');
   // Native FIRST RUN crop. Text remains outside the captured UI.
@@ -232,17 +242,17 @@ async function run() {
   try { await face.load(); } catch { throw new Error('Install Noto Sans JP before exporting.'); }
   document.fonts.add(face);
   await document.fonts.load(`900 110px ${font}`, '25分が、一撃になる。');
-  const names = ['first-run-strike', 'shared-left', 'shared-right', 'shared-bottom', 'shared-arrived', 'companion-egg', 'companion-locks', 'return-other', 'return-self', 'home', 'focusing'];
+  const names = ['first-run-strike', 'shared-left', 'shared-right', 'shared-bottom', 'shared-arrived', 'companion-egg', 'companion-locks', 'return-other', 'return-self', 'home', 'focusing', 'walking-home', 'walking-notebook'];
   await Promise.all([...names.map(name => [name, `raw/${name}.png`]), ['launcher', `${ROOT}/app/src/main/res/drawable-nodpi/ic_launcher_foreground.png`], ['monochrome', `${ROOT}/app/src/main/res/drawable-nodpi/ic_launcher_monochrome.png`], ['arena', `${ROOT}/app/src/main/res/drawable-nodpi/world_arena_v13.png`]].map(async ([name, path]) => {
     const image = new Image(); image.src = path; await image.decode(); pictures[name] = image;
   }));
-  heroA(); shared('01-hero-b', '01'); shared('02-shared-raid', '02'); companion(); reward(); everyday(); feature(); featureEn(); icons();
-  contact('sequence-180', ['01-hero-a', '02-shared-raid', '03-companion', '04-return-raid', '05-everyday'], 180);
+  heroA(); shared('01-hero-b', '01'); shared('02-shared-raid', '02'); companion(); reward(); everyday(); walking(); feature(); featureEn(); icons();
+  contact('sequence-180', ['01-hero-a', '02-shared-raid', '03-companion', '04-return-raid', '05-everyday', '06-walking'], 180);
   contact('hero-ab-360', ['01-hero-a', '01-hero-b'], 360);
   window.storeEvidence = evidence;
   if (evidence.errors.length) throw new Error(`Text outside canvas: ${JSON.stringify(evidence.errors)}`);
   window.storeReady = true;
-  document.querySelector('#status').textContent = '描画完了 · 5枚＋A/B案、横長グラフィック、アイコン、縮小レビュー';
+  document.querySelector('#status').textContent = '描画完了 · 6枚＋A/B案、横長グラフィック、アイコン、縮小レビュー';
 }
 
 document.querySelector('#compact').onclick = () => document.querySelector('#assets').classList.toggle('compact');
