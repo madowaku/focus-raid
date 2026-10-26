@@ -4,6 +4,8 @@ Working asset specification for the first public Android release and Shipaton 20
 
 Last requirements review: 2026-09-05.
 
+Current candidate package: [store/google-play/v1.0](../store/google-play/v1.0/README.md) (recaptured 2026-10-26 from the v1.0 release-prep screens, with English feature graphic and launcher safe-zone inset).
+
 ## Brand principle
 
 Use one recognizable Focus Raid mark across launcher, Google Play, Shipaton, and promotional graphics instead of designing each asset independently.

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ja">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Focus Raid · v1.0 ストア素材レビュー</title>
+<link rel="icon" href="data:,">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #eeeaf4; color: #251c36; font-family: 'Noto Sans JP', sans-serif; }
+  header { padding: 32px; max-width: 1400px; margin: auto; }
+  h1 { font-size: 26px; margin: 0 0 10px; }
+  p { line-height: 1.7; margin: 8px 0; }
+  button, select, a { font: inherit; }
+  button, select { padding: 10px 16px; border: 1px solid #b4a8c6; border-radius: 10px; background: white; cursor: pointer; }
+  a { color: #593bb0; }
+  #status { color: #5d4f71; }
+  #assets { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 24px; padding: 0 32px 40px; max-width: 1500px; margin: auto; }
+  figure { margin: 0; }
+  figcaption { padding: 10px 0; font-size: 14px; }
+  canvas { display: block; width: 270px; height: auto; box-shadow: 0 8px 28px #27133320; }
+  figure.wide canvas { width: min(680px, calc(100vw - 64px)); }
+  #assets.compact canvas { width: 180px; }
+  #assets.compact figure.wide canvas { width: 512px; }
+  #exposure { border: 0; background: #f3eef7; border-radius: 16px; padding: 20px; max-height: 96vh; max-width: 96vw; }
+  #exposure::backdrop { background: #160b2bea; }
+  #exposure canvas { width: min(320px, 78vw); max-height: 82vh; object-fit: contain; box-shadow: none; }
+  #questions { max-width: 560px; }
+  #questions li { margin: 12px 0; }
+  [hidden] { display: none !important; }
+  body.export { background: #130c21; }
+  body.export header, body.export figcaption { display: none; }
+  body.export #assets { display: block; padding: 0; margin: 0; max-width: none; }
+  body.export canvas, body.export figure.wide canvas { width: auto; height: auto; box-shadow: none; }
+</style>
+<header>
+  <h1>Focus Raid · ストア素材候補</h1>
+  <p>v1.0 / 日本語 / 1080 × 1920。実画面を撮影し、ストア用の見出しとクロップを加えた候補です。</p>
+  <p><a href="listing-copy.json">説明文3案・代替テキスト</a> · <a href="README.md">再生成・確認手順</a></p>
+  <p>
+    <button id="compact" type="button">180pxの縮小表示</button>
+    <label>最初の1枚 <select id="variant"><option value="01-hero-a">A · 25分が、一撃になる。</option><option value="01-hero-b">B · 世界中の集中が、同じボスへ。</option></select></label>
+    <button id="five-seconds" type="button">5秒だけ見せる</button>
+  </p>
+  <p id="status" role="status">素材を描画しています…</p>
+  <p>協力者3〜5人で確認してください。このページは回答を送信・保存しません。実際のPlay Consoleでの確認と第三者レビューは未実施です。</p>
+</header>
+<main id="assets"></main>
+<dialog id="exposure" aria-label="5秒レビュー">
+  <div id="exposure-image"></div>
+  <div id="questions" hidden>
+    <p>見えた内容を、説明を受ける前に答えてください。</p>
+    <ol><li>何をするアプリだと思う？</li><li>他のタイマーと何が違う？</li><li>インストールしてみたい？ なぜ？</li><li>全5枚を見たら、どの画像が一番気になった？</li></ol>
+    <button id="close-exposure" type="button">閉じる</button>
+  </div>
+</dialog>
+<script src="creative.js"></script>
+</html>
