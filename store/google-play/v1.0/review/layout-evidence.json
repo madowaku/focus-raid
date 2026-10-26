@@ -1,0 +1,1140 @@
+{
+  "font": "Noto Sans JP",
+  "text": [
+    {
+      "asset": "01-hero-a",
+      "value": "Focus Raid",
+      "size": 34,
+      "left": 64,
+      "right": 245.83056640625,
+      "top": 71,
+      "bottom": 100
+    },
+    {
+      "asset": "01-hero-a",
+      "value": "集中タイマー",
+      "size": 28,
+      "left": 848,
+      "right": 1016,
+      "top": 72,
+      "bottom": 99
+    },
+    {
+      "asset": "01-hero-a",
+      "value": "25分が、",
+      "size": 118,
+      "left": 64,
+      "right": 559.364013671875,
+      "top": 162,
+      "bottom": 279
+    },
+    {
+      "asset": "01-hero-a",
+      "value": "一撃になる。",
+      "size": 118,
+      "left": 64,
+      "right": 772,
+      "top": 313.68,
+      "bottom": 426.68
+    },
+    {
+      "asset": "01-hero-a",
+      "value": "みんなでレイドボスを倒す集中タイマー",
+      "size": 36,
+      "left": 64,
+      "right": 712,
+      "top": 455,
+      "bottom": 489
+    },
+    {
+      "asset": "01-hero-a",
+      "value": "集中を完走すると、",
+      "size": 48,
+      "left": 64,
+      "right": 494.08001708984375,
+      "top": 1587,
+      "bottom": 1633
+    },
+    {
+      "asset": "01-hero-a",
+      "value": "その時間がレイドへ届く。",
+      "size": 48,
+      "left": 64,
+      "right": 640,
+      "top": 1658,
+      "bottom": 1705
+    },
+    {
+      "asset": "01-hero-a",
+      "value": "実際のアプリ画面 / 演出デモ",
+      "size": 30,
+      "left": 64,
+      "right": 449.20001220703125,
+      "top": 1847,
+      "bottom": 1879
+    },
+    {
+      "asset": "01-hero-a",
+      "value": "01",
+      "size": 30,
+      "left": 981.8000183105469,
+      "right": 1016,
+      "top": 1850,
+      "bottom": 1874
+    },
+    {
+      "asset": "01-hero-b",
+      "value": "Focus Raid",
+      "size": 34,
+      "left": 64,
+      "right": 245.83056640625,
+      "top": 71,
+      "bottom": 100
+    },
+    {
+      "asset": "01-hero-b",
+      "value": "集中タイマー",
+      "size": 28,
+      "left": 848,
+      "right": 1016,
+      "top": 72,
+      "bottom": 99
+    },
+    {
+      "asset": "01-hero-b",
+      "value": "世界中の集中が、",
+      "size": 93,
+      "left": 64,
+      "right": 806.1400146484375,
+      "top": 184,
+      "bottom": 276
+    },
+    {
+      "asset": "01-hero-b",
+      "value": "同じボスへ。",
+      "size": 93,
+      "left": 64,
+      "right": 622,
+      "top": 304.18,
+      "bottom": 392.18
+    },
+    {
+      "asset": "01-hero-b",
+      "value": "みんなでレイドボスを倒す集中タイマー",
+      "size": 36,
+      "left": 64,
+      "right": 712,
+      "top": 423,
+      "bottom": 457
+    },
+    {
+      "asset": "01-hero-b",
+      "value": "連続する灯の到着",
+      "size": 30,
+      "left": 64,
+      "right": 304,
+      "top": 1754,
+      "bottom": 1783
+    },
+    {
+      "asset": "01-hero-b",
+      "value": "あなたの25分も、誰かの25分も。",
+      "size": 30,
+      "left": 557.3000183105469,
+      "right": 1016,
+      "top": 1754,
+      "bottom": 1783
+    },
+    {
+      "asset": "01-hero-b",
+      "value": "実際のアプリ画面 / 演出デモ",
+      "size": 30,
+      "left": 64,
+      "right": 449.20001220703125,
+      "top": 1847,
+      "bottom": 1879
+    },
+    {
+      "asset": "01-hero-b",
+      "value": "01",
+      "size": 30,
+      "left": 981.8000183105469,
+      "right": 1016,
+      "top": 1850,
+      "bottom": 1874
+    },
+    {
+      "asset": "02-shared-raid",
+      "value": "Focus Raid",
+      "size": 34,
+      "left": 64,
+      "right": 245.83056640625,
+      "top": 71,
+      "bottom": 100
+    },
+    {
+      "asset": "02-shared-raid",
+      "value": "集中タイマー",
+      "size": 28,
+      "left": 848,
+      "right": 1016,
+      "top": 72,
+      "bottom": 99
+    },
+    {
+      "asset": "02-shared-raid",
+      "value": "世界中の集中が、",
+      "size": 93,
+      "left": 64,
+      "right": 806.1400146484375,
+      "top": 184,
+      "bottom": 276
+    },
+    {
+      "asset": "02-shared-raid",
+      "value": "同じボスへ。",
+      "size": 93,
+      "left": 64,
+      "right": 622,
+      "top": 304.18,
+      "bottom": 392.18
+    },
+    {
+      "asset": "02-shared-raid",
+      "value": "みんなでレイドボスを倒す集中タイマー",
+      "size": 36,
+      "left": 64,
+      "right": 712,
+      "top": 423,
+      "bottom": 457
+    },
+    {
+      "asset": "02-shared-raid",
+      "value": "連続する灯の到着",
+      "size": 30,
+      "left": 64,
+      "right": 304,
+      "top": 1754,
+      "bottom": 1783
+    },
+    {
+      "asset": "02-shared-raid",
+      "value": "あなたの25分も、誰かの25分も。",
+      "size": 30,
+      "left": 557.3000183105469,
+      "right": 1016,
+      "top": 1754,
+      "bottom": 1783
+    },
+    {
+      "asset": "02-shared-raid",
+      "value": "実際のアプリ画面 / 演出デモ",
+      "size": 30,
+      "left": 64,
+      "right": 449.20001220703125,
+      "top": 1847,
+      "bottom": 1879
+    },
+    {
+      "asset": "02-shared-raid",
+      "value": "02",
+      "size": 30,
+      "left": 981.8000183105469,
+      "right": 1016,
+      "top": 1850,
+      "bottom": 1874
+    },
+    {
+      "asset": "03-companion",
+      "value": "Focus Raid",
+      "size": 34,
+      "left": 64,
+      "right": 245.83056640625,
+      "top": 71,
+      "bottom": 100
+    },
+    {
+      "asset": "03-companion",
+      "value": "集中タイマー",
+      "size": 28,
+      "left": 848,
+      "right": 1016,
+      "top": 72,
+      "bottom": 99
+    },
+    {
+      "asset": "03-companion",
+      "value": "相棒も、",
+      "size": 113,
+      "left": 64,
+      "right": 512.6099853515625,
+      "top": 169,
+      "bottom": 277
+    },
+    {
+      "asset": "03-companion",
+      "value": "一緒に育つ。",
+      "size": 113,
+      "left": 64,
+      "right": 737.47998046875,
+      "top": 311.38,
+      "bottom": 419.38
+    },
+    {
+      "asset": "03-companion",
+      "value": "集中した時間が、旅と成長に残る。",
+      "size": 38,
+      "left": 64,
+      "right": 671.239990234375,
+      "top": 447,
+      "bottom": 484
+    },
+    {
+      "asset": "03-companion",
+      "value": "まだ見ぬ",
+      "size": 35,
+      "left": 756,
+      "right": 896,
+      "top": 1576,
+      "bottom": 1609
+    },
+    {
+      "asset": "03-companion",
+      "value": "相棒たち。",
+      "size": 35,
+      "left": 756,
+      "right": 931,
+      "top": 1628,
+      "bottom": 1662
+    },
+    {
+      "asset": "03-companion",
+      "value": "実際のアプリ画面 / はじまりの相棒",
+      "size": 30,
+      "left": 64,
+      "right": 539.2000122070312,
+      "top": 1847,
+      "bottom": 1879
+    },
+    {
+      "asset": "03-companion",
+      "value": "03",
+      "size": 30,
+      "left": 981.8000183105469,
+      "right": 1016,
+      "top": 1850,
+      "bottom": 1874
+    },
+    {
+      "asset": "04-return-raid",
+      "value": "Focus Raid",
+      "size": 34,
+      "left": 64,
+      "right": 245.83056640625,
+      "top": 71,
+      "bottom": 100
+    },
+    {
+      "asset": "04-return-raid",
+      "value": "集中タイマー",
+      "size": 28,
+      "left": 848,
+      "right": 1016,
+      "top": 72,
+      "bottom": 99
+    },
+    {
+      "asset": "04-return-raid",
+      "value": "最後に、",
+      "size": 87,
+      "left": 64,
+      "right": 409.3900146484375,
+      "top": 191,
+      "bottom": 275
+    },
+    {
+      "asset": "04-return-raid",
+      "value": "あなたの集中が届く。",
+      "size": 87,
+      "left": 64,
+      "right": 934,
+      "top": 298.62,
+      "bottom": 384.62
+    },
+    {
+      "asset": "04-return-raid",
+      "value": "みんなの灯のあとに、あなたの金色の灯。",
+      "size": 35,
+      "left": 64,
+      "right": 727.9500122070312,
+      "top": 420,
+      "bottom": 453
+    },
+    {
+      "asset": "04-return-raid",
+      "value": "誰かの灯から",
+      "size": 39,
+      "left": 434,
+      "right": 668,
+      "top": 551,
+      "bottom": 589
+    },
+    {
+      "asset": "04-return-raid",
+      "value": "あなたの一撃へ。",
+      "size": 39,
+      "left": 434,
+      "right": 746,
+      "top": 611,
+      "bottom": 649
+    },
+    {
+      "asset": "04-return-raid",
+      "value": "実際のアプリ画面 / 演出デモ",
+      "size": 30,
+      "left": 64,
+      "right": 449.20001220703125,
+      "top": 1847,
+      "bottom": 1879
+    },
+    {
+      "asset": "04-return-raid",
+      "value": "04",
+      "size": 30,
+      "left": 981.8000183105469,
+      "right": 1016,
+      "top": 1850,
+      "bottom": 1874
+    },
+    {
+      "asset": "05-everyday",
+      "value": "Focus Raid",
+      "size": 34,
+      "left": 64,
+      "right": 245.83056640625,
+      "top": 71,
+      "bottom": 100
+    },
+    {
+      "asset": "05-everyday",
+      "value": "集中タイマー",
+      "size": 28,
+      "left": 848,
+      "right": 1016,
+      "top": 72,
+      "bottom": 99
+    },
+    {
+      "asset": "05-everyday",
+      "value": "集中する。",
+      "size": 114,
+      "left": 64,
+      "right": 634,
+      "top": 168,
+      "bottom": 277
+    },
+    {
+      "asset": "05-everyday",
+      "value": "旅が進む。",
+      "size": 114,
+      "left": 64,
+      "right": 634,
+      "top": 309.64,
+      "bottom": 421.64
+    },
+    {
+      "asset": "05-everyday",
+      "value": "25分から。勉強にも、仕事にも。",
+      "size": 38,
+      "left": 64,
+      "right": 638.1799926757812,
+      "top": 447,
+      "bottom": 484
+    },
+    {
+      "asset": "05-everyday",
+      "value": "実際のアプリ画面 / 演出デモ",
+      "size": 30,
+      "left": 64,
+      "right": 449.20001220703125,
+      "top": 1847,
+      "bottom": 1879
+    },
+    {
+      "asset": "05-everyday",
+      "value": "05",
+      "size": 30,
+      "left": 981.8000183105469,
+      "right": 1016,
+      "top": 1850,
+      "bottom": 1874
+    },
+    {
+      "asset": "06-walking",
+      "value": "Focus Raid",
+      "size": 34,
+      "left": 64,
+      "right": 245.83056640625,
+      "top": 71,
+      "bottom": 100
+    },
+    {
+      "asset": "06-walking",
+      "value": "集中タイマー",
+      "size": 28,
+      "left": 848,
+      "right": 1016,
+      "top": 72,
+      "bottom": 99
+    },
+    {
+      "asset": "06-walking",
+      "value": "歩いた日も、",
+      "size": 108,
+      "left": 64,
+      "right": 708.760009765625,
+      "top": 173,
+      "bottom": 278
+    },
+    {
+      "asset": "06-walking",
+      "value": "小さな冒険に。",
+      "size": 108,
+      "left": 64,
+      "right": 820,
+      "top": 309.08000000000004,
+      "bottom": 413.08000000000004
+    },
+    {
+      "asset": "06-walking",
+      "value": "歩数で、景色と記念品を発見。無料・任意。",
+      "size": 36,
+      "left": 64,
+      "right": 782.5599975585938,
+      "top": 439,
+      "bottom": 474
+    },
+    {
+      "asset": "06-walking",
+      "value": "実際のアプリ画面 / 演出デモ",
+      "size": 30,
+      "left": 64,
+      "right": 449.20001220703125,
+      "top": 1847,
+      "bottom": 1879
+    },
+    {
+      "asset": "06-walking",
+      "value": "06",
+      "size": 30,
+      "left": 981.8000183105469,
+      "right": 1016,
+      "top": 1850,
+      "bottom": 1874
+    },
+    {
+      "asset": "feature-graphic-1024x500",
+      "value": "Focus Raid",
+      "size": 32,
+      "left": 80,
+      "right": 251.13461303710938,
+      "top": 101,
+      "bottom": 129
+    },
+    {
+      "asset": "feature-graphic-1024x500",
+      "value": "25分が、",
+      "size": 66,
+      "left": 80,
+      "right": 357.0679931640625,
+      "top": 166,
+      "bottom": 231
+    },
+    {
+      "asset": "feature-graphic-1024x500",
+      "value": "一撃になる。",
+      "size": 66,
+      "left": 80,
+      "right": 476,
+      "top": 248,
+      "bottom": 312
+    },
+    {
+      "asset": "feature-graphic-1024x500",
+      "value": "みんなでボスを倒す集中タイマー",
+      "size": 24,
+      "left": 80,
+      "right": 440,
+      "top": 347,
+      "bottom": 370
+    },
+    {
+      "asset": "feature-graphic-1024x500",
+      "value": "実画面 / 演出デモ",
+      "size": 18,
+      "left": 80,
+      "right": 221.11996459960938,
+      "top": 394,
+      "bottom": 414
+    },
+    {
+      "asset": "en-US/feature-graphic-1024x500",
+      "value": "Focus Raid",
+      "size": 32,
+      "left": 72,
+      "right": 243.13461303710938,
+      "top": 91,
+      "bottom": 119
+    },
+    {
+      "asset": "en-US/feature-graphic-1024x500",
+      "value": "Focus 25 minutes.",
+      "size": 54,
+      "left": 72,
+      "right": 562.3199462890625,
+      "top": 169,
+      "bottom": 215
+    },
+    {
+      "asset": "en-US/feature-graphic-1024x500",
+      "value": "Strike the boss together.",
+      "size": 40,
+      "left": 72,
+      "right": 565.1198120117188,
+      "top": 246,
+      "bottom": 290
+    },
+    {
+      "asset": "en-US/feature-graphic-1024x500",
+      "value": "A focus timer where everyone raids one boss",
+      "size": 23,
+      "left": 72,
+      "right": 557.7485961914062,
+      "top": 327,
+      "bottom": 352
+    },
+    {
+      "asset": "en-US/feature-graphic-1024x500",
+      "value": "Real app screen / effect demo",
+      "size": 18,
+      "left": 72,
+      "right": 323.89393615722656,
+      "top": 395,
+      "bottom": 414
+    },
+    {
+      "asset": "launcher-preview",
+      "value": "LAUNCHER / STORE ICON",
+      "size": 36,
+      "left": 56,
+      "right": 499.36865234375,
+      "top": 48,
+      "bottom": 85
+    },
+    {
+      "asset": "launcher-preview",
+      "value": "現行のマークを保持。下段は108dpレイヤーの72dp表示領域を模擬。",
+      "size": 24,
+      "left": 56,
+      "right": 808.8799438476562,
+      "top": 103,
+      "bottom": 130
+    },
+    {
+      "asset": "launcher-preview",
+      "value": "LIGHT",
+      "size": 22,
+      "left": 62,
+      "right": 129.1439666748047,
+      "top": 189,
+      "bottom": 207
+    },
+    {
+      "asset": "launcher-preview",
+      "value": "48px",
+      "size": 23,
+      "left": 1200,
+      "right": 1252.1943054199219,
+      "top": 278,
+      "bottom": 302
+    },
+    {
+      "asset": "launcher-preview",
+      "value": "DARK",
+      "size": 22,
+      "left": 62,
+      "right": 122.43132019042969,
+      "top": 404,
+      "bottom": 421
+    },
+    {
+      "asset": "launcher-preview",
+      "value": "48px",
+      "size": 23,
+      "left": 1200,
+      "right": 1252.1943054199219,
+      "top": 493,
+      "bottom": 517
+    },
+    {
+      "asset": "launcher-preview",
+      "value": "adaptive launcher・21% inset（シミュレーション）",
+      "size": 27,
+      "left": 56,
+      "right": 728.3251953125,
+      "top": 633,
+      "bottom": 663
+    },
+    {
+      "asset": "launcher-preview",
+      "value": "circle",
+      "size": 21,
+      "left": 66,
+      "right": 120.16986083984375,
+      "top": 855,
+      "bottom": 873
+    },
+    {
+      "asset": "launcher-preview",
+      "value": "squircle",
+      "size": 21,
+      "left": 271,
+      "right": 350.64283752441406,
+      "top": 855,
+      "bottom": 877
+    },
+    {
+      "asset": "launcher-preview",
+      "value": "rounded",
+      "size": 21,
+      "left": 476,
+      "right": 561.6488494873047,
+      "top": 855,
+      "bottom": 873
+    },
+    {
+      "asset": "launcher-preview",
+      "value": "monochrome",
+      "size": 21,
+      "left": 684,
+      "right": 819.5028381347656,
+      "top": 855,
+      "bottom": 873
+    },
+    {
+      "asset": "launcher-preview",
+      "value": "inset後は輪と星が66dp安全域に収まる。",
+      "size": 24,
+      "left": 917,
+      "right": 1370.4261474609375,
+      "top": 719,
+      "bottom": 746
+    },
+    {
+      "asset": "launcher-preview",
+      "value": "実機の各ランチャーで要確認。",
+      "size": 24,
+      "left": 917,
+      "right": 1253,
+      "top": 759,
+      "bottom": 783
+    },
+    {
+      "asset": "launcher-preview",
+      "value": "ストア用512pxは余白を調整済み。",
+      "size": 24,
+      "left": 917,
+      "right": 1297.1436462402344,
+      "top": 800,
+      "bottom": 827
+    },
+    {
+      "asset": "launcher-preview",
+      "value": "Play Console・壁紙上・他アプリとの比較は未確認。自動合格として扱わない。",
+      "size": 25,
+      "left": 56,
+      "right": 959.3499755859375,
+      "top": 968,
+      "bottom": 996
+    },
+    {
+      "asset": "sequence-180",
+      "value": "01-hero-a",
+      "size": 12,
+      "left": 20,
+      "right": 76.4068603515625,
+      "top": 17,
+      "bottom": 28
+    },
+    {
+      "asset": "sequence-180",
+      "value": "02-shared-raid",
+      "size": 12,
+      "left": 216,
+      "right": 301.3268127441406,
+      "top": 17,
+      "bottom": 28
+    },
+    {
+      "asset": "sequence-180",
+      "value": "03-companion",
+      "size": 12,
+      "left": 412,
+      "right": 495.5948791503906,
+      "top": 17,
+      "bottom": 30
+    },
+    {
+      "asset": "sequence-180",
+      "value": "04-return-raid",
+      "size": 12,
+      "left": 608,
+      "right": 690.1784820556641,
+      "top": 17,
+      "bottom": 28
+    },
+    {
+      "asset": "sequence-180",
+      "value": "05-everyday",
+      "size": 12,
+      "left": 804,
+      "right": 875.6954040527344,
+      "top": 17,
+      "bottom": 30
+    },
+    {
+      "asset": "sequence-180",
+      "value": "06-walking",
+      "size": 12,
+      "left": 1000,
+      "right": 1064.1716003417969,
+      "top": 17,
+      "bottom": 30
+    },
+    {
+      "asset": "hero-ab-360",
+      "value": "01-hero-a",
+      "size": 12,
+      "left": 20,
+      "right": 76.4068603515625,
+      "top": 17,
+      "bottom": 28
+    },
+    {
+      "asset": "hero-ab-360",
+      "value": "01-hero-b",
+      "size": 12,
+      "left": 396,
+      "right": 453.05487060546875,
+      "top": 17,
+      "bottom": 28
+    }
+  ],
+  "crops": [
+    {
+      "asset": "01-hero-a",
+      "source": "raw/first-run-strike.png",
+      "rect": [
+        60,
+        132,
+        960,
+        954
+      ],
+      "destination": [
+        48,
+        514,
+        984,
+        977.85
+      ]
+    },
+    {
+      "asset": "01-hero-b",
+      "source": "raw/shared-right.png",
+      "rect": [
+        60,
+        132,
+        960,
+        954
+      ],
+      "destination": [
+        48,
+        478,
+        984,
+        977.85
+      ]
+    },
+    {
+      "asset": "01-hero-b",
+      "source": "raw/shared-left.png",
+      "rect": [
+        60,
+        230,
+        960,
+        790
+      ],
+      "destination": [
+        48,
+        1476,
+        312,
+        256.75
+      ]
+    },
+    {
+      "asset": "01-hero-b",
+      "source": "raw/shared-right.png",
+      "rect": [
+        60,
+        230,
+        960,
+        790
+      ],
+      "destination": [
+        384,
+        1476,
+        312,
+        256.75
+      ]
+    },
+    {
+      "asset": "01-hero-b",
+      "source": "raw/shared-bottom.png",
+      "rect": [
+        60,
+        230,
+        960,
+        790
+      ],
+      "destination": [
+        720,
+        1476,
+        312,
+        256.75
+      ]
+    },
+    {
+      "asset": "02-shared-raid",
+      "source": "raw/shared-right.png",
+      "rect": [
+        60,
+        132,
+        960,
+        954
+      ],
+      "destination": [
+        48,
+        478,
+        984,
+        977.85
+      ]
+    },
+    {
+      "asset": "02-shared-raid",
+      "source": "raw/shared-left.png",
+      "rect": [
+        60,
+        230,
+        960,
+        790
+      ],
+      "destination": [
+        48,
+        1476,
+        312,
+        256.75
+      ]
+    },
+    {
+      "asset": "02-shared-raid",
+      "source": "raw/shared-right.png",
+      "rect": [
+        60,
+        230,
+        960,
+        790
+      ],
+      "destination": [
+        384,
+        1476,
+        312,
+        256.75
+      ]
+    },
+    {
+      "asset": "02-shared-raid",
+      "source": "raw/shared-bottom.png",
+      "rect": [
+        60,
+        230,
+        960,
+        790
+      ],
+      "destination": [
+        720,
+        1476,
+        312,
+        256.75
+      ]
+    },
+    {
+      "asset": "03-companion",
+      "source": "raw/companion-egg.png",
+      "rect": [
+        60,
+        132,
+        960,
+        954
+      ],
+      "destination": [
+        48,
+        506,
+        984,
+        977.85
+      ]
+    },
+    {
+      "asset": "03-companion",
+      "source": "raw/companion-locks.png",
+      "rect": [
+        48,
+        1200,
+        984,
+        440
+      ],
+      "destination": [
+        48,
+        1490,
+        656,
+        293.33
+      ]
+    },
+    {
+      "asset": "04-return-raid",
+      "source": "raw/return-other.png",
+      "rect": [
+        200,
+        250,
+        680,
+        520
+      ],
+      "destination": [
+        48,
+        474,
+        340,
+        260
+      ]
+    },
+    {
+      "asset": "04-return-raid",
+      "source": "raw/return-self.png",
+      "rect": [
+        48,
+        240,
+        984,
+        1212
+      ],
+      "destination": [
+        114,
+        752,
+        852,
+        1049.41
+      ]
+    },
+    {
+      "asset": "05-everyday",
+      "source": "raw/home.png",
+      "rect": [
+        36,
+        1660,
+        1008,
+        190.5
+      ],
+      "destination": [
+        64,
+        506,
+        952,
+        179.92
+      ]
+    },
+    {
+      "asset": "05-everyday",
+      "source": "raw/focusing.png",
+      "rect": [
+        48,
+        185,
+        984,
+        1413
+      ],
+      "destination": [
+        178,
+        748,
+        724,
+        1039.65
+      ]
+    },
+    {
+      "asset": "06-walking",
+      "source": "raw/walking-home.png",
+      "rect": [
+        0,
+        1680,
+        1080,
+        450
+      ],
+      "destination": [
+        48,
+        506,
+        984,
+        410
+      ]
+    },
+    {
+      "asset": "06-walking",
+      "source": "raw/walking-notebook.png",
+      "rect": [
+        76,
+        326,
+        928,
+        1080
+      ],
+      "destination": [
+        170,
+        936,
+        740,
+        861.21
+      ]
+    },
+    {
+      "asset": "feature-graphic-1024x500",
+      "source": "raw/first-run-strike.png",
+      "rect": [
+        245,
+        240,
+        590,
+        560
+      ],
+      "destination": [
+        565,
+        60,
+        410,
+        389.15
+      ]
+    },
+    {
+      "asset": "en-US/feature-graphic-1024x500",
+      "source": "raw/first-run-strike.png",
+      "rect": [
+        245,
+        240,
+        590,
+        560
+      ],
+      "destination": [
+        600,
+        70,
+        380,
+        360.68
+      ]
+    }
+  ],
+  "errors": []
+}

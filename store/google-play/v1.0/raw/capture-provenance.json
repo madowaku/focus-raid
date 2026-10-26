@@ -1,0 +1,26 @@
+{
+  "productCommit": "4cc830c2a02b1008a63b34ac76a6feddf510685e",
+  "capturedAtUtc": "2026-10-26T14:41:41.4140343Z",
+  "device": "emulator-5554",
+  "viewport": "360x800 dp / 1080x2400 px / font scale 1",
+  "data": "Local deterministic demo fixtures. No production users, timestamps, purchases or network calls.",
+  "tests": "OK (8 tests)",
+  "testSourceSha256": "0d1c43dfdc728dda02d7ebd0c1735b4a2aedec532df51e62740eaad72e9c50e1",
+  "captures": {
+    "companion-egg.png": "7b7be08e0adce1a7a397e5f49a01524a81a3e5d00f065249d138373953b07f8d",
+    "companion-locks.png": "398aa4c7fde44a9cd1fa99228944c54103551f50c109c4f00a8d6bd0bc0d8bf3",
+    "first-run-strike.png": "836d1e7aded61a88eca52e717d852c00a60b16442718bf1a00a76c7cbb5a22b6",
+    "focusing.png": "7872717cf3de86ac803ce9c5d651f5ee2f41cd3d25b37a3fea0730a9a61861c6",
+    "home.png": "06c951797acea40cefbb8f7594edd116997ae3e78c3db8296fbbc2883404c638",
+    "return-camp.png": "77e0f99d5860cbe3c09c13c5296c09517e1b9de9ec187dd1139e0240496c030d",
+    "return-other.png": "aa24ed81351958c145c84ce973d3bd0e4a7d4fff557d770d0e6c114b4d0aee9b",
+    "return-result.png": "beef20adb20d8d537a038f655af5ba2eed4d6c834e9a484253d84c9146b32707",
+    "return-self.png": "264399475eda59fd084c68668c6c26c2034eecf99fe1d895353d6208725df69f",
+    "shared-arrived.png": "b4315d7d4af32ee383ff502cd1c8f345214e399ba3412a8a40e3227d5f238385",
+    "shared-bottom.png": "52e5ae4c2ef473aebcc79711e3642cf914ad16f1c7485ce26d5bc39b4c8ef3cc",
+    "shared-left.png": "52d1fe8d5c23b724a5acac67cdd7e4fea12e9ed30d473528021cebbe9df14c3b",
+    "shared-right.png": "28323efbca0f998d3087422b3b630bee25e7e25e98883a4a66e3cbd373de84c2",
+    "walking-home.png": "56992453963cd09451af3a0e2c63b1bd51df9c05ffc92927cfcf2907cd203a7c",
+    "walking-notebook.png": "174c47554e4243cf5a5fb4b1a9447802d87c41f410940dcd2129935f33cc72b9"
+  }
+}

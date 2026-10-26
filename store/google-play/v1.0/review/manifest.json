@@ -1,0 +1,207 @@
+{
+  "status": "PASS",
+  "capture": {
+    "productCommit": "4cc830c2a02b1008a63b34ac76a6feddf510685e",
+    "capturedAtUtc": "2026-10-26T14:41:41.4140343Z",
+    "device": "emulator-5554",
+    "viewport": "360x800 dp / 1080x2400 px / font scale 1",
+    "data": "Local deterministic demo fixtures. No production users, timestamps, purchases or network calls.",
+    "tests": "OK (8 tests)",
+    "testSourceSha256": "0d1c43dfdc728dda02d7ebd0c1735b4a2aedec532df51e62740eaad72e9c50e1",
+    "captures": {
+      "companion-egg.png": "7b7be08e0adce1a7a397e5f49a01524a81a3e5d00f065249d138373953b07f8d",
+      "companion-locks.png": "398aa4c7fde44a9cd1fa99228944c54103551f50c109c4f00a8d6bd0bc0d8bf3",
+      "first-run-strike.png": "836d1e7aded61a88eca52e717d852c00a60b16442718bf1a00a76c7cbb5a22b6",
+      "focusing.png": "7872717cf3de86ac803ce9c5d651f5ee2f41cd3d25b37a3fea0730a9a61861c6",
+      "home.png": "06c951797acea40cefbb8f7594edd116997ae3e78c3db8296fbbc2883404c638",
+      "return-camp.png": "77e0f99d5860cbe3c09c13c5296c09517e1b9de9ec187dd1139e0240496c030d",
+      "return-other.png": "aa24ed81351958c145c84ce973d3bd0e4a7d4fff557d770d0e6c114b4d0aee9b",
+      "return-result.png": "beef20adb20d8d537a038f655af5ba2eed4d6c834e9a484253d84c9146b32707",
+      "return-self.png": "264399475eda59fd084c68668c6c26c2034eecf99fe1d895353d6208725df69f",
+      "shared-arrived.png": "b4315d7d4af32ee383ff502cd1c8f345214e399ba3412a8a40e3227d5f238385",
+      "shared-bottom.png": "52e5ae4c2ef473aebcc79711e3642cf914ad16f1c7485ce26d5bc39b4c8ef3cc",
+      "shared-left.png": "52d1fe8d5c23b724a5acac67cdd7e4fea12e9ed30d473528021cebbe9df14c3b",
+      "shared-right.png": "28323efbca0f998d3087422b3b630bee25e7e25e98883a4a66e3cbd373de84c2",
+      "walking-home.png": "56992453963cd09451af3a0e2c63b1bd51df9c05ffc92927cfcf2907cd203a7c",
+      "walking-notebook.png": "174c47554e4243cf5a5fb4b1a9447802d87c41f410940dcd2129935f33cc72b9"
+    }
+  },
+  "outputs": [
+    {
+      "file": "ja-JP/01-hero-a.png",
+      "width": 1080,
+      "height": 1920,
+      "mode": "RGB",
+      "bytes": 860542,
+      "sha256": "ebf90951ea48c5d6dbc9bd407942e4a356e0cff0d795f1687c9e020a18b4ed9d"
+    },
+    {
+      "file": "ja-JP/01-hero-b.png",
+      "width": 1080,
+      "height": 1920,
+      "mode": "RGB",
+      "bytes": 993818,
+      "sha256": "5f5315205cf4bde7f33f29061295039d9ecc6764070a3fc7148d6e1cba6a74ff"
+    },
+    {
+      "file": "ja-JP/02-shared-raid.png",
+      "width": 1080,
+      "height": 1920,
+      "mode": "RGB",
+      "bytes": 994113,
+      "sha256": "8c0ae6221bfcf2dca12bc220722b4979f679112dabb54564dce9c24907b4883d"
+    },
+    {
+      "file": "ja-JP/03-companion.png",
+      "width": 1080,
+      "height": 1920,
+      "mode": "RGB",
+      "bytes": 721240,
+      "sha256": "466254f2a1a46f6aeb1e1b44ad4fa9950d5b1c94dfb18d4215aa66c85256aa3d"
+    },
+    {
+      "file": "ja-JP/04-return-raid.png",
+      "width": 1080,
+      "height": 1920,
+      "mode": "RGB",
+      "bytes": 1718947,
+      "sha256": "d3bdef49f402c9905af2e5c141db1b6d5200598ebbc7d240e22a3c8be5973bda"
+    },
+    {
+      "file": "ja-JP/05-everyday.png",
+      "width": 1080,
+      "height": 1920,
+      "mode": "RGB",
+      "bytes": 1367081,
+      "sha256": "687b164e981475f0249ccc8e0b461ec7e16f65d81adfe71559b5ccefc77d0577"
+    },
+    {
+      "file": "ja-JP/06-walking.png",
+      "width": 1080,
+      "height": 1920,
+      "mode": "RGB",
+      "bytes": 621430,
+      "sha256": "81c4be5a3bccf05e00f44efa38808d46d57822809b066612ec56d94d09c5e8e2"
+    },
+    {
+      "file": "ja-JP/feature-graphic-1024x500.png",
+      "width": 1024,
+      "height": 500,
+      "mode": "RGB",
+      "bytes": 424413,
+      "sha256": "fb9c21fa518f420e989a7d6d4f68b34325f665381df8f78bcc6c042a6dd911ba"
+    },
+    {
+      "file": "ja-JP/icon-512.png",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "bytes": 129819,
+      "sha256": "46bb178057638805c6ed7c9286c71105483a9f06e8f303812a92ee572dd92569"
+    },
+    {
+      "file": "en-US/feature-graphic-1024x500.png",
+      "width": 1024,
+      "height": 500,
+      "mode": "RGB",
+      "bytes": 654581,
+      "sha256": "a2d21056f361438ebbb75d8c641d8740a402efc9593995edb3880dc61d05c9ed"
+    }
+  ],
+  "sources": [
+    {
+      "file": "raw/companion-egg.png",
+      "sha256": "7b7be08e0adce1a7a397e5f49a01524a81a3e5d00f065249d138373953b07f8d"
+    },
+    {
+      "file": "raw/companion-locks.png",
+      "sha256": "398aa4c7fde44a9cd1fa99228944c54103551f50c109c4f00a8d6bd0bc0d8bf3"
+    },
+    {
+      "file": "raw/first-run-strike.png",
+      "sha256": "836d1e7aded61a88eca52e717d852c00a60b16442718bf1a00a76c7cbb5a22b6"
+    },
+    {
+      "file": "raw/focusing.png",
+      "sha256": "7872717cf3de86ac803ce9c5d651f5ee2f41cd3d25b37a3fea0730a9a61861c6"
+    },
+    {
+      "file": "raw/home.png",
+      "sha256": "06c951797acea40cefbb8f7594edd116997ae3e78c3db8296fbbc2883404c638"
+    },
+    {
+      "file": "raw/return-other.png",
+      "sha256": "aa24ed81351958c145c84ce973d3bd0e4a7d4fff557d770d0e6c114b4d0aee9b"
+    },
+    {
+      "file": "raw/return-self.png",
+      "sha256": "264399475eda59fd084c68668c6c26c2034eecf99fe1d895353d6208725df69f"
+    },
+    {
+      "file": "raw/shared-bottom.png",
+      "sha256": "52e5ae4c2ef473aebcc79711e3642cf914ad16f1c7485ce26d5bc39b4c8ef3cc"
+    },
+    {
+      "file": "raw/shared-left.png",
+      "sha256": "52d1fe8d5c23b724a5acac67cdd7e4fea12e9ed30d473528021cebbe9df14c3b"
+    },
+    {
+      "file": "raw/shared-right.png",
+      "sha256": "28323efbca0f998d3087422b3b630bee25e7e25e98883a4a66e3cbd373de84c2"
+    },
+    {
+      "file": "raw/walking-home.png",
+      "sha256": "56992453963cd09451af3a0e2c63b1bd51df9c05ffc92927cfcf2907cd203a7c"
+    },
+    {
+      "file": "raw/walking-notebook.png",
+      "sha256": "174c47554e4243cf5a5fb4b1a9447802d87c41f410940dcd2129935f33cc72b9"
+    },
+    {
+      "file": "creative.js",
+      "sha256": "8777a40a78ee9e352cdf788cf10f14dc129b595798b624da1b2e5f6c2a93fe5c"
+    },
+    {
+      "file": "creative.html",
+      "sha256": "d767324f719904b92dd399f42793df006e575f94e750b5b5aa00f514b270cbd3"
+    },
+    {
+      "file": "listing-copy.json",
+      "sha256": "ec936c73fb967a7ce0e2aa1af61d8b12ddd0151ba9d8c0d3f05d0b538c2905e0"
+    },
+    {
+      "file": "listing-copy.en-US.json",
+      "sha256": "51cb90923e87484fd9870b65d41813f8228862cd7eaf2634c96ee6c645e4466d"
+    },
+    {
+      "file": "../../../app/src/main/res/drawable-nodpi/ic_launcher_foreground.png",
+      "sha256": "79bb3b1ea0f4776df0813ed698c683ef4078bca07e0a9ce29f886fcbf6907c6a"
+    },
+    {
+      "file": "../../../app/src/main/res/drawable-nodpi/ic_launcher_monochrome.png",
+      "sha256": "623e41523a5d970f6e373dc2d066ddc61f0433a5337d3f1c56f2b81009c8e32d"
+    }
+  ],
+  "shortDescriptionCharacters": {
+    "A": 37,
+    "B": 39,
+    "C": 39
+  },
+  "shortDescriptionCharactersEnUS": {
+    "A": 78,
+    "B": 78,
+    "C": 76
+  },
+  "validation": [
+    "PNG dimensions and color modes",
+    "30/80/4000-character title and descriptions (ja-JP, en-US) and 140-character alt text",
+    "text bounds and overlaps",
+    "raw source hashes and dimensions"
+  ],
+  "pending": [
+    "3–5 independent five-second reviews",
+    "Play Console and actual launcher mask/themed-icon review",
+    "release-candidate production shared-raid verification"
+  ],
+  "errors": []
+}
