@@ -113,11 +113,15 @@ Focus Raid currently uses services that require disclosure review:
 - RevenueCat
   - purchase history is processed for purchase validation/entitlement functionality
   - RevenueCat may create an anonymous App User ID when no custom App User ID is provided
+- Health Connect (since 2026-10-24, optional Walking Expedition)
+  - `READ_STEPS` only; steps and discoveries stay on-device and are excluded from backup/transfer
+  - requires the Play Console Health apps declaration and Health Connect permission declaration
 
 Before public release:
 
 - [ ] Publish a clearly titled **Privacy Policy** at a public, active, non-geofenced URL.
-- [ ] Put the same Privacy Policy link or text inside Focus Raid.
+- [ ] Put the same Privacy Policy link or text inside Focus Raid. Signed release builds fail unless `FOCUS_RAID_PRIVACY_POLICY_URL` is an absolute https URL.
+- [ ] Complete the Health apps declaration and `READ_STEPS` permission declaration; see [Data Safety worksheet](data-safety.md#walking-expedition-health-connect-and-play-declarations-2026-10-26).
 - [ ] Include the developer/app identity used in the Play listing.
 - [ ] Include a privacy contact or request mechanism.
 - [ ] State retention and deletion handling for Firebase anonymous identity, Footprints, and RevenueCat purchase/customer records.
@@ -156,6 +160,8 @@ Before public release:
 - [ ] Verify Free mode without purchase.
 - [ ] Verify Pro mode through a real Play license-test purchase.
 - [ ] Verify Firebase-backed Footprints with two separate test installations/accounts.
+- [ ] Verify Walking Expedition on a real device: grant, deny, revoke and re-grant `READ_STEPS`; the Health Connect rationale screen opens the Privacy Policy.
+- [ ] Verify focus completion when exact-alarm access is denied (Android 14+ default) and the app is backgrounded.
 
 ## 6. Product honesty gate
 

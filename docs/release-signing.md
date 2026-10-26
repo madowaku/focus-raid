@@ -85,6 +85,8 @@ FOCUS_RAID_PRIVACY_POLICY_URL
 
 The helper script warns when any of these values are missing, but still allows a signing-only test bundle to be produced.
 
+Exception: a signed release build fails when `FOCUS_RAID_PRIVACY_POLICY_URL` is missing, is not an absolute `https://` URL with a host, or does not answer HTTP 2xx (redirects followed; the check needs network access), because the app hides its in-app privacy link without it. Unsigned release builds (the CI compile gate) are not affected.
+
 ## 4. Build the signed AAB manually
 
 With the signing environment configured:

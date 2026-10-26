@@ -1,3 +1,5 @@
+import java.net.URI
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
@@ -51,7 +53,7 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = 1
-        versionName = "0.2.0"
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -103,6 +105,40 @@ android {
     packaging {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
     }
+}
+
+// A signed release is the Play upload artifact, so it must ship the in-app privacy link.
+// Unsigned release builds stay allowed as the CI compile gate.
+val validateReleasePrivacyPolicyUrl by tasks.registering {
+    val url = privacyPolicyUrl.trim()
+    val signed = releaseSigningConfigured
+    inputs.property("privacyPolicyUrl", url)
+    inputs.property("releaseSigningConfigured", signed)
+    doLast {
+        if (!signed) return@doLast
+        val uri = runCatching { URI(url) }.getOrNull()
+        require(uri != null && uri.scheme == "https" && !uri.host.isNullOrBlank()) {
+            "FOCUS_RAID_PRIVACY_POLICY_URL must be an absolute https:// URL with a host for a " +
+                "signed release build (got \"$url\"). Without it the in-app privacy link is hidden."
+        }
+        // The policy must be live, not just well-formed (redirects are followed).
+        val status = runCatching {
+            (uri.toURL().openConnection() as java.net.HttpURLConnection).run {
+                connectTimeout = 10_000
+                readTimeout = 10_000
+                instanceFollowRedirects = true
+                try { responseCode } finally { disconnect() }
+            }
+        }
+        require(status.getOrNull() in 200..299) {
+            "FOCUS_RAID_PRIVACY_POLICY_URL is not publicly reachable (\"$url\": " +
+                (status.exceptionOrNull()?.toString() ?: "HTTP ${status.getOrNull()}") + ")."
+        }
+    }
+}
+
+tasks.matching { it.name == "preReleaseBuild" }.configureEach {
+    dependsOn(validateReleasePrivacyPolicyUrl)
 }
 
 dependencies {
