@@ -2,6 +2,8 @@
 
 Effective date / 適用開始日: 2026-09-05
 
+Updated / 更新日: 2026-10-24 (Walking Expedition)
+
 Developer / 開発者: **madowaku**  
 Contact / お問い合わせ: **raindrum909@gmail.com**
 

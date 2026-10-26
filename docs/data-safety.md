@@ -2,7 +2,7 @@
 
 > Working release worksheet, not legal advice and not a substitute for the current Play Console questionnaire.
 >
-> Last reviewed against the production-intended Android dependency set: 2026-09-05.
+> Last reviewed against the production-intended Android dependency set: 2026-10-26 (adds Health Connect, Firebase Functions and App Check).
 
 Use this document to keep the Play Console Data Safety answers aligned with the actual Focus Raid build and Privacy Policy. Re-check the current Google, Firebase, and RevenueCat guidance immediately before submission because SDK behavior and Play form wording can change.
 
@@ -12,7 +12,10 @@ Focus Raid currently includes:
 
 - Firebase Authentication with anonymous sign-in
 - Cloud Firestore
+- Cloud Functions for Firebase (callable contribution endpoint)
+- Firebase App Check with Play Integrity (release builds)
 - RevenueCat Purchases SDK
+- Health Connect client (`READ_STEPS` only, optional walking exploration)
 - local Room session history
 - local DataStore timer/session preferences
 
@@ -153,6 +156,45 @@ Before submitting Data Safety:
 - RevenueCat Google Play Data Safety guidance: https://www.revenuecat.com/docs/platform-resources/google-platform-resources/google-plays-data-safety
 
 
-## Walking Expedition release gate (2026-10-24)
+## Walking Expedition: Health Connect and Play declarations (2026-10-26)
 
-Declare READ_STEPS and its optional exploration use in Play Console Health apps / Health Connect permissions. Daily steps and discoveries are processed only on-device, never included in Firebase payloads or Android backup/device transfer. No WRITE_STEPS, location or background health-read permission. Publish the updated bilingual privacy policy before a Play release and verify the Console declaration against the actual release bundle. This repository change does not complete Console review or production publication.
+Walking Expedition (issue #25, merged 2026-10-24) reads `READ_STEPS` through Health Connect.
+Facts to keep consistent across the bundle, Privacy Policy and Play Console:
+
+- Permission: `android.permission.health.READ_STEPS` only. No `WRITE_STEPS`, no
+  background health read, no location, no persistent walking service.
+- Purpose: optional, Free exploration. Steps unlock local scenes and keepsakes; they are
+  never converted into focus minutes, damage, growth or purchases.
+- Storage: daily counts, start date, diary time zone and discoveries stay in
+  `walking_expedition.preferences_pb`, excluded from cloud backup and device transfer.
+- Transmission: none. Steps are not in Firebase payloads and are not sent to RevenueCat
+  or any third party.
+- Rationale screen: `WalkingPrivacyActivity` (Health Connect rationale / permission-usage
+  intent) shows the walking explanation and links the full Privacy Policy.
+
+### Data Safety answer
+
+Play's Data Safety form covers data transmitted off the device. Data processed only on
+the device does not need to be declared as collected. Steps therefore stay **not
+collected / not shared**, as long as the build matches the facts above. Re-check the
+current form wording before answering. If any step value, discovery or derived
+walking state is ever sent off-device, this answer must change to
+**Health and fitness → Fitness info**.
+
+### Console tasks before the first release that contains READ_STEPS
+
+- [ ] App content → **Health apps** declaration: mark the walking/fitness feature and
+      describe the optional, on-device use.
+- [ ] Health Connect permission declaration for `READ_STEPS`: justify the step read as
+      the core of the optional Walking Expedition feature, matching the in-app explanation.
+- [ ] Publish `docs/privacy-policy.html` (updated 2026-10-24, walking section) at the
+      URL passed as `FOCUS_RAID_PRIVACY_POLICY_URL`. Signed release builds fail without a
+      valid https URL.
+- [ ] Re-check Firebase's Play data-disclosure page for App Check and Cloud Functions,
+      and update the Firebase sections above if they list additional data types.
+- [ ] Verify the declarations against the exact uploaded bundle (merged manifest permissions).
+
+References: https://developer.android.com/health-and-fitness/health-connect/get-started ,
+https://support.google.com/googleplay/android-developer/answer/10787469
+
+No Console declaration or production publication is performed by this repository change.
