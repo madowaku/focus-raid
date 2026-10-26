@@ -17,6 +17,7 @@ artifacts/
 emulator-*.log
 .kotlin/
 artifacts-*.log
+output/device-check/
 functions/node_modules/
 *-debug.log
 .firebase/
