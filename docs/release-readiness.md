@@ -160,6 +160,7 @@ Before public release:
 - [ ] Verify Free mode without purchase.
 - [ ] Verify Pro mode through a real Play license-test purchase.
 - [ ] Verify Firebase-backed Footprints with two separate test installations/accounts.
+- [ ] Run the A401OP device check ([procedure](device-check-a401op.md)) and fill in its results table. Until it is filled from a real run, the candidate is **not releasable**.
 - [ ] Verify Walking Expedition on a real device: grant, deny, revoke and re-grant `READ_STEPS`; the Health Connect rationale screen opens the Privacy Policy.
 - [ ] Verify focus completion when exact-alarm access is denied (Android 14+ default) and the app is backgrounded.
 
