@@ -69,5 +69,7 @@ try {
     $rejected = $_.Exception.Message -match 'adb shell bad-command failed'
 }
 if (-not $rejected) { throw 'Invoke-Adb failed to propagate a nonzero adb exit code' }
+# PowerShell uses LASTEXITCODE as the script's process status even after an expected failure.
+$global:LASTEXITCODE = 0
 
 Write-Host "A401OP PowerShell parser, argv and error propagation: PASS ($($commands.Count) call sites)"
