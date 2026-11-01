@@ -40,6 +40,7 @@ $rows.Add('')
 $rows.Add('| Check | Operator result | Notes |')
 $rows.Add('| --- | --- | --- |')
 
+# Pass adb argv as one array argument to Invoke-Adb; positional splatting breaks its single-parameter binding.
 function Invoke-Adb([string[]]$Arguments) {
     $value = & $adb -s $Serial @Arguments 2>&1
     if ($LASTEXITCODE -ne 0) { throw "adb $($Arguments -join ' ') failed: $value" }
@@ -53,9 +54,9 @@ function Broadcast([string]$Action, [string[]]$Extras = @()) {
 function Save-Screenshot([string]$Name) {
     $remote = "/sdcard/Download/focus-raid-$stamp-$Name.png"
     $local = Join-Path $outDir "$Name.png"
-    Invoke-Adb @('shell', 'screencap', '-p', $remote) | Out-Null
-    Invoke-Adb @('pull', $remote, $local) | Out-Null
-    Invoke-Adb @('shell', 'rm', $remote) | Out-Null
+    Invoke-Adb (@('shell', 'screencap', '-p', $remote)) | Out-Null
+    Invoke-Adb (@('pull', $remote, $local)) | Out-Null
+    Invoke-Adb (@('shell', 'rm', $remote)) | Out-Null
     Write-Host "Screenshot: $local"
 }
 function Record-Operator([string]$Name, [string]$Prompt, [string]$Screenshot = '') {
@@ -72,35 +73,35 @@ function Record-Operator([string]$Name, [string]$Prompt, [string]$Screenshot = '
 }
 function Set-NotificationGrant([bool]$Grant) {
     $verb = if ($Grant) { 'grant' } else { 'revoke' }
-    Invoke-Adb @('shell', 'pm', $verb, $package, 'android.permission.POST_NOTIFICATIONS') | Out-Null
+    Invoke-Adb (@('shell', 'pm', $verb, $package, 'android.permission.POST_NOTIFICATIONS')) | Out-Null
 }
 function Timer-Scenario([string]$Name, [bool]$ExactAllowed, [bool]$Doze) {
     Broadcast 'CLEAR_TIMER' | Out-Null
     $mode = if ($ExactAllowed) { 'allow' } else { 'ignore' }
-    Invoke-Adb @('shell', 'appops', 'set', $package, 'SCHEDULE_EXACT_ALARM', $mode) | Out-Null
+    Invoke-Adb (@('shell', 'appops', 'set', $package, 'SCHEDULE_EXACT_ALARM', $mode)) | Out-Null
     $seed = Broadcast 'SEED_TIMER' @('--el', 'duration_ms', '30000')
     if ($seed -notmatch 'seeded=true' -or $seed -notmatch "exact=$($ExactAllowed.ToString().ToLowerInvariant())") {
         throw "Unexpected seed or exact-alarm state: $seed"
     }
-    Invoke-Adb @('shell', 'am', 'start', '-W', '-n', "$package/.MainActivity") | Out-Null
-    Invoke-Adb @('shell', 'input', 'keyevent', 'KEYCODE_HOME') | Out-Null
-    Invoke-Adb @('shell', 'input', 'keyevent', 'KEYCODE_SLEEP') | Out-Null
+    Invoke-Adb (@('shell', 'am', 'start', '-W', '-n', "$package/.MainActivity")) | Out-Null
+    Invoke-Adb (@('shell', 'input', 'keyevent', 'KEYCODE_HOME')) | Out-Null
+    Invoke-Adb (@('shell', 'input', 'keyevent', 'KEYCODE_SLEEP')) | Out-Null
     if ($Doze) {
-        Invoke-Adb @('shell', 'dumpsys', 'battery', 'unplug') | Out-Null
-        $idle = Invoke-Adb @('shell', 'dumpsys', 'deviceidle', 'force-idle')
+        Invoke-Adb (@('shell', 'dumpsys', 'battery', 'unplug')) | Out-Null
+        $idle = Invoke-Adb (@('shell', 'dumpsys', 'deviceidle', 'force-idle'))
         Write-Host "Doze request: $idle"
-        $state = Invoke-Adb @('shell', 'dumpsys', 'deviceidle')
+        $state = Invoke-Adb (@('shell', 'dumpsys', 'deviceidle'))
         if ($state -notmatch 'mState=IDLE(\s|$)') { throw 'Device did not enter deep idle; Doze result cannot be claimed.' }
     }
     Start-Sleep -Seconds 40
     $probe = Broadcast 'PROBE_TIMER'
     $rows.Add("| $Name adb probe | OBSERVED | $($probe.Replace('|', '/').Replace("`n", ' ')) |")
     if ($Doze) {
-        Invoke-Adb @('shell', 'dumpsys', 'deviceidle', 'unforce') | Out-Null
-        Invoke-Adb @('shell', 'dumpsys', 'battery', 'reset') | Out-Null
+        Invoke-Adb (@('shell', 'dumpsys', 'deviceidle', 'unforce')) | Out-Null
+        Invoke-Adb (@('shell', 'dumpsys', 'battery', 'reset')) | Out-Null
     }
-    Invoke-Adb @('shell', 'input', 'keyevent', 'KEYCODE_WAKEUP') | Out-Null
-    Invoke-Adb @('shell', 'am', 'start', '-W', '-n', "$package/.MainActivity") | Out-Null
+    Invoke-Adb (@('shell', 'input', 'keyevent', 'KEYCODE_WAKEUP')) | Out-Null
+    Invoke-Adb (@('shell', 'am', 'start', '-W', '-n', "$package/.MainActivity")) | Out-Null
     $after = Broadcast 'PROBE_TIMER'
     $rows.Add("| $Name reopened probe | OBSERVED | $($after.Replace('|', '/').Replace("`n", ' ')) |")
     Record-Operator $Name 'Check timer completion, focus credit and notification behavior after screen-off/background. In denied exact-alarm mode, delivery may be delayed; record actual timing and eventual recovery.' "timer-$Name"
@@ -110,17 +111,17 @@ $originalFont = $null
 $originalExactMode = $null
 $originalNotificationGranted = $null
 try {
-    $originalFont = Invoke-Adb @('shell', 'settings', 'get', 'system', 'font_scale')
-    Invoke-Adb @('install', '-r', $apk) | Out-Null
+    $originalFont = Invoke-Adb (@('shell', 'settings', 'get', 'system', 'font_scale'))
+    Invoke-Adb (@('install', '-r', $apk)) | Out-Null
     # Record the permission states this check changes so the finally block can put them back.
-    $exactOp = Invoke-Adb @('shell', 'appops', 'get', $package, 'SCHEDULE_EXACT_ALARM')
+    $exactOp = Invoke-Adb (@('shell', 'appops', 'get', $package, 'SCHEDULE_EXACT_ALARM'))
     $originalExactMode = if ($exactOp -match 'SCHEDULE_EXACT_ALARM:\s*(\w+)') { $Matches[1] } else { 'default' }
-    $packageDump = Invoke-Adb @('shell', 'dumpsys', 'package', $package)
+    $packageDump = Invoke-Adb (@('shell', 'dumpsys', 'package', $package))
     $originalNotificationGranted = $packageDump -match 'android\.permission\.POST_NOTIFICATIONS: granted=true'
     Write-Host "Original exact-alarm mode=$originalExactMode; notifications granted=$originalNotificationGranted."
-    $rows.Add("| Android version | OBSERVED | $(Invoke-Adb @('shell', 'getprop', 'ro.build.version.release')) |")
-    $rows.Add("| Display size | OBSERVED | $(Invoke-Adb @('shell', 'wm', 'size')) |")
-    Invoke-Adb @('shell', 'settings', 'put', 'system', 'font_scale', '1.5') | Out-Null
+    $rows.Add("| Android version | OBSERVED | $(Invoke-Adb (@('shell', 'getprop', 'ro.build.version.release'))) |")
+    $rows.Add("| Display size | OBSERVED | $(Invoke-Adb (@('shell', 'wm', 'size'))) |")
+    Invoke-Adb (@('shell', 'settings', 'put', 'system', 'font_scale', '1.5')) | Out-Null
     Write-Host "Original font_scale=$originalFont; set to 1.5."
 
     Set-NotificationGrant $false
@@ -141,14 +142,14 @@ try {
     Record-Operator 'Health Connect rationale' 'Open Focus Raid permission usage/rationale from Health Connect. Verify the full Privacy Policy link is visible and opens an https page; record the URL and result.' 'health-rationale'
     Record-Operator 'Real walking and step comparison' 'Walk with the A401OP. Compare Focus Raid notebook count with Health Connect own count for the same day and time zone. Record both numbers, source and refresh time.' 'walking-count'
 } finally {
-    try { Invoke-Adb @('shell', 'dumpsys', 'deviceidle', 'unforce') | Out-Null } catch { Write-Warning $_ }
-    try { Invoke-Adb @('shell', 'dumpsys', 'battery', 'reset') | Out-Null } catch { Write-Warning $_ }
-    try { Invoke-Adb @('shell', 'input', 'keyevent', 'KEYCODE_WAKEUP') | Out-Null } catch { Write-Warning $_ }
+    try { Invoke-Adb (@('shell', 'dumpsys', 'deviceidle', 'unforce')) | Out-Null } catch { Write-Warning $_ }
+    try { Invoke-Adb (@('shell', 'dumpsys', 'battery', 'reset')) | Out-Null } catch { Write-Warning $_ }
+    try { Invoke-Adb (@('shell', 'input', 'keyevent', 'KEYCODE_WAKEUP')) | Out-Null } catch { Write-Warning $_ }
     if ($originalFont -and $originalFont -ne 'null') {
-        try { Invoke-Adb @('shell', 'settings', 'put', 'system', 'font_scale', $originalFont) | Out-Null } catch { Write-Warning "Could not restore font scale: $_" }
+        try { Invoke-Adb (@('shell', 'settings', 'put', 'system', 'font_scale', $originalFont)) | Out-Null } catch { Write-Warning "Could not restore font scale: $_" }
     }
     if ($originalExactMode) {
-        try { Invoke-Adb @('shell', 'appops', 'set', $package, 'SCHEDULE_EXACT_ALARM', $originalExactMode) | Out-Null } catch { Write-Warning "Could not restore exact-alarm mode: $_" }
+        try { Invoke-Adb (@('shell', 'appops', 'set', $package, 'SCHEDULE_EXACT_ALARM', $originalExactMode)) | Out-Null } catch { Write-Warning "Could not restore exact-alarm mode: $_" }
     }
     if ($null -ne $originalNotificationGranted) {
         try { Set-NotificationGrant $originalNotificationGranted } catch { Write-Warning "Could not restore notification permission: $_" }
